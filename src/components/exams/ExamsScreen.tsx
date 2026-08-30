@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
-import { Plus, GraduationCap } from 'lucide-react';
+import { Plus, GraduationCap, Brain, Sparkles } from 'lucide-react';
 import { useExamStore } from '../../store/useExamStore';
 import { useSchoolStore } from '../../store/useSchoolStore';
 import { useAuthStore } from '../../store/useAuthStore';
 import { ExamCard } from './ExamCard';
 import { ExamModal } from './ExamModal';
+import { AiStudyPlannerModal } from './AiStudyPlannerModal';
+import { PricingModal } from '../licensing/PricingModal';
+import { LicenseActivationModal } from '../licensing/LicenseActivationModal';
 import { Button } from '../common/Button';
 import { EmptyState } from '../common/EmptyState';
 import type { Exam } from '../../types';
@@ -16,6 +19,9 @@ export const ExamsScreen: React.FC = () => {
 
   const [selectedSubjectFilter, setSelectedSubjectFilter] = useState<string>('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isAiPlannerOpen, setIsAiPlannerOpen] = useState(false);
+  const [isPricingOpen, setIsPricingOpen] = useState(false);
+  const [isActivationOpen, setIsActivationOpen] = useState(false);
   const [editingExam, setEditingExam] = useState<Exam | null>(null);
 
   const subjectMap = new Map(subjects.map(s => [s.id, s]));
@@ -43,21 +49,37 @@ export const ExamsScreen: React.FC = () => {
             )}
           </h2>
           <p className="text-xs text-gray-500 dark:text-gray-400">
-            Klausurtermine, Stoffthemen und Lernfortschritt verwalten
+            Klausurtermine, Stoffthemen und KI-Lernzeitplanung verwalten
           </p>
         </div>
 
-        <Button
-          variant="primary"
-          size="sm"
-          onClick={() => {
-            setEditingExam(null);
-            setIsModalOpen(true);
-          }}
-          icon={<Plus className="w-4 h-4" />}
-        >
-          Klausur eintragen
-        </Button>
+        <div className="flex items-center gap-2">
+          {/* Pro Feature: KI-Lernplaner */}
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => setIsAiPlannerOpen(true)}
+            icon={<Brain className="w-4 h-4 text-purple-600 dark:text-purple-400" />}
+            className="border-purple-500/30 text-purple-700 dark:text-purple-300 hover:bg-purple-500/10"
+          >
+            <span>KI-Lernplaner</span>
+            <span className="text-[9px] font-extrabold uppercase bg-purple-600 text-white px-1.5 py-0.2 rounded-full ml-1">
+              Pro
+            </span>
+          </Button>
+
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={() => {
+              setEditingExam(null);
+              setIsModalOpen(true);
+            }}
+            icon={<Plus className="w-4 h-4" />}
+          >
+            Klausur eintragen
+          </Button>
+        </div>
       </div>
 
       {/* Subject Filter Pills */}
@@ -105,46 +127,49 @@ export const ExamsScreen: React.FC = () => {
         </div>
       )}
 
-      {/* Exams List */}
-      <div className="space-y-3.5">
-        {filteredExams.length === 0 ? (
-          <EmptyState
-            icon={<GraduationCap className="w-8 h-8 text-ios-blue" />}
-            title="Keine anstehenden Prüfungen"
-            description="Erfasse deine erste Klausur oder deinen nächsten Test, um Lernfortschritt und Themen zu tracken."
-            actionLabel="Klausur eintragen"
-            onAction={() => {
-              setEditingExam(null);
-              setIsModalOpen(true);
-            }}
-          />
-        ) : (
-          filteredExams.map((exam) => (
+      {/* Exams Grid */}
+      {filteredExams.length === 0 ? (
+        <EmptyState
+          icon={<GraduationCap className="w-8 h-8 text-red-500" />}
+          title="Keine anstehenden Klausuren"
+          description="Trage deine Prüfungstermine, Schulaufgaben oder Tests ein, um deinen Lernfortschritt zu planen."
+          actionLabel="Erste Klausur eintragen"
+          onAction={() => {
+            setEditingExam(null);
+            setIsModalOpen(true);
+          }}
+        />
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+          {filteredExams.map((exam) => (
             <ExamCard
               key={exam.id}
               exam={exam}
               subject={subjectMap.get(exam.subjectId)}
               teacher={exam.teacherId ? teacherMap.get(exam.teacherId) : undefined}
               room={exam.roomId ? roomMap.get(exam.roomId) : undefined}
-              onToggleTopic={(examId, topicId) => toggleExamTopic(uid, examId, topicId)}
-              onEdit={(e) => {
-                setEditingExam(e);
+              onEdit={() => {
+                setEditingExam(exam);
                 setIsModalOpen(true);
               }}
+              onToggleTopic={(topicId) => toggleExamTopic(uid, exam.id, topicId)}
             />
-          ))
-        )}
-      </div>
+          ))}
+        </div>
+      )}
 
-      {/* Modal */}
+      {/* Modals */}
       <ExamModal
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSave={(ex) => {
+        onClose={() => {
+          setIsModalOpen(false);
+          setEditingExam(null);
+        }}
+        onSave={(exam) => {
           if (editingExam) {
-            updateExam(uid, ex.id, ex);
+            updateExam(uid, exam.id, exam);
           } else {
-            addExam(uid, ex);
+            addExam(uid, exam);
           }
         }}
         onDelete={(id) => deleteExam(uid, id)}
@@ -152,6 +177,29 @@ export const ExamsScreen: React.FC = () => {
         subjects={subjects}
         teachers={teachers}
         rooms={rooms}
+      />
+
+      <AiStudyPlannerModal
+        isOpen={isAiPlannerOpen}
+        onClose={() => setIsAiPlannerOpen(false)}
+        exams={exams}
+        subjects={subjects}
+        onOpenPricing={() => setIsPricingOpen(true)}
+        onOpenActivation={() => setIsActivationOpen(true)}
+      />
+
+      <PricingModal
+        isOpen={isPricingOpen}
+        onClose={() => setIsPricingOpen(false)}
+        onOpenActivation={() => {
+          setIsPricingOpen(false);
+          setIsActivationOpen(true);
+        }}
+      />
+
+      <LicenseActivationModal
+        isOpen={isActivationOpen}
+        onClose={() => setIsActivationOpen(false)}
       />
     </div>
   );

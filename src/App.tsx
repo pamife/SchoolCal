@@ -5,6 +5,7 @@ import { useExamStore } from './store/useExamStore';
 import { useCalendarStore } from './store/useCalendarStore';
 import { useSettingsStore } from './store/useSettingsStore';
 import { useAuthStore } from './store/useAuthStore';
+import { useGradeStore } from './store/useGradeStore';
 
 import { MobileNavBar } from './components/layout/MobileNavBar';
 import { Sidebar } from './components/layout/Sidebar';
@@ -61,6 +62,7 @@ export function App() {
   const { loadExams, clearExams, addExam, updateExam, deleteExam } = useExamStore();
   const { loadEvents, clearEvents, addEvent } = useCalendarStore();
   const { settings, loadSettings } = useSettingsStore();
+  const { loadGrades, clearGrades } = useGradeStore();
 
   // Listen to Firebase Auth state
   useEffect(() => {
@@ -76,11 +78,13 @@ export function App() {
       loadHomework(user.uid);
       loadExams(user.uid);
       loadEvents(user.uid);
+      loadGrades(user.uid);
     } else {
       clearSchoolData();
       clearHomework();
       clearExams();
       clearEvents();
+      clearGrades();
     }
   }, [user?.uid]);
 

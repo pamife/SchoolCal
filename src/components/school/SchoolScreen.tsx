@@ -9,6 +9,8 @@ import {
   Edit2,
   Clock,
   Coffee,
+  Zap,
+  BarChart3,
 } from 'lucide-react';
 import { useSchoolStore } from '../../store/useSchoolStore';
 import { useAuthStore } from '../../store/useAuthStore';
@@ -24,11 +26,15 @@ import { SubjectModal } from './SubjectModal';
 import { TeacherModal } from './TeacherModal';
 import { RoomModal } from './RoomModal';
 import { PeriodTimesModal } from './PeriodTimesModal';
+import { WebUntisSyncTab } from './WebUntisSyncTab';
+import { GradeAnalyticsTab } from '../grades/GradeAnalyticsTab';
+import { PricingModal } from '../licensing/PricingModal';
+import { LicenseActivationModal } from '../licensing/LicenseActivationModal';
 import { EmptyState } from '../common/EmptyState';
 import type { Subject, Teacher, Room, ScheduleEntry, Substitution, SchedulePeriodTime, ScheduleBreak } from '../../types';
 import { DEFAULT_PERIOD_TIMES } from '../../data/mockData';
 
-type SchoolSubTab = 'schedule' | 'subjects' | 'teachers' | 'rooms' | 'substitutions';
+type SchoolSubTab = 'schedule' | 'subjects' | 'teachers' | 'rooms' | 'substitutions' | 'webuntis' | 'grades';
 
 export const SchoolScreen: React.FC = () => {
   const { user } = useAuthStore();
@@ -77,6 +83,8 @@ export const SchoolScreen: React.FC = () => {
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
 
   const [isPeriodTimesModalOpen, setIsPeriodTimesModalOpen] = useState(false);
+  const [isPricingOpen, setIsPricingOpen] = useState(false);
+  const [isActivationOpen, setIsActivationOpen] = useState(false);
 
   const uid = user?.uid || '';
 
@@ -86,6 +94,8 @@ export const SchoolScreen: React.FC = () => {
     { id: 'teachers', label: `Lehrer (${teachers.length})` },
     { id: 'rooms', label: `Räume (${rooms.length})` },
     { id: 'substitutions', label: `Vertretungen (${substitutions.length})` },
+    { id: 'webuntis', label: '⚡ WebUntis' },
+    { id: 'grades', label: '📊 Noten & Schnitt' },
   ];
 
   const subjectMap = new Map(subjects.map(s => [s.id, s]));
@@ -120,7 +130,6 @@ export const SchoolScreen: React.FC = () => {
       await updateScheduleEntry(uid, entry.id, entry);
     } else {
       await addScheduleEntry(uid, entry);
-      // If user selected double lesson, also add next period
       if (isDoubleLesson) {
         const nextPeriodNum = entry.period + 1;
         const nextPeriodInfo = periodTimes.find(p => p.period === nextPeriodNum);
@@ -311,7 +320,7 @@ export const SchoolScreen: React.FC = () => {
                           const teacher = entry?.teacherId ? teacherMap.get(entry.teacherId) : undefined;
                           const room = entry?.roomId ? roomMap.get(entry.roomId) : undefined;
 
-                          // Doppelstunden-Erkennung (gleiches Fach vorher / nachher)
+                          // Doppelstunden-Erkennung
                           const isConnectedWithPrev = Boolean(
                             entry && prevEntry && entry.subjectId === prevEntry.subjectId
                           );
@@ -650,6 +659,22 @@ export const SchoolScreen: React.FC = () => {
         </div>
       )}
 
+      {/* 6. PLUS FEATURE: WEBUNTIS SYNC */}
+      {activeTab === 'webuntis' && (
+        <WebUntisSyncTab
+          onOpenPricing={() => setIsPricingOpen(true)}
+          onOpenActivation={() => setIsActivationOpen(true)}
+        />
+      )}
+
+      {/* 7. PRO FEATURE: NOTEN & SCHNITT (GRADE ANALYTICS) */}
+      {activeTab === 'grades' && (
+        <GradeAnalyticsTab
+          onOpenPricing={() => setIsPricingOpen(true)}
+          onOpenActivation={() => setIsActivationOpen(true)}
+        />
+      )}
+
       {/* Modals */}
       <ScheduleEntryModal
         isOpen={isScheduleModalOpen}
@@ -671,6 +696,20 @@ export const SchoolScreen: React.FC = () => {
         periodTimes={periodTimes}
         breaks={breaks}
         onSave={handleSavePeriodTimes}
+      />
+
+      <PricingModal
+        isOpen={isPricingOpen}
+        onClose={() => setIsPricingOpen(false)}
+        onOpenActivation={() => {
+          setIsPricingOpen(false);
+          setIsActivationOpen(true);
+        }}
+      />
+
+      <LicenseActivationModal
+        isOpen={isActivationOpen}
+        onClose={() => setIsActivationOpen(false)}
       />
 
       <SubstitutionModal

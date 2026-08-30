@@ -144,6 +144,23 @@ export interface Exam {
   grade?: string;
 }
 
+// ----------------------------------------------------
+// Pro Feature: Noten & Notenschnitt (Grade Analytics)
+// ----------------------------------------------------
+
+export type GradeType = 'exam' | 'test' | 'oral' | 'presentation' | 'homework' | 'other';
+
+export interface Grade {
+  id: string;
+  subjectId: string;
+  value: number; // e.g. 1.0 - 6.0
+  weight: number; // 1.0 = einfach, 2.0 = doppelt (z.B. Klausur/Schulaufgabe)
+  type: GradeType;
+  date: string; // YYYY-MM-DD
+  title: string; // e.g. "1. Schulaufgabe"
+  notes?: string;
+}
+
 export interface Holiday {
   id: string;
   name: string;
@@ -165,6 +182,9 @@ export interface UserSettings {
   notificationsEnabled: boolean;
   dailySummaryTime: string;
   activeTimetableVersion: string;
+  webuntisServer?: string;
+  webuntisSchool?: string;
+  webuntisUsername?: string;
 }
 
 // ----------------------------------------------------
