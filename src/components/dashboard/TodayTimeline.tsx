@@ -1,7 +1,6 @@
 import React from 'react';
-import { Clock, MapPin, User, AlertCircle, ChevronRight, CheckCircle2 } from 'lucide-react';
-import { ScheduleEntry, Subject, Teacher, Room, Substitution } from '../../types';
-import { getSubjectIcon } from '../../utils/colorUtils';
+import { Clock, MapPin, User, ChevronRight } from 'lucide-react';
+import type { ScheduleEntry, Subject, Teacher, Room, Substitution } from '../../types';
 import { Badge } from '../common/Badge';
 
 interface TodayTimelineProps {
@@ -12,6 +11,18 @@ interface TodayTimelineProps {
   substitutions: Substitution[];
   currentPeriodNumber?: number;
   onSelectEntry?: (entry: ScheduleEntry) => void;
+}
+
+interface TimelineGroup {
+  entries: ScheduleEntry[];
+  subject?: Subject;
+  teacher?: Teacher;
+  room?: Room;
+  isCurrent: boolean;
+  isCancelled: boolean;
+  hasSubstitution: boolean;
+  timeRange: string;
+  periodLabel: string;
 }
 
 export const TodayTimeline: React.FC<TodayTimelineProps> = ({
@@ -32,29 +43,65 @@ export const TodayTimeline: React.FC<TodayTimelineProps> = ({
     return (
       <div className="ios-card p-6 text-center text-gray-500 dark:text-gray-400">
         <p className="text-sm font-medium">Heute steht kein planmäßiger Unterricht an.</p>
-        <p className="text-xs text-gray-400 mt-1">Wochenende, Feiertag oder schulfreier Tag.</p>
+        <p className="text-xs text-gray-400 mt-1">Wochenende, Feiertag oder noch kein Stundenplan angelegt.</p>
       </div>
     );
   }
 
+  // Group consecutive lessons of the same subject into Doppelstunden
+  const groups: TimelineGroup[] = [];
+  let i = 0;
+
+  while (i < entries.length) {
+    const current = entries[i];
+    const next = entries[i + 1];
+    const subject = subjectMap.get(current.subjectId);
+
+    // Check if next lesson is directly following period and same subject
+    const isDouble = Boolean(
+      next &&
+      next.period === current.period + 1 &&
+      next.subjectId === current.subjectId
+    );
+
+    const groupEntries = isDouble ? [current, next] : [current];
+    const substitution = substMap.get(current.id) || (next && substMap.get(next.id));
+    const effectiveTeacherId = substitution?.newTeacherId || current.teacherId;
+    const effectiveRoomId = substitution?.newRoomId || current.roomId;
+
+    const teacher = effectiveTeacherId ? teacherMap.get(effectiveTeacherId) : undefined;
+    const room = effectiveRoomId ? roomMap.get(effectiveRoomId) : undefined;
+    const isCurrent = groupEntries.some(e => e.period === currentPeriodNumber);
+    const isCancelled = substitution?.type === 'cancelled';
+
+    const periodLabel = isDouble ? `${current.period}. & ${next.period}. Std` : `${current.period}. Std`;
+    const timeRange = isDouble ? `${current.startTime} – ${next.endTime}` : `${current.startTime} – ${current.endTime}`;
+
+    groups.push({
+      entries: groupEntries,
+      subject,
+      teacher,
+      room,
+      isCurrent,
+      isCancelled,
+      hasSubstitution: Boolean(substitution && !isCancelled),
+      timeRange,
+      periodLabel,
+    });
+
+    i += isDouble ? 2 : 1;
+  }
+
   return (
     <div className="space-y-2">
-      {entries.map((entry) => {
-        const subject = subjectMap.get(entry.subjectId);
-        const substitution = substMap.get(entry.id);
-        const effectiveTeacherId = substitution?.newTeacherId || entry.teacherId;
-        const effectiveRoomId = substitution?.newRoomId || entry.roomId;
-
-        const teacher = effectiveTeacherId ? teacherMap.get(effectiveTeacherId) : undefined;
-        const room = effectiveRoomId ? roomMap.get(effectiveRoomId) : undefined;
-        const isCurrent = entry.period === currentPeriodNumber;
-        const isCancelled = substitution?.type === 'cancelled';
-        const Icon = subject ? getSubjectIcon(subject.icon) : Clock;
+      {groups.map((group, idx) => {
+        const { subject, teacher, room, isCurrent, isCancelled, hasSubstitution, timeRange, periodLabel, entries: grpEntries } = group;
+        const isDouble = grpEntries.length > 1;
 
         return (
           <div
-            key={entry.id}
-            onClick={() => onSelectEntry && onSelectEntry(entry)}
+            key={grpEntries[0].id || idx}
+            onClick={() => onSelectEntry && onSelectEntry(grpEntries[0])}
             className={`ios-card p-3.5 transition-all flex items-center justify-between gap-3 cursor-pointer group ${
               isCancelled
                 ? 'opacity-60 bg-red-500/5 border-red-500/20'
@@ -66,25 +113,24 @@ export const TodayTimeline: React.FC<TodayTimelineProps> = ({
             {/* Left: Period Number & Time */}
             <div className="flex items-center gap-3 shrink-0">
               <div
-                className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold text-sm transition-transform group-hover:scale-105 ${
+                className={`px-2 py-1.5 rounded-xl flex flex-col items-center justify-center font-bold text-xs transition-transform group-hover:scale-105 ${
                   isCurrent
                     ? 'bg-ios-blue text-white shadow-xs'
                     : 'bg-gray-100 dark:bg-ios-dark-secondary text-gray-700 dark:text-gray-300'
                 }`}
               >
-                {entry.period}
+                <span>{periodLabel}</span>
               </div>
-              <div className="text-[11px] text-gray-500 dark:text-gray-400 leading-tight">
-                <div className="font-semibold text-gray-700 dark:text-gray-300">{entry.startTime}</div>
-                <div>{entry.endTime}</div>
+              <div className="text-[11px] text-gray-500 dark:text-gray-400 font-semibold">
+                {timeRange}
               </div>
             </div>
 
-            {/* Middle: Subject, Teacher, Room, Substitution */}
+            {/* Middle: Subject, Teacher, Room, Badges */}
             <div className="flex-1 min-w-0 flex items-center gap-2.5">
               {subject && (
                 <div
-                  className="w-2.5 h-7 rounded-full shrink-0"
+                  className="w-2.5 h-8 rounded-full shrink-0"
                   style={{ backgroundColor: subject.color }}
                 />
               )}
@@ -93,12 +139,25 @@ export const TodayTimeline: React.FC<TodayTimelineProps> = ({
                   <h4 className={`text-sm font-bold text-gray-900 dark:text-white truncate ${isCancelled ? 'line-through' : ''}`}>
                     {subject?.name || 'Fach'}
                   </h4>
+
+                  {isDouble && (
+                    <span
+                      style={{
+                        backgroundColor: subject ? `${subject.color}25` : undefined,
+                        color: subject?.color || '#007AFF',
+                      }}
+                      className="text-[10px] font-extrabold px-1.5 py-0.2 rounded-full uppercase"
+                    >
+                      Doppelstunde
+                    </span>
+                  )}
+
                   {isCancelled && (
                     <Badge variant="red" size="sm">
                       Entfall
                     </Badge>
                   )}
-                  {substitution && !isCancelled && (
+                  {hasSubstitution && (
                     <Badge variant="amber" size="sm">
                       Vertretung
                     </Badge>
@@ -109,17 +168,13 @@ export const TodayTimeline: React.FC<TodayTimelineProps> = ({
                   {room && (
                     <span className="flex items-center gap-0.5">
                       <MapPin className="w-3 h-3 text-gray-400" />
-                      <span className={substitution?.newRoomId ? 'text-amber-500 font-semibold' : ''}>
-                        {room.name}
-                      </span>
+                      <span>{room.name}</span>
                     </span>
                   )}
                   {teacher && (
                     <span className="flex items-center gap-0.5">
                       <User className="w-3 h-3 text-gray-400" />
-                      <span className={substitution?.newTeacherId ? 'text-amber-500 font-semibold' : ''}>
-                        {teacher.shortName || teacher.name}
-                      </span>
+                      <span>{teacher.shortName || teacher.name}</span>
                     </span>
                   )}
                 </div>

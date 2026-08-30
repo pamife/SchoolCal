@@ -14,6 +14,7 @@ import {
   Calendar,
   FileSpreadsheet,
   LogOut,
+  Clock,
 } from 'lucide-react';
 import { useSettingsStore } from '../../store/useSettingsStore';
 import { useAuthStore } from '../../store/useAuthStore';
@@ -25,9 +26,12 @@ import { GERMAN_STATES, getHolidaysForState } from '../../data/holidays';
 import { ACCENT_PALETTES } from '../../utils/colorUtils';
 import { Button } from '../common/Button';
 import { Badge } from '../common/Badge';
+import { PeriodTimesModal } from '../school/PeriodTimesModal';
 import { exportFullJsonBackup, parseJsonBackup, exportScheduleCsv } from '../../services/export/dataExportService';
 import { generateIcsCalendar, downloadIcsFile } from '../../services/ical/icalService';
 import { format } from 'date-fns';
+import { DEFAULT_PERIOD_TIMES } from '../../data/mockData';
+import type { SchedulePeriodTime, ScheduleBreak } from '../../types';
 
 export const SettingsScreen: React.FC = () => {
   const { user, logout, updateProfile, deleteAccountAndData } = useAuthStore();
@@ -42,14 +46,31 @@ export const SettingsScreen: React.FC = () => {
   const [gradeLevel, setGradeLevel] = useState(settings.gradeLevel || '');
   const [showSavedToast, setShowSavedToast] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isPeriodTimesOpen, setIsPeriodTimesOpen] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const uid = user?.uid || '';
+
+  const periodTimes: SchedulePeriodTime[] =
+    settings.periodTimes && settings.periodTimes.length > 0
+      ? settings.periodTimes
+      : DEFAULT_PERIOD_TIMES;
+
+  const breaks: ScheduleBreak[] = settings.breaks || [];
 
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     updateProfile({ displayName });
     await updateSettings({ schoolName, gradeLevel }, uid);
+    setShowSavedToast(true);
+    setTimeout(() => setShowSavedToast(false), 2500);
+  };
+
+  const handleSavePeriodTimes = async (
+    newPeriods: SchedulePeriodTime[],
+    newBreaks: ScheduleBreak[]
+  ) => {
+    await updateSettings({ periodTimes: newPeriods, breaks: newBreaks }, uid);
     setShowSavedToast(true);
     setTimeout(() => setShowSavedToast(false), 2500);
   };
@@ -109,14 +130,14 @@ export const SettingsScreen: React.FC = () => {
           Einstellungen
         </h2>
         <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-          Passe SchoolCal an deine Schule, deine Klassenstufe und dein Bundesland an
+          Passe SchoolCal an deine Schule, deinen Zeitplan und dein Bundesland an
         </p>
       </div>
 
       {showSavedToast && (
         <div className="p-3 bg-green-500 text-white text-xs font-bold rounded-xl flex items-center gap-2 shadow-md">
           <Check className="w-4 h-4" />
-          <span>Änderungen wurden erfolgreich in Cloud Firestore gespeichert!</span>
+          <span>Änderungen wurden erfolgreich gespeichert!</span>
         </div>
       )}
 
@@ -195,7 +216,49 @@ export const SettingsScreen: React.FC = () => {
         </form>
       </div>
 
-      {/* 2. DARSTELLUNG & DESIGN */}
+      {/* 2. ZEITPLAN & GLOCKENZEITEN */}
+      <div className="ios-card p-5 space-y-4">
+        <div className="flex items-center justify-between pb-2 border-b border-black/5 dark:border-white/10">
+          <div className="flex items-center gap-2.5">
+            <Clock className="w-5 h-5 text-ios-blue" />
+            <div>
+              <h3 className="text-base font-bold text-gray-900 dark:text-white">
+                Glockenzeiten & Pausen (Zeitplan)
+              </h3>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Definiere die zentralen Stunden- und Pausenzeiten deiner Schule
+              </p>
+            </div>
+          </div>
+
+          <Button
+            type="button"
+            variant="primary"
+            size="sm"
+            onClick={() => setIsPeriodTimesOpen(true)}
+          >
+            Zeitplan anpassen
+          </Button>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          {periodTimes.slice(0, 8).map((p) => (
+            <div
+              key={p.period}
+              className="p-2.5 rounded-xl bg-gray-50 dark:bg-ios-dark-secondary text-center"
+            >
+              <div className="text-xs font-bold text-gray-800 dark:text-gray-200">
+                {p.period}. Stunde
+              </div>
+              <div className="text-[11px] text-gray-500 font-medium mt-0.5">
+                {p.startTime} – {p.endTime}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* 3. DARSTELLUNG & DESIGN */}
       <div className="ios-card p-5 space-y-4">
         <div className="flex items-center gap-2.5 pb-2 border-b border-black/5 dark:border-white/10">
           <Palette className="w-5 h-5 text-purple-500" />
@@ -262,7 +325,7 @@ export const SettingsScreen: React.FC = () => {
         </div>
       </div>
 
-      {/* 3. BUNDESLAND & FERIEN */}
+      {/* 4. BUNDESLAND & FERIEN */}
       <div className="ios-card p-5 space-y-4">
         <div className="flex items-center justify-between pb-2 border-b border-black/5 dark:border-white/10">
           <div className="flex items-center gap-2.5">
@@ -316,7 +379,7 @@ export const SettingsScreen: React.FC = () => {
         </div>
       </div>
 
-      {/* 4. DATEN, EXPORT & BACKUP */}
+      {/* 5. DATEN, EXPORT & BACKUP */}
       <div className="ios-card p-5 space-y-4">
         <div className="flex items-center gap-2.5 pb-2 border-b border-black/5 dark:border-white/10">
           <Download className="w-5 h-5 text-indigo-500" />
@@ -397,7 +460,7 @@ export const SettingsScreen: React.FC = () => {
         </div>
       </div>
 
-      {/* 5. ACCOUNT LÖSCHEN */}
+      {/* 6. ACCOUNT LÖSCHEN */}
       <div className="ios-card p-5 space-y-4">
         <div className="flex items-center gap-2.5 pb-2 border-b border-black/5 dark:border-white/10">
           <ShieldCheck className="w-5 h-5 text-gray-500" />
@@ -426,6 +489,15 @@ export const SettingsScreen: React.FC = () => {
           </Button>
         </div>
       </div>
+
+      {/* PeriodTimesModal */}
+      <PeriodTimesModal
+        isOpen={isPeriodTimesOpen}
+        onClose={() => setIsPeriodTimesOpen(false)}
+        periodTimes={periodTimes}
+        breaks={breaks}
+        onSave={handleSavePeriodTimes}
+      />
     </div>
   );
 };

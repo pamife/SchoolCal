@@ -1,10 +1,18 @@
 import React from 'react';
 import { format, isToday } from 'date-fns';
 import { de } from 'date-fns/locale';
-import { ScheduleEntry, CalendarEvent, Exam, Subject, Teacher, Room, Substitution } from '../../types';
-import { getSubjectIcon, hexToRgba, getEventTypeBadge } from '../../utils/colorUtils';
-import { Clock, MapPin, User, AlertCircle, Plus } from 'lucide-react';
+import type {
+  ScheduleEntry,
+  CalendarEvent,
+  Exam,
+  Subject,
+  Teacher,
+  Room,
+  Substitution,
+} from '../../types';
+import { getSubjectIcon, hexToRgba } from '../../utils/colorUtils';
 import { Badge } from '../common/Badge';
+import { Clock, MapPin, User, Plus, AlertCircle, ChevronRight } from 'lucide-react';
 
 interface DayViewProps {
   selectedDate: Date;
@@ -19,6 +27,17 @@ interface DayViewProps {
   onSelectExam: (exam: Exam) => void;
   onSelectScheduleEntry: (entry: ScheduleEntry) => void;
   onAddEventForDate: (date: Date) => void;
+}
+
+interface GroupedDayLesson {
+  entries: ScheduleEntry[];
+  subject?: Subject;
+  teacher?: Teacher;
+  room?: Room;
+  isCancelled: boolean;
+  hasSubstitution: boolean;
+  timeRange: string;
+  periodLabel: string;
 }
 
 export const DayView: React.FC<DayViewProps> = ({
@@ -42,21 +61,59 @@ export const DayView: React.FC<DayViewProps> = ({
   const subjectMap = new Map(subjects.map(s => [s.id, s]));
   const teacherMap = new Map(teachers.map(t => [t.id, t]));
   const roomMap = new Map(rooms.map(r => [r.id, r]));
+  const substMap = new Map(substitutions.map(s => [s.scheduleEntryId, s]));
 
-  // School lessons for this day
+  // Day specific items
   const dayLessons = scheduleEntries
     .filter(e => e.dayOfWeek === dayOfWeek)
     .sort((a, b) => a.period - b.period);
 
-  // Events on this day
   const dayEvents = events.filter(e => e.startDate.startsWith(dayIso));
-
-  // Exams on this day
   const dayExams = exams.filter(e => e.date === dayIso);
+
+  // Group consecutive lessons into Doppelstunden
+  const groupedLessons: GroupedDayLesson[] = [];
+  let i = 0;
+  while (i < dayLessons.length) {
+    const current = dayLessons[i];
+    const next = dayLessons[i + 1];
+    const subject = subjectMap.get(current.subjectId);
+
+    const isDouble = Boolean(
+      next &&
+      next.period === current.period + 1 &&
+      next.subjectId === current.subjectId
+    );
+
+    const groupEntries = isDouble ? [current, next] : [current];
+    const substitution = substMap.get(current.id) || (next && substMap.get(next.id));
+    const effectiveTeacherId = substitution?.newTeacherId || current.teacherId;
+    const effectiveRoomId = substitution?.newRoomId || current.roomId;
+
+    const teacher = effectiveTeacherId ? teacherMap.get(effectiveTeacherId) : undefined;
+    const room = effectiveRoomId ? roomMap.get(effectiveRoomId) : undefined;
+    const isCancelled = substitution?.type === 'cancelled';
+
+    const periodLabel = isDouble ? `${current.period}. & ${next.period}. Std` : `${current.period}. Std`;
+    const timeRange = isDouble ? `${current.startTime} – ${next.endTime}` : `${current.startTime} – ${current.endTime}`;
+
+    groupedLessons.push({
+      entries: groupEntries,
+      subject,
+      teacher,
+      room,
+      isCancelled,
+      hasSubstitution: Boolean(substitution && !isCancelled),
+      timeRange,
+      periodLabel,
+    });
+
+    i += isDouble ? 2 : 1;
+  }
 
   return (
     <div className="space-y-4">
-      {/* Date Header Pill */}
+      {/* Header bar */}
       <div className="flex items-center justify-between px-1">
         <div className="flex items-center gap-2">
           <span className="text-base font-bold text-gray-900 dark:text-white">
@@ -125,37 +182,28 @@ export const DayView: React.FC<DayViewProps> = ({
           Unterrichtsablauf
         </div>
 
-        {dayLessons.length === 0 ? (
+        {groupedLessons.length === 0 ? (
           <div className="ios-card p-6 text-center text-sm text-gray-400">
             Kein Unterricht für diesen Tag eingetragen.
           </div>
         ) : (
           <div className="space-y-2">
-            {dayLessons.map((entry) => {
-              const subject = subjectMap.get(entry.subjectId);
-              const subEntry = substitutions.find(
-                s => s.scheduleEntryId === entry.id && s.date === dayIso
-              );
-              const effectiveTeacherId = subEntry?.newTeacherId || entry.teacherId;
-              const effectiveRoomId = subEntry?.newRoomId || entry.roomId;
-
-              const teacher = effectiveTeacherId ? teacherMap.get(effectiveTeacherId) : undefined;
-              const room = effectiveRoomId ? roomMap.get(effectiveRoomId) : undefined;
-              const isCancelled = subEntry?.type === 'cancelled';
+            {groupedLessons.map((grp, idx) => {
+              const { entries: grpEntries, subject, teacher, room, isCancelled, hasSubstitution, timeRange, periodLabel } = grp;
+              const isDouble = grpEntries.length > 1;
               const Icon = subject ? getSubjectIcon(subject.icon) : Clock;
 
               return (
                 <div
-                  key={entry.id}
-                  onClick={() => onSelectScheduleEntry(entry)}
+                  key={grpEntries[0].id || idx}
+                  onClick={() => onSelectScheduleEntry(grpEntries[0])}
                   className={`ios-card p-3.5 flex items-center justify-between gap-3 cursor-pointer transition-all hover:shadow-sm ${
                     isCancelled ? 'opacity-50 bg-red-500/5' : ''
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-gray-100 dark:bg-ios-dark-secondary flex flex-col items-center justify-center font-bold text-xs text-gray-700 dark:text-gray-300">
-                      <span>{entry.period}.</span>
-                      <span className="text-[9px] font-normal text-gray-400">Std</span>
+                    <div className="px-2.5 py-1.5 rounded-xl bg-gray-100 dark:bg-ios-dark-secondary flex flex-col items-center justify-center font-bold text-xs text-gray-700 dark:text-gray-300">
+                      <span>{periodLabel}</span>
                     </div>
 
                     {subject && (
@@ -172,19 +220,27 @@ export const DayView: React.FC<DayViewProps> = ({
                         <h4 className={`text-sm font-bold text-gray-900 dark:text-white ${isCancelled ? 'line-through' : ''}`}>
                           {subject?.name || 'Unterricht'}
                         </h4>
+                        {isDouble && (
+                          <span
+                            style={{ backgroundColor: subject ? `${subject.color}25` : undefined, color: subject?.color || '#007AFF' }}
+                            className="text-[10px] font-extrabold px-1.5 py-0.2 rounded-full uppercase"
+                          >
+                            Doppelstunde
+                          </span>
+                        )}
                         {isCancelled && (
                           <Badge variant="red" size="sm">
                             Entfall
                           </Badge>
                         )}
-                        {subEntry && !isCancelled && (
+                        {hasSubstitution && (
                           <Badge variant="amber" size="sm">
                             Vertretung
                           </Badge>
                         )}
                       </div>
                       <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                        <span>{entry.startTime} – {entry.endTime}</span>
+                        <span className="font-semibold">{timeRange}</span>
                         {room && (
                           <span className="flex items-center gap-0.5">
                             <MapPin className="w-3 h-3 text-gray-400" />
@@ -200,6 +256,8 @@ export const DayView: React.FC<DayViewProps> = ({
                       </div>
                     </div>
                   </div>
+
+                  <ChevronRight className="w-4 h-4 text-gray-400" />
                 </div>
               );
             })}
@@ -207,44 +265,37 @@ export const DayView: React.FC<DayViewProps> = ({
         )}
       </div>
 
-      {/* 3. Personal / Afternoon Events */}
+      {/* 3. Personal Calendar Events Section */}
       {dayEvents.length > 0 && (
-        <div className="space-y-2">
+        <div className="space-y-2 pt-2">
           <div className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 px-1">
-            Termine & Freizeit
+            Persönliche Termine & Ereignisse
           </div>
           <div className="space-y-2">
-            {dayEvents.map((evt) => {
-              const badge = getEventTypeBadge(evt.type);
-              return (
-                <div
-                  key={evt.id}
-                  onClick={() => onSelectEvent(evt)}
-                  className="ios-card p-3.5 flex items-center justify-between gap-3 cursor-pointer hover:shadow-sm transition-all"
-                >
-                  <div className="flex items-center gap-3">
-                    <div
-                      className="w-2.5 h-8 rounded-full"
-                      style={{ backgroundColor: evt.color || '#007AFF' }}
-                    />
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h4 className="text-sm font-bold text-gray-900 dark:text-white">{evt.title}</h4>
-                        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${badge.bgColor} ${badge.textColor}`}>
-                          {badge.label}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                        <span>
-                          {evt.allDay ? 'Ganztägig' : `${evt.startDate.slice(11, 16)} – ${evt.endDate.slice(11, 16)}`}
-                        </span>
-                        {evt.location && <span>📍 {evt.location}</span>}
-                      </div>
-                    </div>
+            {dayEvents.map((evt) => (
+              <div
+                key={evt.id}
+                onClick={() => onSelectEvent(evt)}
+                style={{
+                  backgroundColor: evt.color ? hexToRgba(evt.color, 0.08) : undefined,
+                  borderLeftColor: evt.color || '#007AFF',
+                  borderLeftWidth: '4px',
+                }}
+                className="ios-card p-3.5 flex items-center justify-between cursor-pointer hover:shadow-sm transition-all"
+              >
+                <div>
+                  <h4 className="text-sm font-bold text-gray-900 dark:text-white">{evt.title}</h4>
+                  <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                    <Clock className="w-3 h-3" />
+                    <span>
+                      {evt.allDay ? 'Ganztägig' : `${evt.startDate.slice(11, 16)} – ${evt.endDate.slice(11, 16)}`}
+                    </span>
+                    {evt.location && <span>• {evt.location}</span>}
                   </div>
                 </div>
-              );
-            })}
+                <ChevronRight className="w-4 h-4 text-gray-400" />
+              </div>
+            ))}
           </div>
         </div>
       )}

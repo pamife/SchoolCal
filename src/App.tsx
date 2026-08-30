@@ -60,7 +60,7 @@ export function App() {
   const { loadHomework, clearHomework, addHomework } = useHomeworkStore();
   const { loadExams, clearExams, addExam, updateExam, deleteExam } = useExamStore();
   const { loadEvents, clearEvents, addEvent } = useCalendarStore();
-  const { loadSettings } = useSettingsStore();
+  const { settings, loadSettings } = useSettingsStore();
 
   // Listen to Firebase Auth state
   useEffect(() => {
@@ -248,11 +248,23 @@ export function App() {
           setIsScheduleModalOpen(false);
           setSelectedScheduleEntry(null);
         }}
-        onSave={(entry) => {
+        onSave={async (entry, isDoubleLesson) => {
           if (selectedScheduleEntry) {
-            updateScheduleEntry(uid, entry.id, entry);
+            await updateScheduleEntry(uid, entry.id, entry);
           } else {
-            addScheduleEntry(uid, entry);
+            await addScheduleEntry(uid, entry);
+            if (isDoubleLesson) {
+              const nextPeriodNum = entry.period + 1;
+              const nextPeriodInfo = settings.periodTimes?.find(p => p.period === nextPeriodNum);
+              const secondEntry: ScheduleEntry = {
+                ...entry,
+                id: `sch-${entry.dayOfWeek}-${nextPeriodNum}-${Date.now()}`,
+                period: nextPeriodNum,
+                startTime: nextPeriodInfo?.startTime || '08:50',
+                endTime: nextPeriodInfo?.endTime || '09:35',
+              };
+              await addScheduleEntry(uid, secondEntry);
+            }
           }
         }}
         onDelete={(id) => deleteScheduleEntry(uid, id)}
@@ -260,6 +272,7 @@ export function App() {
         subjects={subjects}
         teachers={teachers}
         rooms={rooms}
+        periodTimes={settings.periodTimes}
       />
     </div>
   );

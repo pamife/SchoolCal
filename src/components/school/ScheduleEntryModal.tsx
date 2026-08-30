@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { ScheduleEntry, Subject, Teacher, Room } from '../../types';
+import type { ScheduleEntry, Subject, Teacher, Room, SchedulePeriodTime } from '../../types';
 import { BottomSheet } from '../common/BottomSheet';
 import { Button } from '../common/Button';
-import { Trash2, Clock, MapPin, User, BookOpen } from 'lucide-react';
+import { Trash2, Clock, Layers } from 'lucide-react';
+import { DEFAULT_PERIOD_TIMES } from '../../data/mockData';
 
 interface ScheduleEntryModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (entry: ScheduleEntry) => void;
+  onSave: (entry: ScheduleEntry, isDoubleLesson?: boolean) => void;
   onDelete?: (id: string) => void;
   initialEntry?: ScheduleEntry | null;
   initialDay?: number;
@@ -15,6 +16,7 @@ interface ScheduleEntryModalProps {
   subjects: Subject[];
   teachers: Teacher[];
   rooms: Room[];
+  periodTimes?: SchedulePeriodTime[];
 }
 
 export const ScheduleEntryModal: React.FC<ScheduleEntryModalProps> = ({
@@ -28,14 +30,14 @@ export const ScheduleEntryModal: React.FC<ScheduleEntryModalProps> = ({
   subjects,
   teachers,
   rooms,
+  periodTimes = DEFAULT_PERIOD_TIMES,
 }) => {
   const [dayOfWeek, setDayOfWeek] = useState(initialDay);
   const [period, setPeriod] = useState(initialPeriod);
   const [subjectId, setSubjectId] = useState(subjects[0]?.id || '');
   const [teacherId, setTeacherId] = useState('');
   const [roomId, setRoomId] = useState('');
-  const [startTime, setStartTime] = useState('08:00');
-  const [endTime, setEndTime] = useState('08:45');
+  const [isDoubleLesson, setIsDoubleLesson] = useState(false);
 
   const days = [
     { id: 1, label: 'Montag' },
@@ -46,6 +48,13 @@ export const ScheduleEntryModal: React.FC<ScheduleEntryModalProps> = ({
     { id: 6, label: 'Samstag' },
   ];
 
+  // Helper to get time for a specific period
+  const getTimeForPeriod = (pNum: number) => {
+    const found = periodTimes.find(p => p.period === pNum);
+    if (found) return { start: found.startTime, end: found.endTime };
+    return { start: '08:00', end: '08:45' };
+  };
+
   useEffect(() => {
     if (initialEntry) {
       setDayOfWeek(initialEntry.dayOfWeek);
@@ -53,8 +62,7 @@ export const ScheduleEntryModal: React.FC<ScheduleEntryModalProps> = ({
       setSubjectId(initialEntry.subjectId);
       setTeacherId(initialEntry.teacherId || '');
       setRoomId(initialEntry.roomId || '');
-      setStartTime(initialEntry.startTime);
-      setEndTime(initialEntry.endTime);
+      setIsDoubleLesson(false);
     } else {
       setDayOfWeek(initialDay);
       setPeriod(initialPeriod);
@@ -62,9 +70,7 @@ export const ScheduleEntryModal: React.FC<ScheduleEntryModalProps> = ({
       setSubjectId(defaultSub?.id || '');
       setTeacherId(defaultSub?.teacherId || '');
       setRoomId(defaultSub?.defaultRoomId || '');
-      // Calculate start and end time based on period
-      setStartTime('08:00');
-      setEndTime('08:45');
+      setIsDoubleLesson(false);
     }
   }, [initialEntry, initialDay, initialPeriod, isOpen, subjects]);
 
@@ -77,6 +83,9 @@ export const ScheduleEntryModal: React.FC<ScheduleEntryModalProps> = ({
     }
   };
 
+  const currentTime = getTimeForPeriod(period);
+  const nextTime = getTimeForPeriod(period + 1);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!subjectId) return;
@@ -85,15 +94,15 @@ export const ScheduleEntryModal: React.FC<ScheduleEntryModalProps> = ({
       id: initialEntry?.id || `sch-${dayOfWeek}-${period}-${Date.now()}`,
       dayOfWeek,
       period,
-      startTime,
-      endTime,
+      startTime: currentTime.start,
+      endTime: currentTime.end,
       subjectId,
       teacherId: teacherId || undefined,
       roomId: roomId || undefined,
       versionId: 'default',
     };
 
-    onSave(entryToSave);
+    onSave(entryToSave, !initialEntry && isDoubleLesson);
     onClose();
   };
 
@@ -132,14 +141,50 @@ export const ScheduleEntryModal: React.FC<ScheduleEntryModalProps> = ({
               onChange={(e) => setPeriod(Number(e.target.value))}
               className="w-full px-3 py-2.5 bg-gray-100 dark:bg-ios-dark-secondary rounded-xl text-sm font-semibold text-gray-900 dark:text-white focus:outline-none"
             >
-              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((p) => (
-                <option key={p} value={p}>
-                  {p}. Stunde
+              {(periodTimes.length > 0 ? periodTimes : DEFAULT_PERIOD_TIMES).map((p) => (
+                <option key={p.period} value={p.period}>
+                  {p.period}. Stunde ({p.startTime} – {p.endTime})
                 </option>
               ))}
             </select>
           </div>
         </div>
+
+        {/* Automatic Time Info Badge */}
+        <div className="px-3.5 py-2 rounded-xl bg-blue-500/10 border border-blue-500/20 text-ios-blue flex items-center justify-between text-xs font-medium">
+          <div className="flex items-center gap-1.5">
+            <Clock className="w-3.5 h-3.5" />
+            <span>
+              {isDoubleLesson
+                ? `${period}. & ${period + 1}. Stunde (${currentTime.start} – ${nextTime.end})`
+                : `${period}. Stunde (${currentTime.start} – ${currentTime.end})`}
+            </span>
+          </div>
+          <span className="text-[10px] text-gray-400">Automatisch laut Zeitplan</span>
+        </div>
+
+        {/* Double Lesson Toggle (for new entries) */}
+        {!initialEntry && (
+          <label className="p-3 rounded-xl bg-gray-50 dark:bg-ios-dark-secondary border border-black/5 dark:border-white/5 flex items-center justify-between cursor-pointer">
+            <div className="flex items-center gap-2">
+              <Layers className="w-4 h-4 text-ios-blue" />
+              <div>
+                <div className="text-xs font-bold text-gray-900 dark:text-white">
+                  Als Doppelstunde anlegen
+                </div>
+                <div className="text-[11px] text-gray-500">
+                  Erstellt automatisch Stunde {period} und {period + 1}
+                </div>
+              </div>
+            </div>
+            <input
+              type="checkbox"
+              checked={isDoubleLesson}
+              onChange={(e) => setIsDoubleLesson(e.target.checked)}
+              className="w-4 h-4 text-ios-blue rounded focus:ring-ios-blue"
+            />
+          </label>
+        )}
 
         {/* Subject */}
         <div>
@@ -199,34 +244,7 @@ export const ScheduleEntryModal: React.FC<ScheduleEntryModalProps> = ({
           </div>
         </div>
 
-        {/* Times */}
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">
-              Beginn
-            </label>
-            <input
-              type="time"
-              value={startTime}
-              onChange={(e) => setStartTime(e.target.value)}
-              className="w-full px-3 py-2 bg-gray-100 dark:bg-ios-dark-secondary rounded-xl text-xs font-semibold text-gray-900 dark:text-white focus:outline-none"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">
-              Ende
-            </label>
-            <input
-              type="time"
-              value={endTime}
-              onChange={(e) => setEndTime(e.target.value)}
-              className="w-full px-3 py-2 bg-gray-100 dark:bg-ios-dark-secondary rounded-xl text-xs font-semibold text-gray-900 dark:text-white focus:outline-none"
-            />
-          </div>
-        </div>
-
-        {/* Action buttons */}
+        {/* Buttons */}
         <div className="flex items-center gap-2 pt-2">
           {initialEntry && onDelete && (
             <Button
@@ -244,7 +262,11 @@ export const ScheduleEntryModal: React.FC<ScheduleEntryModalProps> = ({
           )}
 
           <Button type="submit" variant="primary" size="md" fullWidth>
-            {initialEntry ? 'Speichern' : 'Stunde anlegen'}
+            {initialEntry
+              ? 'Speichern'
+              : isDoubleLesson
+              ? 'Doppelstunde anlegen'
+              : 'Stunde anlegen'}
           </Button>
         </div>
       </form>

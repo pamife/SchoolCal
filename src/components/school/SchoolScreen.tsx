@@ -7,10 +7,12 @@ import {
   Plus,
   Download,
   Edit2,
-  Trash2,
+  Clock,
+  Coffee,
 } from 'lucide-react';
 import { useSchoolStore } from '../../store/useSchoolStore';
 import { useAuthStore } from '../../store/useAuthStore';
+import { useSettingsStore } from '../../store/useSettingsStore';
 import { SegmentedControl, type SegmentOption } from '../common/SegmentedControl';
 import { Button } from '../common/Button';
 import { Badge } from '../common/Badge';
@@ -21,13 +23,16 @@ import { SubstitutionModal } from './SubstitutionModal';
 import { SubjectModal } from './SubjectModal';
 import { TeacherModal } from './TeacherModal';
 import { RoomModal } from './RoomModal';
+import { PeriodTimesModal } from './PeriodTimesModal';
 import { EmptyState } from '../common/EmptyState';
-import type { Subject, Teacher, Room, ScheduleEntry, Substitution } from '../../types';
+import type { Subject, Teacher, Room, ScheduleEntry, Substitution, SchedulePeriodTime, ScheduleBreak } from '../../types';
+import { DEFAULT_PERIOD_TIMES } from '../../data/mockData';
 
 type SchoolSubTab = 'schedule' | 'subjects' | 'teachers' | 'rooms' | 'substitutions';
 
 export const SchoolScreen: React.FC = () => {
   const { user } = useAuthStore();
+  const { settings, updateSettings } = useSettingsStore();
   const {
     subjects,
     teachers,
@@ -71,6 +76,8 @@ export const SchoolScreen: React.FC = () => {
   const [isRoomModalOpen, setIsRoomModalOpen] = useState(false);
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
 
+  const [isPeriodTimesModalOpen, setIsPeriodTimesModalOpen] = useState(false);
+
   const uid = user?.uid || '';
 
   const tabs: SegmentOption<SchoolSubTab>[] = [
@@ -93,7 +100,12 @@ export const SchoolScreen: React.FC = () => {
     { id: 5, name: 'Freitag', short: 'Fr' },
   ];
 
-  const periods = [1, 2, 3, 4, 5, 6, 7, 8];
+  const periodTimes: SchedulePeriodTime[] =
+    settings.periodTimes && settings.periodTimes.length > 0
+      ? settings.periodTimes
+      : DEFAULT_PERIOD_TIMES;
+
+  const breaks: ScheduleBreak[] = settings.breaks || [];
 
   const handleCellClick = (dayId: number, periodNum: number) => {
     const existing = scheduleEntries.find(e => e.dayOfWeek === dayId && e.period === periodNum);
@@ -103,13 +115,41 @@ export const SchoolScreen: React.FC = () => {
     setIsScheduleModalOpen(true);
   };
 
+  const handleSaveScheduleEntry = async (entry: ScheduleEntry, isDoubleLesson?: boolean) => {
+    if (selectedEntry) {
+      await updateScheduleEntry(uid, entry.id, entry);
+    } else {
+      await addScheduleEntry(uid, entry);
+      // If user selected double lesson, also add next period
+      if (isDoubleLesson) {
+        const nextPeriodNum = entry.period + 1;
+        const nextPeriodInfo = periodTimes.find(p => p.period === nextPeriodNum);
+        const secondEntry: ScheduleEntry = {
+          ...entry,
+          id: `sch-${entry.dayOfWeek}-${nextPeriodNum}-${Date.now()}`,
+          period: nextPeriodNum,
+          startTime: nextPeriodInfo?.startTime || '08:50',
+          endTime: nextPeriodInfo?.endTime || '09:35',
+        };
+        await addScheduleEntry(uid, secondEntry);
+      }
+    }
+  };
+
+  const handleSavePeriodTimes = async (
+    newPeriods: SchedulePeriodTime[],
+    newBreaks: ScheduleBreak[]
+  ) => {
+    await updateSettings({ periodTimes: newPeriods, breaks: newBreaks }, uid);
+  };
+
   const handleExportCsv = () => {
     exportScheduleCsv(scheduleEntries, subjects, teachers, rooms);
   };
 
   return (
     <div className="space-y-4 pb-24 ipad:pb-10 max-w-5xl mx-auto">
-      {/* Subtab Navigator */}
+      {/* Subtab Navigator & Global Actions */}
       <div className="flex items-center justify-between gap-3 overflow-x-auto no-scrollbar pb-1 px-1">
         <SegmentedControl
           options={tabs}
@@ -121,6 +161,16 @@ export const SchoolScreen: React.FC = () => {
         {/* Tab specific primary action button */}
         {activeTab === 'schedule' && (
           <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={() => setIsPeriodTimesModalOpen(true)}
+              className="p-2 bg-gray-100 dark:bg-ios-dark-secondary text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-ios-dark-tertiary rounded-ios transition-colors text-xs font-semibold flex items-center gap-1.5"
+              title="Glockenzeiten & Pausen anpassen"
+            >
+              <Clock className="w-4 h-4 text-ios-blue" />
+              <span className="hidden sm:inline">Zeitplan</span>
+            </button>
+
             {scheduleEntries.length > 0 && (
               <button
                 type="button"
@@ -132,6 +182,7 @@ export const SchoolScreen: React.FC = () => {
                 <span className="hidden sm:inline">CSV Export</span>
               </button>
             )}
+
             <Button
               variant="primary"
               size="sm"
@@ -213,7 +264,7 @@ export const SchoolScreen: React.FC = () => {
               {/* Header row */}
               <div className="grid grid-cols-6 border-b border-black/5 dark:border-white/10 bg-gray-50/70 dark:bg-ios-dark-secondary/70">
                 <div className="p-3 text-center text-xs font-bold text-gray-400 dark:text-gray-500 border-r border-black/5 dark:border-white/5">
-                  Std
+                  Zeit
                 </div>
                 {days.map((day) => (
                   <div
@@ -225,59 +276,120 @@ export const SchoolScreen: React.FC = () => {
                 ))}
               </div>
 
-              {/* Rows for periods 1-8 */}
+              {/* Rows for periods */}
               <div className="divide-y divide-black/5 dark:divide-white/5">
-                {periods.map((periodNum) => (
-                  <div key={periodNum} className="grid grid-cols-6 items-stretch min-h-[68px]">
-                    <div className="p-2 flex flex-col items-center justify-center border-r border-black/5 dark:border-white/5 bg-gray-50/40 dark:bg-ios-dark-secondary/40">
-                      <span className="text-xs font-bold text-gray-800 dark:text-gray-200">
-                        {periodNum}. Std
-                      </span>
-                    </div>
+                {periodTimes.map((periodInfo) => {
+                  const periodNum = periodInfo.period;
+                  const matchingBreaks = breaks.filter(b => b.afterPeriod === periodNum);
 
-                    {days.map((day) => {
-                      const entry = scheduleEntries.find(
-                        e => e.dayOfWeek === day.id && e.period === periodNum
-                      );
-                      const subject = entry ? subjectMap.get(entry.subjectId) : undefined;
-                      const teacher = entry?.teacherId ? teacherMap.get(entry.teacherId) : undefined;
-                      const room = entry?.roomId ? roomMap.get(entry.roomId) : undefined;
-
-                      return (
-                        <div
-                          key={day.id}
-                          onClick={() => handleCellClick(day.id, periodNum)}
-                          className="p-1.5 border-r last:border-r-0 border-black/5 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer flex flex-col justify-center"
-                        >
-                          {entry && subject ? (
-                            <div
-                              style={{
-                                borderLeftColor: subject.color,
-                                borderLeftWidth: '3px',
-                                backgroundColor: hexToRgba(subject.color, 0.08),
-                              }}
-                              className="p-1.5 rounded-lg border border-black/5 dark:border-white/5 h-full flex flex-col justify-between"
-                            >
-                              <div className="flex items-center justify-between gap-1">
-                                <span className="font-bold text-xs text-gray-900 dark:text-white truncate">
-                                  {subject.name}
-                                </span>
-                              </div>
-                              <div className="flex items-center justify-between text-[10px] text-gray-500 dark:text-gray-400 mt-1">
-                                <span>{room?.name?.replace('Raum ', 'R') || ''}</span>
-                                <span>{teacher?.shortName || ''}</span>
-                              </div>
-                            </div>
-                          ) : (
-                            <div className="h-full rounded-lg border border-dashed border-gray-200 dark:border-gray-800 flex items-center justify-center text-[10px] text-gray-300 dark:text-gray-600 hover:border-ios-blue hover:text-ios-blue transition-colors">
-                              +
-                            </div>
-                          )}
+                  return (
+                    <React.Fragment key={periodNum}>
+                      <div className="grid grid-cols-6 items-stretch min-h-[72px]">
+                        {/* Period & Time column */}
+                        <div className="p-2 flex flex-col items-center justify-center border-r border-black/5 dark:border-white/5 bg-gray-50/40 dark:bg-ios-dark-secondary/40">
+                          <span className="text-xs font-bold text-gray-800 dark:text-gray-200">
+                            {periodNum}. Std
+                          </span>
+                          <span className="text-[10px] text-gray-400 font-medium">
+                            {periodInfo.startTime}–{periodInfo.endTime}
+                          </span>
                         </div>
-                      );
-                    })}
-                  </div>
-                ))}
+
+                        {/* 5 Day Cells */}
+                        {days.map((day) => {
+                          const entry = scheduleEntries.find(
+                            e => e.dayOfWeek === day.id && e.period === periodNum
+                          );
+                          const prevEntry = scheduleEntries.find(
+                            e => e.dayOfWeek === day.id && e.period === periodNum - 1
+                          );
+                          const nextEntry = scheduleEntries.find(
+                            e => e.dayOfWeek === day.id && e.period === periodNum + 1
+                          );
+
+                          const subject = entry ? subjectMap.get(entry.subjectId) : undefined;
+                          const teacher = entry?.teacherId ? teacherMap.get(entry.teacherId) : undefined;
+                          const room = entry?.roomId ? roomMap.get(entry.roomId) : undefined;
+
+                          // Doppelstunden-Erkennung (gleiches Fach vorher / nachher)
+                          const isConnectedWithPrev = Boolean(
+                            entry && prevEntry && entry.subjectId === prevEntry.subjectId
+                          );
+                          const isConnectedWithNext = Boolean(
+                            entry && nextEntry && entry.subjectId === nextEntry.subjectId
+                          );
+
+                          return (
+                            <div
+                              key={day.id}
+                              onClick={() => handleCellClick(day.id, periodNum)}
+                              className={`p-1.5 border-r last:border-r-0 border-black/5 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer flex flex-col justify-center ${
+                                isConnectedWithPrev ? 'pt-0' : ''
+                              } ${isConnectedWithNext ? 'pb-0' : ''}`}
+                            >
+                              {entry && subject ? (
+                                <div
+                                  style={{
+                                    borderLeftColor: subject.color,
+                                    borderLeftWidth: '3px',
+                                    backgroundColor: hexToRgba(subject.color, 0.08),
+                                  }}
+                                  className={`p-2 border border-black/5 dark:border-white/5 h-full flex flex-col justify-between transition-all ${
+                                    isConnectedWithPrev && isConnectedWithNext
+                                      ? 'rounded-none border-t-0 border-b-0 -mt-1.5 -mb-1.5'
+                                      : isConnectedWithPrev
+                                      ? 'rounded-t-none rounded-b-lg border-t-0 -mt-1.5'
+                                      : isConnectedWithNext
+                                      ? 'rounded-b-none rounded-t-lg border-b-0 -mb-1.5'
+                                      : 'rounded-lg'
+                                  }`}
+                                >
+                                  <div className="flex items-center justify-between gap-1">
+                                    <span className="font-bold text-xs text-gray-900 dark:text-white truncate">
+                                      {subject.name}
+                                    </span>
+                                    {isConnectedWithNext && (
+                                      <span
+                                        style={{ backgroundColor: hexToRgba(subject.color, 0.2), color: subject.color }}
+                                        className="text-[9px] font-extrabold px-1.5 py-0.2 rounded-full uppercase"
+                                      >
+                                        Doppelstunde
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div className="flex items-center justify-between text-[10px] text-gray-500 dark:text-gray-400 mt-1">
+                                    <span>{room?.name?.replace('Raum ', 'R') || ''}</span>
+                                    <span>{teacher?.shortName || ''}</span>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="h-full rounded-lg border border-dashed border-gray-200 dark:border-gray-800 flex items-center justify-center text-[10px] text-gray-300 dark:text-gray-600 hover:border-ios-blue hover:text-ios-blue transition-colors">
+                                  +
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      {/* Render Break Row if a break is scheduled after this period */}
+                      {matchingBreaks.map((b) => (
+                        <div
+                          key={b.id}
+                          className="grid grid-cols-6 items-center bg-amber-500/10 dark:bg-amber-500/5 border-y border-amber-500/20 py-1.5 px-3 text-[11px] font-semibold text-amber-700 dark:text-amber-400"
+                        >
+                          <div className="text-center font-bold flex items-center justify-center gap-1">
+                            <Coffee className="w-3 h-3 text-amber-500" />
+                            <span>{b.startTime}–{b.endTime}</span>
+                          </div>
+                          <div className="col-span-5 text-center sm:text-left sm:pl-4">
+                            {b.name}
+                          </div>
+                        </div>
+                      ))}
+                    </React.Fragment>
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -542,13 +654,7 @@ export const SchoolScreen: React.FC = () => {
       <ScheduleEntryModal
         isOpen={isScheduleModalOpen}
         onClose={() => setIsScheduleModalOpen(false)}
-        onSave={(entry) => {
-          if (selectedEntry) {
-            updateScheduleEntry(uid, entry.id, entry);
-          } else {
-            addScheduleEntry(uid, entry);
-          }
-        }}
+        onSave={handleSaveScheduleEntry}
         onDelete={(id) => deleteScheduleEntry(uid, id)}
         initialEntry={selectedEntry}
         initialDay={selectedDay}
@@ -556,6 +662,15 @@ export const SchoolScreen: React.FC = () => {
         subjects={subjects}
         teachers={teachers}
         rooms={rooms}
+        periodTimes={periodTimes}
+      />
+
+      <PeriodTimesModal
+        isOpen={isPeriodTimesModalOpen}
+        onClose={() => setIsPeriodTimesModalOpen(false)}
+        periodTimes={periodTimes}
+        breaks={breaks}
+        onSave={handleSavePeriodTimes}
       />
 
       <SubstitutionModal

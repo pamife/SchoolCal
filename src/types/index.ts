@@ -57,6 +57,15 @@ export interface SchedulePeriodTime {
   period: number;
   startTime: string; // HH:mm
   endTime: string;   // HH:mm
+  label?: string;    // e.g. "1. Stunde"
+}
+
+export interface ScheduleBreak {
+  id: string;
+  name: string;      // z.B. "1. Pause", "Große Pause", "Mittagspause"
+  afterPeriod: number; // Nach welcher Stunde (z.B. 2 = nach 2. Std)
+  startTime: string; // HH:mm
+  endTime: string;   // HH:mm
 }
 
 export interface ScheduleEntry {
@@ -151,6 +160,7 @@ export interface UserSettings {
   schoolName: string;
   gradeLevel: string;  // e.g. "10a", "Q11", "Klasse 9"
   periodTimes: SchedulePeriodTime[];
+  breaks?: ScheduleBreak[];
   defaultCalendarView: CalendarViewType;
   notificationsEnabled: boolean;
   dailySummaryTime: string;
