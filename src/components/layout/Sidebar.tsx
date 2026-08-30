@@ -7,15 +7,16 @@ import {
   Settings,
   Search,
   BookOpen,
-  Sparkles,
   MapPin,
 } from 'lucide-react';
-import { NavigationTab } from '../../types';
+import type { NavigationTab } from '../../types';
 import { useHomeworkStore } from '../../store/useHomeworkStore';
 import { useExamStore } from '../../store/useExamStore';
 import { useSettingsStore } from '../../store/useSettingsStore';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useSearchStore } from '../../store/useSearchStore';
+import { useSubscription } from '../../hooks/useSubscription';
+import { PremiumBadge } from '../licensing/PremiumBadge';
 import { GERMAN_STATES } from '../../data/holidays';
 
 interface SidebarProps {
@@ -32,9 +33,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const { settings } = useSettingsStore();
   const { user } = useAuthStore();
   const { openSearch } = useSearchStore();
+  const { plan } = useSubscription();
 
   const openTasksCount = homework.filter(h => h.status !== 'done').length;
-  const upcomingExamsCount = exams.length;
   const stateName = GERMAN_STATES.find(s => s.code === settings.state)?.name || settings.state;
 
   const navItems = [
@@ -55,9 +56,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <div>
           <h1 className="text-base font-bold text-gray-900 dark:text-white leading-tight tracking-tight flex items-center gap-1.5">
             SchoolCal
-            <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded-full bg-ios-blue/15 text-ios-blue dark:text-blue-400">
-              Pro
-            </span>
+            <PremiumBadge plan={plan} size="xs" />
           </h1>
           <p className="text-xs text-gray-500 dark:text-gray-400">
             {settings.schoolName || 'Schulplaner'}
@@ -75,7 +74,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <Search className="w-4 h-4 text-gray-400" />
           <span>Schnellsuche...</span>
         </div>
-        <kbd className="px-1.5 py-0.5 text-[10px] font-semibold bg-gray-100 dark:bg-ios-dark-tertiary rounded text-gray-500">
+        <kbd className="px-1.5 py-0.5 text-[10px] font-semibold bg-gray-100 dark:bg-ios-dark-tertiary rounded-text-gray-500">
           ⌘K
         </kbd>
       </button>
@@ -138,7 +137,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
 
         {/* User profile snippet */}
-        <div className="flex items-center gap-2.5 p-2 rounded-ios hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer"
+        <div
+          className="flex items-center gap-2.5 p-2 rounded-ios hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer"
           onClick={() => onTabChange('settings')}
         >
           <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-purple-500 to-ios-blue text-white flex items-center justify-center font-bold text-xs shadow-sm">
@@ -146,7 +146,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </div>
           <div className="min-w-0 flex-1">
             <p className="text-xs font-semibold text-gray-900 dark:text-white truncate">
-              {user?.displayName || 'Paul Schmidt'}
+              {user?.displayName || 'Schüler'}
             </p>
             <p className="text-[10px] text-gray-500 dark:text-gray-400 truncate">
               {settings.gradeLevel || 'Schüler'}

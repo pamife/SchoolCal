@@ -167,11 +167,61 @@ export interface UserSettings {
   activeTimetableVersion: string;
 }
 
+// ----------------------------------------------------
+// Licensing & Permission System Types
+// ----------------------------------------------------
+
+export type UserPlan = 'STANDARD' | 'PLUS' | 'PRO';
+
+export type PlanSource = 'FREE' | 'LICENSE' | 'ADMIN';
+
+export type LicenseStatus = 'AVAILABLE' | 'ACTIVE' | 'EXPIRED' | 'REVOKED';
+
+export interface License {
+  id: string;
+  codeHash: string; // SHA-256 hash of the activation code
+  codePrefix: string; // Masked representation for display e.g. "SCAL-PLUS-****-Q8FD"
+  plan: 'PLUS' | 'PRO';
+  status: LicenseStatus;
+  durationDays: number | null; // null = unlimited (lifetime)
+  createdAt: string;
+  expiresAt: string | null; // ISO string when active or fixed expiry
+  activatedAt: string | null;
+  activatedByUid: string | null;
+  activatedByEmail?: string | null;
+  revokedAt: string | null;
+  revokedByUid: string | null;
+  notes?: string | null;
+}
+
+export interface AuditLogEntry {
+  id: string;
+  action:
+    | 'LICENSE_CREATED'
+    | 'LICENSE_ACTIVATED'
+    | 'LICENSE_REVOKED'
+    | 'LICENSE_RESTORED'
+    | 'MANUAL_PLAN_GRANTED'
+    | 'USER_DELETED';
+  actorUid: string;
+  actorEmail?: string;
+  targetUid?: string | null;
+  targetEmail?: string | null;
+  licenseId?: string | null;
+  details?: Record<string, any>;
+  timestamp: string;
+}
+
 export interface UserProfile {
   uid: string;
   displayName: string;
   email: string;
   photoURL?: string;
+  plan: UserPlan;
+  planSource: PlanSource;
+  activeLicenseId: string | null;
+  planExpiresAt: string | null; // ISO string or null for lifetime
+  role?: 'admin' | 'user';
   createdAt: string;
   updatedAt: string;
 }

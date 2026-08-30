@@ -15,6 +15,10 @@ import {
   FileSpreadsheet,
   LogOut,
   Clock,
+  Sparkles,
+  KeyRound,
+  Shield,
+  Crown,
 } from 'lucide-react';
 import { useSettingsStore } from '../../store/useSettingsStore';
 import { useAuthStore } from '../../store/useAuthStore';
@@ -22,14 +26,20 @@ import { useSchoolStore } from '../../store/useSchoolStore';
 import { useHomeworkStore } from '../../store/useHomeworkStore';
 import { useExamStore } from '../../store/useExamStore';
 import { useCalendarStore } from '../../store/useCalendarStore';
+import { useSubscription } from '../../hooks/useSubscription';
 import { GERMAN_STATES, getHolidaysForState } from '../../data/holidays';
 import { ACCENT_PALETTES } from '../../utils/colorUtils';
 import { Button } from '../common/Button';
 import { Badge } from '../common/Badge';
 import { PeriodTimesModal } from '../school/PeriodTimesModal';
+import { PricingModal } from '../licensing/PricingModal';
+import { LicenseActivationModal } from '../licensing/LicenseActivationModal';
+import { AdminModal } from '../admin/AdminModal';
+import { PremiumBadge } from '../licensing/PremiumBadge';
 import { exportFullJsonBackup, parseJsonBackup, exportScheduleCsv } from '../../services/export/dataExportService';
 import { generateIcsCalendar, downloadIcsFile } from '../../services/ical/icalService';
 import { format } from 'date-fns';
+import { de } from 'date-fns/locale';
 import { DEFAULT_PERIOD_TIMES } from '../../data/mockData';
 import type { SchedulePeriodTime, ScheduleBreak } from '../../types';
 
@@ -40,13 +50,19 @@ export const SettingsScreen: React.FC = () => {
   const { homework } = useHomeworkStore();
   const { exams } = useExamStore();
   const { events } = useCalendarStore();
+  const { plan, isPlus, isPro, isAdmin, expiresAt, isLifetime, planSource, planInfo } = useSubscription();
 
   const [displayName, setDisplayName] = useState(user?.displayName || '');
   const [schoolName, setSchoolName] = useState(settings.schoolName || '');
   const [gradeLevel, setGradeLevel] = useState(settings.gradeLevel || '');
   const [showSavedToast, setShowSavedToast] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  // Modals
   const [isPeriodTimesOpen, setIsPeriodTimesOpen] = useState(false);
+  const [isPricingOpen, setIsPricingOpen] = useState(false);
+  const [isActivationOpen, setIsActivationOpen] = useState(false);
+  const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const uid = user?.uid || '';
@@ -130,7 +146,7 @@ export const SettingsScreen: React.FC = () => {
           Einstellungen
         </h2>
         <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-          Passe SchoolCal an deine Schule, deinen Zeitplan und dein Bundesland an
+          Passe SchoolCal an deine Schule, deinen Zeitplan und deine Lizenz an
         </p>
       </div>
 
@@ -141,7 +157,112 @@ export const SettingsScreen: React.FC = () => {
         </div>
       )}
 
-      {/* 1. BENUTZERPROFIL & SCHULE */}
+      {/* 1. ABONNEMENT & LIZENZ */}
+      <div className="ios-card p-5 space-y-4">
+        <div className="flex items-center justify-between pb-2 border-b border-black/5 dark:border-white/10">
+          <div className="flex items-center gap-2.5">
+            <Sparkles className="w-5 h-5 text-ios-blue" />
+            <div>
+              <h3 className="text-base font-bold text-gray-900 dark:text-white">
+                Tarif & Lizenz
+              </h3>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Dein aktueller Plan und Freischaltungen
+              </p>
+            </div>
+          </div>
+
+          <PremiumBadge plan={plan} size="md" />
+        </div>
+
+        <div className="p-4 rounded-2xl bg-gray-50 dark:bg-ios-dark-secondary flex flex-col sm:flex-row sm:items-center justify-between gap-3 border border-black/5 dark:border-white/5">
+          <div>
+            <div className="flex items-center gap-2">
+              <h4 className="text-sm font-extrabold text-gray-900 dark:text-white">
+                SchoolCal {planInfo.name}
+              </h4>
+              {planSource === 'ADMIN' && (
+                <Badge variant="purple" size="sm">Admin-Freischaltung</Badge>
+              )}
+            </div>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+              {planInfo.description}
+            </p>
+
+            <div className="text-xs text-gray-600 dark:text-gray-300 font-medium mt-2">
+              {isLifetime ? (
+                <span className="text-emerald-600 dark:text-emerald-400 font-bold">
+                  ✓ Dauerhaft aktiv (Unbegrenzte Laufzeit)
+                </span>
+              ) : expiresAt ? (
+                <span>
+                  Gültig bis:{' '}
+                  <strong>
+                    {format(new Date(expiresAt), 'dd. MMMM yyyy', { locale: de })}
+                  </strong>
+                </span>
+              ) : (
+                <span>Kostenloser Standard-Account</span>
+              )}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={() => setIsPricingOpen(true)}
+            >
+              Tarife vergleichen
+            </Button>
+            <Button
+              type="button"
+              variant="primary"
+              size="sm"
+              onClick={() => setIsActivationOpen(true)}
+              icon={<KeyRound className="w-3.5 h-3.5" />}
+            >
+              Code einlösen
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* 2. ADMIN PANEL ACCESS (IF ADMIN) */}
+      {isAdmin && (
+        <div className="ios-card p-5 space-y-3 bg-gradient-to-r from-purple-500/10 via-indigo-500/10 to-blue-500/10 border border-purple-500/20">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <Shield className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+              <div>
+                <h3 className="text-base font-bold text-gray-900 dark:text-white">
+                  Administrator-Bereich
+                </h3>
+                <p className="text-xs text-purple-600/80 dark:text-purple-400/80 font-medium">
+                  Du bist als Administrator autorisiert
+                </p>
+              </div>
+            </div>
+
+            <Button
+              type="button"
+              variant="primary"
+              size="sm"
+              onClick={() => setIsAdminModalOpen(true)}
+              className="bg-purple-600 hover:bg-purple-700 text-white shadow-xs"
+              icon={<Shield className="w-3.5 h-3.5" />}
+            >
+              Admin Panel öffnen
+            </Button>
+          </div>
+          <p className="text-xs text-gray-600 dark:text-gray-300">
+            Verwalte Benutzer, erstelle neue Plus- und Pro-Lizenzcodes im Generator, prüfe Audit-Logs oder widerrufe Lizenzen.
+          </p>
+        </div>
+      )}
+
+      {/* 3. BENUTZERPROFIL & SCHULE */}
       <div className="ios-card p-5 space-y-4">
         <div className="flex items-center justify-between pb-2 border-b border-black/5 dark:border-white/10">
           <div className="flex items-center gap-2.5">
@@ -216,7 +337,7 @@ export const SettingsScreen: React.FC = () => {
         </form>
       </div>
 
-      {/* 2. ZEITPLAN & GLOCKENZEITEN */}
+      {/* 4. ZEITPLAN & GLOCKENZEITEN */}
       <div className="ios-card p-5 space-y-4">
         <div className="flex items-center justify-between pb-2 border-b border-black/5 dark:border-white/10">
           <div className="flex items-center gap-2.5">
@@ -258,7 +379,7 @@ export const SettingsScreen: React.FC = () => {
         </div>
       </div>
 
-      {/* 3. DARSTELLUNG & DESIGN */}
+      {/* 5. DARSTELLUNG & DESIGN */}
       <div className="ios-card p-5 space-y-4">
         <div className="flex items-center gap-2.5 pb-2 border-b border-black/5 dark:border-white/10">
           <Palette className="w-5 h-5 text-purple-500" />
@@ -325,7 +446,7 @@ export const SettingsScreen: React.FC = () => {
         </div>
       </div>
 
-      {/* 4. BUNDESLAND & FERIEN */}
+      {/* 6. BUNDESLAND & FERIEN */}
       <div className="ios-card p-5 space-y-4">
         <div className="flex items-center justify-between pb-2 border-b border-black/5 dark:border-white/10">
           <div className="flex items-center gap-2.5">
@@ -379,7 +500,7 @@ export const SettingsScreen: React.FC = () => {
         </div>
       </div>
 
-      {/* 5. DATEN, EXPORT & BACKUP */}
+      {/* 7. DATEN, EXPORT & BACKUP */}
       <div className="ios-card p-5 space-y-4">
         <div className="flex items-center gap-2.5 pb-2 border-b border-black/5 dark:border-white/10">
           <Download className="w-5 h-5 text-indigo-500" />
@@ -460,7 +581,7 @@ export const SettingsScreen: React.FC = () => {
         </div>
       </div>
 
-      {/* 6. ACCOUNT LÖSCHEN */}
+      {/* 8. ACCOUNT LÖSCHEN */}
       <div className="ios-card p-5 space-y-4">
         <div className="flex items-center gap-2.5 pb-2 border-b border-black/5 dark:border-white/10">
           <ShieldCheck className="w-5 h-5 text-gray-500" />
@@ -490,13 +611,32 @@ export const SettingsScreen: React.FC = () => {
         </div>
       </div>
 
-      {/* PeriodTimesModal */}
+      {/* Modals */}
       <PeriodTimesModal
         isOpen={isPeriodTimesOpen}
         onClose={() => setIsPeriodTimesOpen(false)}
         periodTimes={periodTimes}
         breaks={breaks}
         onSave={handleSavePeriodTimes}
+      />
+
+      <PricingModal
+        isOpen={isPricingOpen}
+        onClose={() => setIsPricingOpen(false)}
+        onOpenActivation={() => {
+          setIsPricingOpen(false);
+          setIsActivationOpen(true);
+        }}
+      />
+
+      <LicenseActivationModal
+        isOpen={isActivationOpen}
+        onClose={() => setIsActivationOpen(false)}
+      />
+
+      <AdminModal
+        isOpen={isAdminModalOpen}
+        onClose={() => setIsAdminModalOpen(false)}
       />
     </div>
   );

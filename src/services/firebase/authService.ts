@@ -12,6 +12,7 @@ import {
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { auth, db } from './firebaseApp';
 import type { UserProfile } from '../../types';
+import { checkAndUpdateUserPlanExpiration } from '../licensing/licenseService';
 
 export function translateFirebaseAuthError(errorCode: string): string {
   switch (errorCode) {
@@ -60,6 +61,11 @@ export async function registerWithEmail(
     displayName: displayName.trim() || fbUser.email?.split('@')[0] || 'Schüler',
     email: fbUser.email || email.trim(),
     photoURL: fbUser.photoURL || undefined,
+    plan: 'STANDARD',
+    planSource: 'FREE',
+    activeLicenseId: null,
+    planExpiresAt: null,
+    role: 'user',
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   };
@@ -78,12 +84,12 @@ export async function loginWithEmail(email: string, password: string): Promise<U
   const userCredential = await signInWithEmailAndPassword(auth, email.trim(), password);
   const fbUser = userCredential.user;
 
-  // Retrieve user profile from Firestore or construct from auth
   try {
     const userDocRef = doc(db, 'users', fbUser.uid);
     const snap = await getDoc(userDocRef);
     if (snap.exists()) {
-      return snap.data() as UserProfile;
+      const data = snap.data() as UserProfile;
+      return await checkAndUpdateUserPlanExpiration(data);
     }
   } catch (err) {
     console.warn('Could not load user doc on login:', err);
@@ -94,6 +100,11 @@ export async function loginWithEmail(email: string, password: string): Promise<U
     displayName: fbUser.displayName || fbUser.email?.split('@')[0] || 'Schüler',
     email: fbUser.email || email.trim(),
     photoURL: fbUser.photoURL || undefined,
+    plan: 'STANDARD',
+    planSource: 'FREE',
+    activeLicenseId: null,
+    planExpiresAt: null,
+    role: 'user',
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   };
@@ -111,7 +122,8 @@ export async function signInWithGoogle(): Promise<UserProfile> {
   try {
     const snap = await getDoc(userDocRef);
     if (snap.exists()) {
-      return snap.data() as UserProfile;
+      const data = snap.data() as UserProfile;
+      return await checkAndUpdateUserPlanExpiration(data);
     }
   } catch (err) {
     console.warn('Could not read user doc on Google login:', err);
@@ -122,6 +134,11 @@ export async function signInWithGoogle(): Promise<UserProfile> {
     displayName: fbUser.displayName || fbUser.email?.split('@')[0] || 'Schüler',
     email: fbUser.email || '',
     photoURL: fbUser.photoURL || undefined,
+    plan: 'STANDARD',
+    planSource: 'FREE',
+    activeLicenseId: null,
+    planExpiresAt: null,
+    role: 'user',
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   };
@@ -155,7 +172,9 @@ export function subscribeToAuthState(
     try {
       const snap = await getDoc(doc(db, 'users', fbUser.uid));
       if (snap.exists()) {
-        callback(snap.data() as UserProfile);
+        const profile = snap.data() as UserProfile;
+        const validated = await checkAndUpdateUserPlanExpiration(profile);
+        callback(validated);
         return;
       }
     } catch {
@@ -167,6 +186,11 @@ export function subscribeToAuthState(
       displayName: fbUser.displayName || fbUser.email?.split('@')[0] || 'Schüler',
       email: fbUser.email || '',
       photoURL: fbUser.photoURL || undefined,
+      plan: 'STANDARD',
+      planSource: 'FREE',
+      activeLicenseId: null,
+      planExpiresAt: null,
+      role: 'user',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };

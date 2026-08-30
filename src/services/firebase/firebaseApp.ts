@@ -40,4 +40,5 @@ try {
 }
 
 export const db = firestoreInstance;
+export const firestore = firestoreInstance;
 export { isFirebaseConfigured };
