@@ -147,6 +147,46 @@ export const GradesScreen: React.FC = () => {
             </div>
           </div>
 
+          {/* 🧠 AI Noten-Zielrechner Card */}
+          <div className="ios-card p-4 bg-gradient-to-r from-purple-500/10 via-indigo-500/10 to-teal-500/10 border border-purple-500/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-purple-600 text-white flex items-center justify-center shadow-xs shrink-0">
+                <Calculator className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="flex items-center gap-1.5">
+                  <h4 className="text-sm font-bold text-gray-900 dark:text-white">
+                    KI-Notenprognose & Zielrechner
+                  </h4>
+                  <span className="text-[9px] font-extrabold uppercase bg-purple-600 text-white px-1.5 py-0.2 rounded-full">
+                    Pro
+                  </span>
+                </div>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  {overallAverage
+                    ? `Dein aktueller Notenschnitt liegt bei ${overallAverage.replace('.', ',')}. Trage weitere Noten ein, um die Prognose zu verfeinern.`
+                    : 'Trage deine ersten Noten ein, um eine automatische Notenschnitt-Prognose zu erhalten.'}
+                </p>
+              </div>
+            </div>
+
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={() => {
+                if (subjects.length > 0 && !selectedSubjectId) {
+                  setSelectedSubjectId(subjects[0].id);
+                }
+                setIsAddModalOpen(true);
+              }}
+              icon={<Sparkles className="w-3.5 h-3.5 text-purple-600" />}
+              className="shrink-0"
+            >
+              Note simulieren
+            </Button>
+          </div>
+
           {/* Fächerspiegel Breakdown */}
           {subjects.length === 0 ? (
             <div className="ios-card p-8 text-center text-xs text-gray-400">

@@ -26,6 +26,9 @@ import { HomeworkModal } from './components/homework/HomeworkModal';
 import { ExamModal } from './components/exams/ExamModal';
 import { ScheduleEntryModal } from './components/school/ScheduleEntryModal';
 import { SubstitutionModal } from './components/school/SubstitutionModal';
+import { AiStudyPlannerModal } from './components/exams/AiStudyPlannerModal';
+import { PricingModal } from './components/licensing/PricingModal';
+import { LicenseActivationModal } from './components/licensing/LicenseActivationModal';
 
 import type { NavigationTab, QuickActionType, ScheduleEntry, Exam } from './types';
 import { BookOpen } from 'lucide-react';
@@ -40,6 +43,9 @@ export function App() {
   const [isExamModalOpen, setIsExamModalOpen] = useState(false);
   const [isSubstModalOpen, setIsSubstModalOpen] = useState(false);
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
+  const [isAiPlannerOpen, setIsAiPlannerOpen] = useState(false);
+  const [isPricingOpen, setIsPricingOpen] = useState(false);
+  const [isActivationOpen, setIsActivationOpen] = useState(false);
 
   const [selectedScheduleEntry, setSelectedScheduleEntry] = useState<ScheduleEntry | null>(null);
   const [selectedExam, setSelectedExam] = useState<Exam | null>(null);
@@ -60,7 +66,7 @@ export function App() {
   } = useSchoolStore();
 
   const { loadHomework, clearHomework, addHomework } = useHomeworkStore();
-  const { loadExams, clearExams, addExam, updateExam, deleteExam } = useExamStore();
+  const { exams, loadExams, clearExams, addExam, updateExam, deleteExam } = useExamStore();
   const { loadEvents, clearEvents, addEvent } = useCalendarStore();
   const { settings, loadSettings } = useSettingsStore();
   const { loadGrades, clearGrades } = useGradeStore();
@@ -93,6 +99,9 @@ export function App() {
 
   const handleQuickAction = (action: QuickActionType) => {
     switch (action) {
+      case 'ai_plan':
+        setIsAiPlannerOpen(true);
+        break;
       case 'homework':
         setIsHomeworkModalOpen(true);
         break;
@@ -188,36 +197,34 @@ export function App() {
         </main>
       </div>
 
-      {/* iPhone Bottom Navigation Bar */}
+      {/* iPhone / Mobile Bottom Bar */}
       <MobileNavBar
         activeTab={activeTab}
         onTabChange={setActiveTab}
       />
 
-      {/* Global Quick Action Sheet */}
+      {/* Global Modals & Action Sheets */}
+      <GlobalSearchModal
+        onNavigateTab={setActiveTab}
+      />
+
       <QuickActionSheet
         isOpen={isQuickActionOpen}
         onClose={() => setIsQuickActionOpen(false)}
         onSelectAction={handleQuickAction}
       />
 
-      {/* Global Spotlight Search Modal */}
-      <GlobalSearchModal
-        onNavigateTab={setActiveTab}
-      />
-
-      {/* Quick Action Modals */}
-      <EventModal
-        isOpen={isEventModalOpen}
-        onClose={() => setIsEventModalOpen(false)}
-        onSave={(evt) => addEvent(uid, evt)}
-        subjects={subjects}
-      />
-
       <HomeworkModal
         isOpen={isHomeworkModalOpen}
         onClose={() => setIsHomeworkModalOpen(false)}
         onSave={(hw) => addHomework(uid, hw)}
+        subjects={subjects}
+      />
+
+      <EventModal
+        isOpen={isEventModalOpen}
+        onClose={() => setIsEventModalOpen(false)}
+        onSave={(ev) => addEvent(uid, ev)}
         subjects={subjects}
       />
 
@@ -239,6 +246,29 @@ export function App() {
         subjects={subjects}
         teachers={teachers}
         rooms={rooms}
+      />
+
+      <AiStudyPlannerModal
+        isOpen={isAiPlannerOpen}
+        onClose={() => setIsAiPlannerOpen(false)}
+        exams={exams}
+        subjects={subjects}
+        onOpenPricing={() => setIsPricingOpen(true)}
+        onOpenActivation={() => setIsActivationOpen(true)}
+      />
+
+      <PricingModal
+        isOpen={isPricingOpen}
+        onClose={() => setIsPricingOpen(false)}
+        onOpenActivation={() => {
+          setIsPricingOpen(false);
+          setIsActivationOpen(true);
+        }}
+      />
+
+      <LicenseActivationModal
+        isOpen={isActivationOpen}
+        onClose={() => setIsActivationOpen(false)}
       />
 
       <SubstitutionModal

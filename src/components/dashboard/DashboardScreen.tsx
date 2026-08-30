@@ -1,5 +1,17 @@
 import React from 'react';
-import { Sparkles, Calendar, BookOpen, Clock, AlertTriangle, CheckCircle2, ChevronRight, GraduationCap } from 'lucide-react';
+import {
+  Sparkles,
+  Calendar,
+  BookOpen,
+  Clock,
+  AlertTriangle,
+  CheckCircle2,
+  ChevronRight,
+  GraduationCap,
+  Brain,
+  Award,
+  Zap,
+} from 'lucide-react';
 import { useSchoolStore } from '../../store/useSchoolStore';
 import { useHomeworkStore } from '../../store/useHomeworkStore';
 import { useExamStore } from '../../store/useExamStore';
@@ -11,7 +23,7 @@ import { NextLessonHero } from './NextLessonHero';
 import { TodayTimeline } from './TodayTimeline';
 import { TodayHomeworkWidget } from './TodayHomeworkWidget';
 import { ExamCountdownWidget } from './ExamCountdownWidget';
-import { NavigationTab, ScheduleEntry, Exam, QuickActionType } from '../../types';
+import type { NavigationTab, ScheduleEntry, Exam, QuickActionType } from '../../types';
 
 interface DashboardScreenProps {
   onNavigateTab: (tab: NavigationTab) => void;
@@ -63,8 +75,8 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   const activeHoliday = stateHolidays.find(h => todayIso >= h.startDate && todayIso <= h.endDate);
 
   // Greeting based on time of day
-  const hour = today.getHours();
-  const greeting = hour < 11 ? 'Guten Morgen' : hour < 18 ? 'Guten Tag' : 'Guten Abend';
+  const hours = today.getHours();
+  const greeting = hours < 11 ? 'Guten Morgen' : hours < 14 ? 'Guten Tag' : hours < 18 ? 'Guten Nachmittag' : 'Guten Abend';
   const firstName = user?.displayName ? user.displayName.split(' ')[0] : 'Schüler';
 
   return (
@@ -123,6 +135,50 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
           onOpenSchedule={() => onNavigateTab('school')}
         />
       </section>
+
+      {/* 🌟 PRO FEATURE HERO: SchoolCal KI-Assistent & Lernplaner */}
+      <div className="ios-card p-4 sm:p-5 bg-gradient-to-r from-purple-500/10 via-indigo-500/10 to-blue-500/10 border border-purple-500/20">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-start sm:items-center gap-3">
+            <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-purple-600 to-indigo-600 text-white flex items-center justify-center shadow-md shadow-purple-500/20 shrink-0">
+              <Brain className="w-6 h-6" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm sm:text-base font-extrabold text-gray-900 dark:text-white">
+                  SchoolCal KI-Lernzeitplaner
+                </h3>
+                <span className="text-[9px] font-extrabold uppercase bg-purple-600 text-white px-2 py-0.5 rounded-full shadow-xs">
+                  Pro Feature
+                </span>
+              </div>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                Berechne optimale tägliche Lerneinheiten für anstehende Klausuren & Prüfungen.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => onOpenQuickAction('ai_plan')}
+              className="px-3.5 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all active:scale-95"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-amber-300 fill-amber-300" />
+              <span>KI-Lernplan generieren</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => onNavigateTab('grades')}
+              className="px-3 py-2 rounded-xl bg-white dark:bg-ios-dark-secondary text-gray-700 dark:text-gray-300 hover:bg-gray-100 text-xs font-semibold flex items-center gap-1 border border-black/5 dark:border-white/10 transition-colors"
+            >
+              <Award className="w-3.5 h-3.5 text-purple-600" />
+              <span>Notenschnitt</span>
+            </button>
+          </div>
+        </div>
+      </div>
 
       {/* 2. Grid: Heutiger Stundenplan (Left/Full) + Homework & Exams (Right on iPad) */}
       <div className="grid grid-cols-1 ipad:grid-cols-12 gap-5">

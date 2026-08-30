@@ -252,4 +252,5 @@ export type QuickActionType =
   | 'exam'
   | 'test'
   | 'study'
-  | 'substitution';
+  | 'substitution'
+  | 'ai_plan';

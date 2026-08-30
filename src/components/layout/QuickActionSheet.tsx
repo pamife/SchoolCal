@@ -7,9 +7,10 @@ import {
   Sparkles,
   BookOpen,
   RefreshCw,
+  Brain,
   X,
 } from 'lucide-react';
-import { QuickActionType } from '../../types';
+import type { QuickActionType } from '../../types';
 
 interface QuickActionSheetProps {
   isOpen: boolean;
@@ -22,7 +23,15 @@ export const QuickActionSheet: React.FC<QuickActionSheetProps> = ({
   onClose,
   onSelectAction,
 }) => {
-  const actions: { id: QuickActionType; label: string; description: string; icon: React.ComponentType<{ className?: string }>; color: string }[] = [
+  const actions: { id: QuickActionType; label: string; description: string; icon: React.ComponentType<{ className?: string }>; color: string; isPro?: boolean }[] = [
+    {
+      id: 'ai_plan',
+      label: '✨ KI-Lernzeitplaner',
+      description: 'Lernstoff optimal bis zur nächsten Klausur verteilen',
+      icon: Brain,
+      color: 'bg-gradient-to-tr from-purple-600 to-indigo-600 text-white',
+      isPro: true,
+    },
     {
       id: 'homework',
       label: 'Hausaufgabe / Aufgabe',
@@ -84,7 +93,7 @@ export const QuickActionSheet: React.FC<QuickActionSheetProps> = ({
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: '100%', opacity: 0 }}
             transition={{ type: 'spring', damping: 26, stiffness: 320 }}
-            className="relative w-full sm:max-w-md bg-white dark:bg-ios-dark-card rounded-t-[28px] sm:rounded-[24px] shadow-2xl p-5 pb-safe z-10 border border-black/5 dark:border-white/10"
+            className="relative w-full sm:max-w-md bg-white dark:bg-ios-dark-card rounded-t-[28px] sm:rounded-[24px] shadow-2xl p-5 pb-safe z-10 border border-black/5 dark:border-white/10 max-h-[85vh] overflow-y-auto"
           >
             {/* iOS Handle */}
             <div className="sm:hidden pt-1 pb-3 flex justify-center">
@@ -126,8 +135,15 @@ export const QuickActionSheet: React.FC<QuickActionSheetProps> = ({
                       <Icon className="w-5 h-5" />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <div className="text-sm font-semibold text-gray-900 dark:text-white">
-                        {act.label}
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                          {act.label}
+                        </span>
+                        {act.isPro && (
+                          <span className="text-[9px] font-extrabold uppercase bg-purple-600 text-white px-1.5 py-0.2 rounded-full">
+                            Pro
+                          </span>
+                        )}
                       </div>
                       <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
                         {act.description}
