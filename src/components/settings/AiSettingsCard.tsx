@@ -52,28 +52,41 @@ export const AiSettingsCard: React.FC = () => {
     }
 
     setTestStatus('testing');
-    try {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${keyToTest}`;
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ role: 'user', parts: [{ text: 'Antworte nur mit "OK".' }] }],
-        }),
-      });
+    const candidateModels = [
+      'gemini-3.6-flash',
+      'gemini-2.0-flash',
+      'gemini-1.5-flash',
+      'gemini-1.5-pro',
+      'gemini-2.5-flash',
+    ];
 
-      if (res.ok) {
-        setTestStatus('success');
-        setTestMessage('✓ Verbindung erfolgreich! Google Gemini 2.5 Flash ist einsatzbereit.');
-      } else {
-        const data = await res.json().catch(() => ({}));
-        setTestStatus('error');
-        setTestMessage(`Fehler (${res.status}): ${data.error?.message || 'Ungültiger API-Key'}`);
+    let lastErr = '';
+    for (const model of candidateModels) {
+      try {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${keyToTest}`;
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ role: 'user', parts: [{ text: 'Antworte nur mit "OK".' }] }],
+          }),
+        });
+
+        if (res.ok) {
+          setTestStatus('success');
+          setTestMessage(`✓ Verbindung erfolgreich! Modell "${model}" ist einsatzbereit.`);
+          return;
+        } else {
+          const data = await res.json().catch(() => ({}));
+          lastErr = `Fehler (${res.status}): ${data.error?.message || 'Modell nicht verfügbar'}`;
+        }
+      } catch (e: any) {
+        lastErr = `Netzwerkfehler: ${e.message}`;
       }
-    } catch (e: any) {
-      setTestStatus('error');
-      setTestMessage(`Netzwerkfehler: ${e.message}`);
     }
+
+    setTestStatus('error');
+    setTestMessage(lastErr || 'Verbindung fehlgeschlagen');
   };
 
   const isConfigured = Boolean(apiKey.trim() || getEffectiveGeminiApiKey());
@@ -94,7 +107,7 @@ export const AiSettingsCard: React.FC = () => {
               </span>
             </h3>
             <p className="text-xs text-gray-500 dark:text-gray-400">
-              Verbinde die echte Google Gemini 2.5 Flash KI für Freitext-Antworten & Lernpläne
+              Verbinde Google Gemini für Freitext-Antworten & intelligente Lernpläne
             </p>
           </div>
         </div>
@@ -103,7 +116,7 @@ export const AiSettingsCard: React.FC = () => {
           {isConfigured ? (
             <span className="text-xs px-2.5 py-1 rounded-full font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              Online (Gemini 2.5)
+              Online (Gemini)
             </span>
           ) : (
             <span className="text-xs px-2.5 py-1 rounded-full font-bold bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center gap-1">

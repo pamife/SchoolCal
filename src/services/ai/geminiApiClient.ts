@@ -1,14 +1,13 @@
 import type { AISchoolContext, AIResponse } from './AIServiceInterface';
 import type { AIChatMessage } from '../../types';
 
+/**
+ * Returns the personal API key stored strictly in the user's local browser storage.
+ * Does NOT leak or expose server-side environment keys.
+ */
 export function getEffectiveGeminiApiKey(): string {
   if (typeof window === 'undefined') return '';
-  return (
-    localStorage.getItem('schoolcal_gemini_api_key') ||
-    import.meta.env.VITE_GEMINI_API_KEY ||
-    import.meta.env.VITE_FIREBASE_API_KEY ||
-    ''
-  );
+  return localStorage.getItem('schoolcal_gemini_api_key') || '';
 }
 
 export function setCustomGeminiApiKey(key: string): void {
@@ -74,7 +73,6 @@ WICHTIGE REGELN:
 
   if (conversationHistory && Array.isArray(conversationHistory)) {
     conversationHistory.forEach((msg) => {
-      // Ignore initial greeting / error messages
       if (msg.id === 'welcome' || msg.id === 'welcome-reset') return;
       contents.push({
         role: msg.role === 'assistant' ? 'model' : 'user',
@@ -88,10 +86,16 @@ WICHTIGE REGELN:
     parts: [{ text: prompt }],
   });
 
-  // Try Gemini 2.5 Flash first, then fallback to gemini-1.5-flash
-  const models = ['gemini-2.5-flash', 'gemini-1.5-flash', 'gemini-1.5-pro'];
+  // Candidate models: start with gemini-3.6-flash, then 2.0-flash, 1.5-flash
+  const candidateModels = [
+    'gemini-3.6-flash',
+    'gemini-2.0-flash',
+    'gemini-1.5-flash',
+    'gemini-1.5-pro',
+    'gemini-2.5-flash',
+  ];
 
-  for (const model of models) {
+  for (const model of candidateModels) {
     try {
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
       const response = await fetch(url, {
@@ -116,7 +120,6 @@ WICHTIGE REGELN:
         let rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
 
         if (rawText) {
-          // Extract structured action if present
           let action: any = undefined;
           const actionRegex = /```json_action\s*([\s\S]*?)\s*```/;
           const match = rawText.match(actionRegex);
@@ -136,10 +139,10 @@ WICHTIGE REGELN:
         }
       } else {
         const errText = await response.text();
-        console.warn(`Gemini model ${model} returned ${response.status}:`, errText);
+        console.warn(`Direct Gemini model ${model} returned status ${response.status}:`, errText);
       }
     } catch (err) {
-      console.warn(`Failed calling Gemini model ${model}:`, err);
+      console.warn(`Direct Gemini model ${model} failed:`, err);
     }
   }
 
