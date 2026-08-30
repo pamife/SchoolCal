@@ -50,20 +50,26 @@ export const useCalendarStore = create<CalendarState>((set, get) => ({
   },
 
   addEvent: async (uid, event) => {
-    await saveUserDoc<CalendarEvent>(uid, 'events', event);
     set({ events: [...get().events, event] });
+    if (uid) {
+      await saveUserDoc<CalendarEvent>(uid, 'events', event);
+    }
   },
 
   updateEvent: async (uid, id, updates) => {
-    await updateUserDoc<CalendarEvent>(uid, 'events', id, updates);
     set({
       events: get().events.map(e => (e.id === id ? { ...e, ...updates } : e)),
     });
+    if (uid) {
+      await updateUserDoc<CalendarEvent>(uid, 'events', id, updates);
+    }
   },
 
   deleteEvent: async (uid, id) => {
-    await deleteUserDoc(uid, 'events', id);
     set({ events: get().events.filter(e => e.id !== id) });
+    if (uid) {
+      await deleteUserDoc(uid, 'events', id);
+    }
   },
 
   setSelectedDate: (date) => {

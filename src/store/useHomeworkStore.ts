@@ -57,20 +57,26 @@ export const useHomeworkStore = create<HomeworkState>((set, get) => ({
   },
 
   addHomework: async (uid, item) => {
-    await saveUserDoc<Homework>(uid, 'homework', item);
     set({ homework: [item, ...get().homework] });
+    if (uid) {
+      await saveUserDoc<Homework>(uid, 'homework', item);
+    }
   },
 
   updateHomework: async (uid, id, updates) => {
-    await updateUserDoc<Homework>(uid, 'homework', id, updates);
     set({
       homework: get().homework.map(h => (h.id === id ? { ...h, ...updates } : h)),
     });
+    if (uid) {
+      await updateUserDoc<Homework>(uid, 'homework', id, updates);
+    }
   },
 
   deleteHomework: async (uid, id) => {
-    await deleteUserDoc(uid, 'homework', id);
     set({ homework: get().homework.filter(h => h.id !== id) });
+    if (uid) {
+      await deleteUserDoc(uid, 'homework', id);
+    }
   },
 
   toggleComplete: async (uid, id) => {

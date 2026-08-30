@@ -42,21 +42,27 @@ export const useExamStore = create<ExamState>((set, get) => ({
   },
 
   addExam: async (uid, exam) => {
-    await saveUserDoc<Exam>(uid, 'exams', exam);
     const updated = [...get().exams, exam].sort((a, b) => a.date.localeCompare(b.date));
     set({ exams: updated });
+    if (uid) {
+      await saveUserDoc<Exam>(uid, 'exams', exam);
+    }
   },
 
   updateExam: async (uid, id, updates) => {
-    await updateUserDoc<Exam>(uid, 'exams', id, updates);
     const updated = get().exams.map(e => (e.id === id ? { ...e, ...updates } : e))
       .sort((a, b) => a.date.localeCompare(b.date));
     set({ exams: updated });
+    if (uid) {
+      await updateUserDoc<Exam>(uid, 'exams', id, updates);
+    }
   },
 
   deleteExam: async (uid, id) => {
-    await deleteUserDoc(uid, 'exams', id);
     set({ exams: get().exams.filter(e => e.id !== id) });
+    if (uid) {
+      await deleteUserDoc(uid, 'exams', id);
+    }
   },
 
   toggleExamTopic: async (uid, examId, topicId) => {

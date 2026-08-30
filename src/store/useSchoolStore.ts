@@ -91,99 +91,132 @@ export const useSchoolStore = create<SchoolState>((set, get) => ({
   },
 
   addSubject: async (uid, subject) => {
-    await saveUserDoc<Subject>(uid, 'subjects', subject);
+    // Instant UI update
     set({ subjects: [...get().subjects, subject] });
+    if (uid) {
+      await saveUserDoc<Subject>(uid, 'subjects', subject);
+    }
   },
 
   updateSubject: async (uid, id, updates) => {
-    await updateUserDoc<Subject>(uid, 'subjects', id, updates);
     set({
       subjects: get().subjects.map(s => (s.id === id ? { ...s, ...updates } : s)),
     });
+    if (uid) {
+      await updateUserDoc<Subject>(uid, 'subjects', id, updates);
+    }
   },
 
   deleteSubject: async (uid, id) => {
-    await deleteUserDoc(uid, 'subjects', id);
     set({
       subjects: get().subjects.filter(s => s.id !== id),
       scheduleEntries: get().scheduleEntries.filter(e => e.subjectId !== id),
     });
+    if (uid) {
+      await deleteUserDoc(uid, 'subjects', id);
+    }
   },
 
   addTeacher: async (uid, teacher) => {
-    await saveUserDoc<Teacher>(uid, 'teachers', teacher);
     set({ teachers: [...get().teachers, teacher] });
+    if (uid) {
+      await saveUserDoc<Teacher>(uid, 'teachers', teacher);
+    }
   },
 
   updateTeacher: async (uid, id, updates) => {
-    await updateUserDoc<Teacher>(uid, 'teachers', id, updates);
     set({
       teachers: get().teachers.map(t => (t.id === id ? { ...t, ...updates } : t)),
     });
+    if (uid) {
+      await updateUserDoc<Teacher>(uid, 'teachers', id, updates);
+    }
   },
 
   deleteTeacher: async (uid, id) => {
-    await deleteUserDoc(uid, 'teachers', id);
     set({ teachers: get().teachers.filter(t => t.id !== id) });
+    if (uid) {
+      await deleteUserDoc(uid, 'teachers', id);
+    }
   },
 
   addRoom: async (uid, room) => {
-    await saveUserDoc<Room>(uid, 'rooms', room);
     set({ rooms: [...get().rooms, room] });
+    if (uid) {
+      await saveUserDoc<Room>(uid, 'rooms', room);
+    }
   },
 
   updateRoom: async (uid, id, updates) => {
-    await updateUserDoc<Room>(uid, 'rooms', id, updates);
     set({
       rooms: get().rooms.map(r => (r.id === id ? { ...r, ...updates } : r)),
     });
+    if (uid) {
+      await updateUserDoc<Room>(uid, 'rooms', id, updates);
+    }
   },
 
   deleteRoom: async (uid, id) => {
-    await deleteUserDoc(uid, 'rooms', id);
     set({ rooms: get().rooms.filter(r => r.id !== id) });
+    if (uid) {
+      await deleteUserDoc(uid, 'rooms', id);
+    }
   },
 
   addScheduleEntry: async (uid, entry) => {
-    await saveUserDoc<ScheduleEntry>(uid, 'schedule', entry);
     set({ scheduleEntries: [...get().scheduleEntries, entry] });
+    if (uid) {
+      await saveUserDoc<ScheduleEntry>(uid, 'schedule', entry);
+    }
   },
 
   updateScheduleEntry: async (uid, id, updates) => {
-    await updateUserDoc<ScheduleEntry>(uid, 'schedule', id, updates);
     set({
       scheduleEntries: get().scheduleEntries.map(e => (e.id === id ? { ...e, ...updates } : e)),
     });
+    if (uid) {
+      await updateUserDoc<ScheduleEntry>(uid, 'schedule', id, updates);
+    }
   },
 
   deleteScheduleEntry: async (uid, id) => {
-    await deleteUserDoc(uid, 'schedule', id);
     set({
       scheduleEntries: get().scheduleEntries.filter(e => e.id !== id),
     });
+    if (uid) {
+      await deleteUserDoc(uid, 'schedule', id);
+    }
   },
 
   setScheduleEntries: async (uid, entries) => {
-    await saveAllUserDocs<ScheduleEntry>(uid, 'schedule', entries);
     set({ scheduleEntries: entries });
+    if (uid) {
+      await saveAllUserDocs<ScheduleEntry>(uid, 'schedule', entries);
+    }
   },
 
   addSubstitution: async (uid, sub) => {
-    await saveUserDoc<Substitution>(uid, 'substitutions', sub);
     set({ substitutions: [...get().substitutions, sub] });
+    if (uid) {
+      await saveUserDoc<Substitution>(uid, 'substitutions', sub);
+    }
   },
 
   updateSubstitution: async (uid, id, updates) => {
-    await updateUserDoc<Substitution>(uid, 'substitutions', id, updates);
     set({
       substitutions: get().substitutions.map(s => (s.id === id ? { ...s, ...updates } : s)),
     });
+    if (uid) {
+      await updateUserDoc<Substitution>(uid, 'substitutions', id, updates);
+    }
   },
 
   deleteSubstitution: async (uid, id) => {
-    await deleteUserDoc(uid, 'substitutions', id);
     set({
       substitutions: get().substitutions.filter(s => s.id !== id),
     });
+    if (uid) {
+      await deleteUserDoc(uid, 'substitutions', id);
+    }
   },
 }));
