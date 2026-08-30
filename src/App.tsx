@@ -138,7 +138,7 @@ export function App() {
   }
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-ios-light-bg dark:bg-ios-dark-bg text-slate-900 dark:text-white">
+    <div className="flex h-[100dvh] min-h-[100dvh] w-full overflow-hidden bg-ios-light-bg dark:bg-ios-dark-bg text-slate-900 dark:text-white">
       {/* iPad / Desktop Sidebar */}
       <Sidebar
         activeTab={activeTab}
@@ -146,7 +146,7 @@ export function App() {
       />
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto overscroll-none">
+      <div className="flex-1 flex flex-col min-w-0 h-[100dvh] overflow-y-auto overscroll-contain">
         {/* Top Header */}
         <TopHeader
           onOpenQuickAction={() => setIsQuickActionOpen(true)}

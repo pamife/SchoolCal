@@ -72,7 +72,10 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
             )}
 
             {/* Content Body */}
-            <div className="flex-1 overflow-y-auto p-5 pb-safe no-scrollbar">
+            <div
+              className="flex-1 overflow-y-auto overscroll-contain p-5 pb-safe"
+              style={{ WebkitOverflowScrolling: 'touch' }}
+            >
               {children}
             </div>
           </motion.div>
