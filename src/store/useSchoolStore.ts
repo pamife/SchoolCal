@@ -1,19 +1,12 @@
 import { create } from 'zustand';
 import type { Subject, Teacher, Room, ScheduleEntry, Substitution } from '../types';
-import { LocalStorageRepository } from '../services/repository/LocalStorageRepository';
 import {
-  MOCK_SUBJECTS,
-  MOCK_TEACHERS,
-  MOCK_ROOMS,
-  MOCK_SCHEDULE_ENTRIES,
-  MOCK_SUBSTITUTIONS,
-} from '../data/mockData';
-
-const subjectsRepo = new LocalStorageRepository<Subject>('subjects', MOCK_SUBJECTS);
-const teachersRepo = new LocalStorageRepository<Teacher>('teachers', MOCK_TEACHERS);
-const roomsRepo = new LocalStorageRepository<Room>('rooms', MOCK_ROOMS);
-const scheduleRepo = new LocalStorageRepository<ScheduleEntry>('schedule', MOCK_SCHEDULE_ENTRIES);
-const substRepo = new LocalStorageRepository<Substitution>('substitutions', MOCK_SUBSTITUTIONS);
+  fetchUserCollection,
+  saveUserDoc,
+  updateUserDoc,
+  deleteUserDoc,
+  saveAllUserDocs,
+} from '../services/firebase/firestoreService';
 
 interface SchoolState {
   subjects: Subject[];
@@ -23,24 +16,34 @@ interface SchoolState {
   substitutions: Substitution[];
   isLoading: boolean;
 
-  loadSchoolData: () => Promise<void>;
-  addSubject: (subject: Subject) => Promise<void>;
-  updateSubject: (id: string, updates: Partial<Subject>) => Promise<void>;
-  deleteSubject: (id: string) => Promise<void>;
-  addTeacher: (teacher: Teacher) => Promise<void>;
-  updateTeacher: (id: string, updates: Partial<Teacher>) => Promise<void>;
-  deleteTeacher: (id: string) => Promise<void>;
-  addRoom: (room: Room) => Promise<void>;
-  updateRoom: (id: string, updates: Partial<Room>) => Promise<void>;
-  deleteRoom: (id: string) => Promise<void>;
-  addScheduleEntry: (entry: ScheduleEntry) => Promise<void>;
-  updateScheduleEntry: (id: string, updates: Partial<ScheduleEntry>) => Promise<void>;
-  deleteScheduleEntry: (id: string) => Promise<void>;
-  setScheduleEntries: (entries: ScheduleEntry[]) => Promise<void>;
-  addSubstitution: (sub: Substitution) => Promise<void>;
-  updateSubstitution: (id: string, updates: Partial<Substitution>) => Promise<void>;
-  deleteSubstitution: (id: string) => Promise<void>;
-  resetToDefault: () => void;
+  loadSchoolData: (uid: string) => Promise<void>;
+  clearSchoolData: () => void;
+
+  // Subject operations
+  addSubject: (uid: string, subject: Subject) => Promise<void>;
+  updateSubject: (uid: string, id: string, updates: Partial<Subject>) => Promise<void>;
+  deleteSubject: (uid: string, id: string) => Promise<void>;
+
+  // Teacher operations
+  addTeacher: (uid: string, teacher: Teacher) => Promise<void>;
+  updateTeacher: (uid: string, id: string, updates: Partial<Teacher>) => Promise<void>;
+  deleteTeacher: (uid: string, id: string) => Promise<void>;
+
+  // Room operations
+  addRoom: (uid: string, room: Room) => Promise<void>;
+  updateRoom: (uid: string, id: string, updates: Partial<Room>) => Promise<void>;
+  deleteRoom: (uid: string, id: string) => Promise<void>;
+
+  // Schedule operations
+  addScheduleEntry: (uid: string, entry: ScheduleEntry) => Promise<void>;
+  updateScheduleEntry: (uid: string, id: string, updates: Partial<ScheduleEntry>) => Promise<void>;
+  deleteScheduleEntry: (uid: string, id: string) => Promise<void>;
+  setScheduleEntries: (uid: string, entries: ScheduleEntry[]) => Promise<void>;
+
+  // Substitution operations
+  addSubstitution: (uid: string, sub: Substitution) => Promise<void>;
+  updateSubstitution: (uid: string, id: string, updates: Partial<Substitution>) => Promise<void>;
+  deleteSubstitution: (uid: string, id: string) => Promise<void>;
 }
 
 export const useSchoolStore = create<SchoolState>((set, get) => ({
@@ -49,136 +52,138 @@ export const useSchoolStore = create<SchoolState>((set, get) => ({
   rooms: [],
   scheduleEntries: [],
   substitutions: [],
-  isLoading: true,
+  isLoading: false,
 
-  loadSchoolData: async () => {
+  loadSchoolData: async (uid: string) => {
+    if (!uid) return;
     set({ isLoading: true });
-    const [subjects, teachers, rooms, scheduleEntries, substitutions] = await Promise.all([
-      subjectsRepo.getAll(),
-      teachersRepo.getAll(),
-      roomsRepo.getAll(),
-      scheduleRepo.getAll(),
-      substRepo.getAll(),
-    ]);
+    try {
+      const [subjects, teachers, rooms, scheduleEntries, substitutions] = await Promise.all([
+        fetchUserCollection<Subject>(uid, 'subjects'),
+        fetchUserCollection<Teacher>(uid, 'teachers'),
+        fetchUserCollection<Room>(uid, 'rooms'),
+        fetchUserCollection<ScheduleEntry>(uid, 'schedule'),
+        fetchUserCollection<Substitution>(uid, 'substitutions'),
+      ]);
+      set({
+        subjects,
+        teachers,
+        rooms,
+        scheduleEntries,
+        substitutions,
+        isLoading: false,
+      });
+    } catch (err) {
+      console.error('Error loading school data from Firestore:', err);
+      set({ isLoading: false });
+    }
+  },
+
+  clearSchoolData: () => {
     set({
-      subjects,
-      teachers,
-      rooms,
-      scheduleEntries,
-      substitutions,
+      subjects: [],
+      teachers: [],
+      rooms: [],
+      scheduleEntries: [],
+      substitutions: [],
       isLoading: false,
     });
   },
 
-  addSubject: async (subject) => {
-    await subjectsRepo.create(subject);
+  addSubject: async (uid, subject) => {
+    await saveUserDoc<Subject>(uid, 'subjects', subject);
     set({ subjects: [...get().subjects, subject] });
   },
 
-  updateSubject: async (id, updates) => {
-    await subjectsRepo.update(id, updates);
+  updateSubject: async (uid, id, updates) => {
+    await updateUserDoc<Subject>(uid, 'subjects', id, updates);
     set({
       subjects: get().subjects.map(s => (s.id === id ? { ...s, ...updates } : s)),
     });
   },
 
-  deleteSubject: async (id) => {
-    await subjectsRepo.delete(id);
+  deleteSubject: async (uid, id) => {
+    await deleteUserDoc(uid, 'subjects', id);
     set({
       subjects: get().subjects.filter(s => s.id !== id),
       scheduleEntries: get().scheduleEntries.filter(e => e.subjectId !== id),
     });
   },
 
-  addTeacher: async (teacher) => {
-    await teachersRepo.create(teacher);
+  addTeacher: async (uid, teacher) => {
+    await saveUserDoc<Teacher>(uid, 'teachers', teacher);
     set({ teachers: [...get().teachers, teacher] });
   },
 
-  updateTeacher: async (id, updates) => {
-    await teachersRepo.update(id, updates);
+  updateTeacher: async (uid, id, updates) => {
+    await updateUserDoc<Teacher>(uid, 'teachers', id, updates);
     set({
       teachers: get().teachers.map(t => (t.id === id ? { ...t, ...updates } : t)),
     });
   },
 
-  deleteTeacher: async (id) => {
-    await teachersRepo.delete(id);
+  deleteTeacher: async (uid, id) => {
+    await deleteUserDoc(uid, 'teachers', id);
     set({ teachers: get().teachers.filter(t => t.id !== id) });
   },
 
-  addRoom: async (room) => {
-    await roomsRepo.create(room);
+  addRoom: async (uid, room) => {
+    await saveUserDoc<Room>(uid, 'rooms', room);
     set({ rooms: [...get().rooms, room] });
   },
 
-  updateRoom: async (id, updates) => {
-    await roomsRepo.update(id, updates);
+  updateRoom: async (uid, id, updates) => {
+    await updateUserDoc<Room>(uid, 'rooms', id, updates);
     set({
       rooms: get().rooms.map(r => (r.id === id ? { ...r, ...updates } : r)),
     });
   },
 
-  deleteRoom: async (id) => {
-    await roomsRepo.delete(id);
+  deleteRoom: async (uid, id) => {
+    await deleteUserDoc(uid, 'rooms', id);
     set({ rooms: get().rooms.filter(r => r.id !== id) });
   },
 
-  addScheduleEntry: async (entry) => {
-    await scheduleRepo.create(entry);
+  addScheduleEntry: async (uid, entry) => {
+    await saveUserDoc<ScheduleEntry>(uid, 'schedule', entry);
     set({ scheduleEntries: [...get().scheduleEntries, entry] });
   },
 
-  updateScheduleEntry: async (id, updates) => {
-    await scheduleRepo.update(id, updates);
+  updateScheduleEntry: async (uid, id, updates) => {
+    await updateUserDoc<ScheduleEntry>(uid, 'schedule', id, updates);
     set({
       scheduleEntries: get().scheduleEntries.map(e => (e.id === id ? { ...e, ...updates } : e)),
     });
   },
 
-  deleteScheduleEntry: async (id) => {
-    await scheduleRepo.delete(id);
+  deleteScheduleEntry: async (uid, id) => {
+    await deleteUserDoc(uid, 'schedule', id);
     set({
       scheduleEntries: get().scheduleEntries.filter(e => e.id !== id),
     });
   },
 
-  setScheduleEntries: async (entries) => {
-    await scheduleRepo.saveAll(entries);
+  setScheduleEntries: async (uid, entries) => {
+    await saveAllUserDocs<ScheduleEntry>(uid, 'schedule', entries);
     set({ scheduleEntries: entries });
   },
 
-  addSubstitution: async (sub) => {
-    await substRepo.create(sub);
+  addSubstitution: async (uid, sub) => {
+    await saveUserDoc<Substitution>(uid, 'substitutions', sub);
     set({ substitutions: [...get().substitutions, sub] });
   },
 
-  updateSubstitution: async (id, updates) => {
-    await substRepo.update(id, updates);
+  updateSubstitution: async (uid, id, updates) => {
+    await updateUserDoc<Substitution>(uid, 'substitutions', id, updates);
     set({
       substitutions: get().substitutions.map(s => (s.id === id ? { ...s, ...updates } : s)),
     });
   },
 
-  deleteSubstitution: async (id) => {
-    await substRepo.delete(id);
+  deleteSubstitution: async (uid, id) => {
+    await deleteUserDoc(uid, 'substitutions', id);
     set({
       substitutions: get().substitutions.filter(s => s.id !== id),
-    });
-  },
-
-  resetToDefault: () => {
-    subjectsRepo.resetToDefault();
-    teachersRepo.resetToDefault();
-    roomsRepo.resetToDefault();
-    scheduleRepo.resetToDefault();
-    substRepo.resetToDefault();
-    set({
-      subjects: MOCK_SUBJECTS,
-      teachers: MOCK_TEACHERS,
-      rooms: MOCK_ROOMS,
-      scheduleEntries: MOCK_SCHEDULE_ENTRIES,
-      substitutions: MOCK_SUBSTITUTIONS,
     });
   },
 }));

@@ -1,18 +1,20 @@
 import React, { useState } from 'react';
-import { Plus, CheckCircle2, Filter, Sparkles, BookOpen, Clock, AlertTriangle } from 'lucide-react';
+import { Plus, CheckCircle2 } from 'lucide-react';
 import { useHomeworkStore } from '../../store/useHomeworkStore';
 import { useSchoolStore } from '../../store/useSchoolStore';
+import { useAuthStore } from '../../store/useAuthStore';
 import { HomeworkCard } from './HomeworkCard';
 import { HomeworkModal } from './HomeworkModal';
 import { Button } from '../common/Button';
-import { SegmentedControl, SegmentOption } from '../common/SegmentedControl';
+import { SegmentedControl, type SegmentOption } from '../common/SegmentedControl';
 import { EmptyState } from '../common/EmptyState';
-import { Homework } from '../../types';
+import type { Homework } from '../../types';
 import { isToday, isTomorrow, isThisWeek, parseISO } from 'date-fns';
 
 type DueFilterOption = 'all' | 'today' | 'tomorrow' | 'this_week' | 'overdue' | 'done';
 
 export const HomeworkScreen: React.FC = () => {
+  const { user } = useAuthStore();
   const { homework, addHomework, updateHomework, deleteHomework, toggleComplete } = useHomeworkStore();
   const { subjects } = useSchoolStore();
 
@@ -32,9 +34,7 @@ export const HomeworkScreen: React.FC = () => {
     { id: 'done', label: 'Erledigt' },
   ];
 
-  // Filtering logic
   const filteredTasks = homework.filter((item) => {
-    // Subject filter
     if (filterSubject !== 'all' && item.subjectId !== filterSubject) {
       return false;
     }
@@ -69,6 +69,7 @@ export const HomeworkScreen: React.FC = () => {
   });
 
   const openCount = homework.filter(h => h.status !== 'done').length;
+  const uid = user?.uid || '';
 
   return (
     <div className="space-y-4 pb-24 ipad:pb-10 max-w-5xl mx-auto">
@@ -112,57 +113,59 @@ export const HomeworkScreen: React.FC = () => {
       </div>
 
       {/* Subject Pills Filter */}
-      <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1 px-1">
-        <button
-          type="button"
-          onClick={() => setFilterSubject('all')}
-          className={`px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap transition-all ${
-            filterSubject === 'all'
-              ? 'bg-gray-900 text-white dark:bg-white dark:text-gray-900'
-              : 'bg-gray-100 dark:bg-ios-dark-secondary text-gray-600 dark:text-gray-400 hover:bg-gray-200'
-          }`}
-        >
-          Alle Fächer
-        </button>
-        {subjects.map((sub) => {
-          const isSelected = filterSubject === sub.id;
-          const count = homework.filter(h => h.subjectId === sub.id && h.status !== 'done').length;
+      {subjects.length > 0 && (
+        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1 px-1">
+          <button
+            type="button"
+            onClick={() => setFilterSubject('all')}
+            className={`px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap transition-all ${
+              filterSubject === 'all'
+                ? 'bg-gray-900 text-white dark:bg-white dark:text-gray-900'
+                : 'bg-gray-100 dark:bg-ios-dark-secondary text-gray-600 dark:text-gray-400 hover:bg-gray-200'
+            }`}
+          >
+            Alle Fächer
+          </button>
+          {subjects.map((sub) => {
+            const isSelected = filterSubject === sub.id;
+            const count = homework.filter(h => h.subjectId === sub.id && h.status !== 'done').length;
 
-          return (
-            <button
-              key={sub.id}
-              type="button"
-              onClick={() => setFilterSubject(sub.id)}
-              className={`px-2.5 py-1 rounded-full text-xs font-semibold whitespace-nowrap flex items-center gap-1.5 transition-all ${
-                isSelected
-                  ? 'text-white shadow-xs'
-                  : 'bg-gray-100 dark:bg-ios-dark-secondary text-gray-700 dark:text-gray-300 hover:bg-gray-200'
-              }`}
-              style={{
-                backgroundColor: isSelected ? sub.color : undefined,
-              }}
-            >
-              <span>{sub.name}</span>
-              {count > 0 && (
-                <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${isSelected ? 'bg-white/25 text-white' : 'bg-black/10 dark:bg-white/10'}`}>
-                  {count}
-                </span>
-              )}
-            </button>
-          );
-        })}
-      </div>
+            return (
+              <button
+                key={sub.id}
+                type="button"
+                onClick={() => setFilterSubject(sub.id)}
+                className={`px-2.5 py-1 rounded-full text-xs font-semibold whitespace-nowrap flex items-center gap-1.5 transition-all ${
+                  isSelected
+                    ? 'text-white shadow-xs'
+                    : 'bg-gray-100 dark:bg-ios-dark-secondary text-gray-700 dark:text-gray-300 hover:bg-gray-200'
+                }`}
+                style={{
+                  backgroundColor: isSelected ? sub.color : undefined,
+                }}
+              >
+                <span>{sub.name}</span>
+                {count > 0 && (
+                  <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${isSelected ? 'bg-white/25 text-white' : 'bg-black/10 dark:bg-white/10'}`}>
+                    {count}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       {/* Tasks List */}
       <div className="space-y-2.5">
         {filteredTasks.length === 0 ? (
           <EmptyState
             icon={<CheckCircle2 className="w-8 h-8 text-green-500" />}
-            title="Keine Aufgaben gefunden"
+            title="Keine Aufgaben vorhanden"
             description={
               filterDue === 'done'
                 ? 'Noch keine erledigten Aufgaben in der Liste.'
-                : 'Alles erledigt oder keine Aufgaben für diesen Filter vorhanden!'
+                : 'Erstelle deine erste Schulaufgabe oder wähle einen anderen Filter.'
             }
             actionLabel={filterDue !== 'done' ? 'Aufgabe erstellen' : undefined}
             onAction={() => {
@@ -176,7 +179,7 @@ export const HomeworkScreen: React.FC = () => {
               key={item.id}
               homework={item}
               subject={subjectMap.get(item.subjectId)}
-              onToggleComplete={toggleComplete}
+              onToggleComplete={() => toggleComplete(uid, item.id)}
               onEdit={(hw) => {
                 setEditingHomework(hw);
                 setIsModalOpen(true);
@@ -192,12 +195,12 @@ export const HomeworkScreen: React.FC = () => {
         onClose={() => setIsModalOpen(false)}
         onSave={(hw) => {
           if (editingHomework) {
-            updateHomework(hw.id, hw);
+            updateHomework(uid, hw.id, hw);
           } else {
-            addHomework(hw);
+            addHomework(uid, hw);
           }
         }}
-        onDelete={(id) => deleteHomework(id)}
+        onDelete={(id) => deleteHomework(uid, id)}
         initialHomework={editingHomework}
         subjects={subjects}
       />

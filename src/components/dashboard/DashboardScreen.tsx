@@ -161,7 +161,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
           <TodayHomeworkWidget
             homework={homework}
             subjects={subjects}
-            onToggleComplete={toggleComplete}
+            onToggleComplete={(id) => toggleComplete(user?.uid || '', id)}
             onOpenHomeworkTab={() => onNavigateTab('tasks')}
             onAddHomework={() => onOpenQuickAction('homework')}
           />

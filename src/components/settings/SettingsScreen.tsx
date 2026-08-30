@@ -6,16 +6,14 @@ import {
   Moon,
   Smartphone,
   MapPin,
-  Clock,
   Download,
   Upload,
-  RefreshCw,
   Trash2,
   Check,
   ShieldCheck,
   Calendar,
-  Cloud,
   FileSpreadsheet,
+  LogOut,
 } from 'lucide-react';
 import { useSettingsStore } from '../../store/useSettingsStore';
 import { useAuthStore } from '../../store/useAuthStore';
@@ -32,25 +30,26 @@ import { generateIcsCalendar, downloadIcsFile } from '../../services/ical/icalSe
 import { format } from 'date-fns';
 
 export const SettingsScreen: React.FC = () => {
-  const { settings, setTheme, setAccentColor, setState, updateSettings, resetSettings } = useSettingsStore();
-  const { user, isFirebaseActive, updateProfile, deleteAccountAndData } = useAuthStore();
-  const { subjects, teachers, rooms, scheduleEntries, substitutions, setScheduleEntries, resetToDefault: resetSchool } = useSchoolStore();
-  const { homework, resetToDefault: resetHomework } = useHomeworkStore();
-  const { exams, resetToDefault: resetExams } = useExamStore();
-  const { events, resetToDefault: resetCalendar } = useCalendarStore();
+  const { user, logout, updateProfile, deleteAccountAndData } = useAuthStore();
+  const { settings, setTheme, setAccentColor, setState, updateSettings } = useSettingsStore();
+  const { subjects, teachers, rooms, scheduleEntries, substitutions, setScheduleEntries } = useSchoolStore();
+  const { homework } = useHomeworkStore();
+  const { exams } = useExamStore();
+  const { events } = useCalendarStore();
 
-  const [displayName, setDisplayName] = useState(user?.displayName || 'Paul Schmidt');
-  const [schoolName, setSchoolName] = useState(settings.schoolName || 'Goethe-Gymnasium');
-  const [gradeLevel, setGradeLevel] = useState(settings.gradeLevel || 'Klasse 10b');
+  const [displayName, setDisplayName] = useState(user?.displayName || '');
+  const [schoolName, setSchoolName] = useState(settings.schoolName || '');
+  const [gradeLevel, setGradeLevel] = useState(settings.gradeLevel || '');
   const [showSavedToast, setShowSavedToast] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const uid = user?.uid || '';
 
-  const handleSaveProfile = (e: React.FormEvent) => {
+  const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     updateProfile({ displayName });
-    updateSettings({ schoolName, gradeLevel });
+    await updateSettings({ schoolName, gradeLevel }, uid);
     setShowSavedToast(true);
     setTimeout(() => setShowSavedToast(false), 2500);
   };
@@ -79,11 +78,10 @@ export const SettingsScreen: React.FC = () => {
         const text = event.target?.result as string;
         const backup = parseJsonBackup(text);
         
-        // Restore all entities
-        if (backup.userSettings) updateSettings(backup.userSettings);
-        if (backup.scheduleEntries) await setScheduleEntries(backup.scheduleEntries);
+        if (backup.userSettings) await updateSettings(backup.userSettings, uid);
+        if (backup.scheduleEntries) await setScheduleEntries(uid, backup.scheduleEntries);
 
-        alert('Backup erfolgreich wiederhergestellt! Die Seite wird aktualisiert.');
+        alert('Backup erfolgreich wiederhergestellt!');
         window.location.reload();
       } catch (err: any) {
         alert('Fehler beim Importieren der Datei: ' + err.message);
@@ -92,20 +90,8 @@ export const SettingsScreen: React.FC = () => {
     reader.readAsText(file);
   };
 
-  const handleResetDemoData = () => {
-    if (window.confirm('Möchtest du alle Daten auf die realistischen Standard-Demodaten zurücksetzen?')) {
-      resetSchool();
-      resetHomework();
-      resetExams();
-      resetCalendar();
-      resetSettings();
-      alert('Demodaten wurden erfolgreich wiederhergestellt!');
-      window.location.reload();
-    }
-  };
-
   const handleDeleteAll = async () => {
-    if (window.confirm('ACHTUNG: Möchtest du deinen Account und ALLE Daten unwiderruflich löschen?')) {
+    if (window.confirm('ACHTUNG: Möchtest du deinen Account und ALLE deine Daten unwiderruflich löschen?')) {
       if (window.confirm('Bist du wirklich sicher? Diese Aktion kann nicht rückgängig gemacht werden.')) {
         setIsDeleting(true);
         await deleteAccountAndData();
@@ -130,17 +116,33 @@ export const SettingsScreen: React.FC = () => {
       {showSavedToast && (
         <div className="p-3 bg-green-500 text-white text-xs font-bold rounded-xl flex items-center gap-2 shadow-md">
           <Check className="w-4 h-4" />
-          <span>Änderungen wurden erfolgreich gespeichert!</span>
+          <span>Änderungen wurden erfolgreich in Cloud Firestore gespeichert!</span>
         </div>
       )}
 
       {/* 1. BENUTZERPROFIL & SCHULE */}
       <div className="ios-card p-5 space-y-4">
-        <div className="flex items-center gap-2.5 pb-2 border-b border-black/5 dark:border-white/10">
-          <User className="w-5 h-5 text-ios-blue" />
-          <h3 className="text-base font-bold text-gray-900 dark:text-white">
-            Schülerprofil & Schule
-          </h3>
+        <div className="flex items-center justify-between pb-2 border-b border-black/5 dark:border-white/10">
+          <div className="flex items-center gap-2.5">
+            <User className="w-5 h-5 text-ios-blue" />
+            <div>
+              <h3 className="text-base font-bold text-gray-900 dark:text-white">
+                Schülerprofil
+              </h3>
+              <p className="text-xs text-gray-400">{user?.email}</p>
+            </div>
+          </div>
+
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => logout()}
+            icon={<LogOut className="w-4 h-4" />}
+            className="text-gray-500 hover:text-red-500"
+          >
+            Abmelden
+          </Button>
         </div>
 
         <form onSubmit={handleSaveProfile} className="space-y-3.5">
@@ -151,6 +153,7 @@ export const SettingsScreen: React.FC = () => {
               </label>
               <input
                 type="text"
+                placeholder="Dein Vor- und Nachname"
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
                 className="w-full px-3.5 py-2.5 bg-gray-100 dark:bg-ios-dark-secondary rounded-xl text-sm font-semibold text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-ios-blue"
@@ -163,6 +166,7 @@ export const SettingsScreen: React.FC = () => {
               </label>
               <input
                 type="text"
+                placeholder="z.B. Goethe-Gymnasium"
                 value={schoolName}
                 onChange={(e) => setSchoolName(e.target.value)}
                 className="w-full px-3.5 py-2.5 bg-gray-100 dark:bg-ios-dark-secondary rounded-xl text-sm font-semibold text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-ios-blue"
@@ -175,6 +179,7 @@ export const SettingsScreen: React.FC = () => {
               </label>
               <input
                 type="text"
+                placeholder="z.B. Klasse 10b"
                 value={gradeLevel}
                 onChange={(e) => setGradeLevel(e.target.value)}
                 className="w-full px-3.5 py-2.5 bg-gray-100 dark:bg-ios-dark-secondary rounded-xl text-sm font-semibold text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-ios-blue"
@@ -216,7 +221,7 @@ export const SettingsScreen: React.FC = () => {
                 <button
                   key={th.id}
                   type="button"
-                  onClick={() => setTheme(th.id as any)}
+                  onClick={() => setTheme(th.id as any, uid)}
                   className={`p-3 rounded-xl flex flex-col items-center justify-center gap-1.5 font-semibold text-xs transition-all ${
                     isSelected
                       ? 'bg-ios-blue text-white shadow-sm'
@@ -241,7 +246,7 @@ export const SettingsScreen: React.FC = () => {
               <button
                 key={palette.color}
                 type="button"
-                onClick={() => setAccentColor(palette.color)}
+                onClick={() => setAccentColor(palette.color, uid)}
                 style={{ backgroundColor: palette.color }}
                 className={`w-9 h-9 rounded-full transition-transform flex items-center justify-center text-white ${
                   settings.accentColor === palette.color
@@ -277,7 +282,7 @@ export const SettingsScreen: React.FC = () => {
           </label>
           <select
             value={settings.state}
-            onChange={(e) => setState(e.target.value)}
+            onChange={(e) => setState(e.target.value, uid)}
             className="w-full px-3.5 py-2.5 bg-gray-100 dark:bg-ios-dark-secondary rounded-xl text-sm font-semibold text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-ios-blue"
           >
             {GERMAN_STATES.map((st) => (
@@ -392,41 +397,22 @@ export const SettingsScreen: React.FC = () => {
         </div>
       </div>
 
-      {/* 5. DEMODATEN & ACCOUNT LÖSCHEN */}
+      {/* 5. ACCOUNT LÖSCHEN */}
       <div className="ios-card p-5 space-y-4">
         <div className="flex items-center gap-2.5 pb-2 border-b border-black/5 dark:border-white/10">
           <ShieldCheck className="w-5 h-5 text-gray-500" />
           <h3 className="text-base font-bold text-gray-900 dark:text-white">
-            System & Datenverwaltung
+            Datenschutz & Account-Verwaltung
           </h3>
         </div>
 
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
-            <h4 className="text-sm font-semibold text-gray-900 dark:text-white">
-              Demodaten neu laden
-            </h4>
-            <p className="text-xs text-gray-500 dark:text-gray-400">
-              Setzt alle Fächer, Stundenplan, Aufgaben und Klausuren auf den Beispiel-Zustand zurück.
-            </p>
-          </div>
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={handleResetDemoData}
-            icon={<RefreshCw className="w-4 h-4" />}
-          >
-            Demodaten laden
-          </Button>
-        </div>
-
-        <div className="pt-3 border-t border-black/5 dark:border-white/10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <div>
             <h4 className="text-sm font-semibold text-red-600 dark:text-red-400">
-              Account & alle Daten löschen
+              Account & alle Cloud-Daten löschen
             </h4>
             <p className="text-xs text-gray-500 dark:text-gray-400">
-              Entfernt unwiderruflich alle gespeicherten Daten auf diesem Gerät.
+              Entfernt unwiderruflich dein Benutzerkonto und alle in Firestore gespeicherten Daten.
             </p>
           </div>
           <Button
@@ -436,7 +422,7 @@ export const SettingsScreen: React.FC = () => {
             onClick={handleDeleteAll}
             icon={<Trash2 className="w-4 h-4" />}
           >
-            Alle Daten löschen
+            {isDeleting ? 'Wird gelöscht...' : 'Account & Daten löschen'}
           </Button>
         </div>
       </div>

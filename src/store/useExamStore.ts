@@ -1,53 +1,65 @@
 import { create } from 'zustand';
 import type { Exam } from '../types';
-import { LocalStorageRepository } from '../services/repository/LocalStorageRepository';
-import { MOCK_EXAMS } from '../data/mockData';
-
-const examsRepo = new LocalStorageRepository<Exam>('exams', MOCK_EXAMS);
+import {
+  fetchUserCollection,
+  saveUserDoc,
+  updateUserDoc,
+  deleteUserDoc,
+} from '../services/firebase/firestoreService';
 
 interface ExamState {
   exams: Exam[];
   isLoading: boolean;
 
-  loadExams: () => Promise<void>;
-  addExam: (exam: Exam) => Promise<void>;
-  updateExam: (id: string, updates: Partial<Exam>) => Promise<void>;
-  deleteExam: (id: string) => Promise<void>;
-  toggleExamTopic: (examId: string, topicId: string) => Promise<void>;
-  updateStudyProgress: (examId: string, progress: number) => Promise<void>;
-  resetToDefault: () => void;
+  loadExams: (uid: string) => Promise<void>;
+  clearExams: () => void;
+  addExam: (uid: string, exam: Exam) => Promise<void>;
+  updateExam: (uid: string, id: string, updates: Partial<Exam>) => Promise<void>;
+  deleteExam: (uid: string, id: string) => Promise<void>;
+  toggleExamTopic: (uid: string, examId: string, topicId: string) => Promise<void>;
+  updateStudyProgress: (uid: string, examId: string, progress: number) => Promise<void>;
 }
 
 export const useExamStore = create<ExamState>((set, get) => ({
   exams: [],
-  isLoading: true,
+  isLoading: false,
 
-  loadExams: async () => {
+  loadExams: async (uid: string) => {
+    if (!uid) return;
     set({ isLoading: true });
-    const items = await examsRepo.getAll();
-    items.sort((a, b) => a.date.localeCompare(b.date));
-    set({ exams: items, isLoading: false });
+    try {
+      const items = await fetchUserCollection<Exam>(uid, 'exams');
+      items.sort((a, b) => a.date.localeCompare(b.date));
+      set({ exams: items, isLoading: false });
+    } catch (err) {
+      console.error('Error loading exams from Firestore:', err);
+      set({ isLoading: false });
+    }
   },
 
-  addExam: async (exam) => {
-    await examsRepo.create(exam);
+  clearExams: () => {
+    set({ exams: [], isLoading: false });
+  },
+
+  addExam: async (uid, exam) => {
+    await saveUserDoc<Exam>(uid, 'exams', exam);
     const updated = [...get().exams, exam].sort((a, b) => a.date.localeCompare(b.date));
     set({ exams: updated });
   },
 
-  updateExam: async (id, updates) => {
-    await examsRepo.update(id, updates);
+  updateExam: async (uid, id, updates) => {
+    await updateUserDoc<Exam>(uid, 'exams', id, updates);
     const updated = get().exams.map(e => (e.id === id ? { ...e, ...updates } : e))
       .sort((a, b) => a.date.localeCompare(b.date));
     set({ exams: updated });
   },
 
-  deleteExam: async (id) => {
-    await examsRepo.delete(id);
+  deleteExam: async (uid, id) => {
+    await deleteUserDoc(uid, 'exams', id);
     set({ exams: get().exams.filter(e => e.id !== id) });
   },
 
-  toggleExamTopic: async (examId, topicId) => {
+  toggleExamTopic: async (uid, examId, topicId) => {
     const exam = get().exams.find(e => e.id === examId);
     if (!exam) return;
 
@@ -60,18 +72,13 @@ export const useExamStore = create<ExamState>((set, get) => ({
       ? Math.round((completedCount / newTopics.length) * 100)
       : exam.studyProgress;
 
-    await get().updateExam(examId, {
+    await get().updateExam(uid, examId, {
       topics: newTopics,
       studyProgress: calculatedProgress,
     });
   },
 
-  updateStudyProgress: async (examId, progress) => {
-    await get().updateExam(examId, { studyProgress: Math.min(100, Math.max(0, progress)) });
-  },
-
-  resetToDefault: () => {
-    examsRepo.resetToDefault();
-    set({ exams: MOCK_EXAMS });
+  updateStudyProgress: async (uid, examId, progress) => {
+    await get().updateExam(uid, examId, { studyProgress: Math.min(100, Math.max(0, progress)) });
   },
 }));

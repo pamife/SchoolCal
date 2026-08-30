@@ -1,18 +1,19 @@
 import { create } from 'zustand';
 import type { UserSettings } from '../types';
 import { DEFAULT_USER_SETTINGS } from '../data/mockData';
+import { fetchUserDoc, saveUserDoc } from '../services/firebase/firestoreService';
 
 interface SettingsState {
   settings: UserSettings;
   activeTab: string;
+  isLoading: boolean;
 
-  loadSettings: () => void;
-  updateSettings: (updates: Partial<UserSettings>) => void;
-  setTheme: (theme: 'light' | 'dark' | 'system') => void;
-  setAccentColor: (color: string) => void;
-  setState: (state: string) => void;
+  loadSettings: (uid?: string) => Promise<void>;
+  updateSettings: (updates: Partial<UserSettings>, uid?: string) => Promise<void>;
+  setTheme: (theme: 'light' | 'dark' | 'system', uid?: string) => void;
+  setAccentColor: (color: string, uid?: string) => void;
+  setState: (state: string, uid?: string) => void;
   setActiveTab: (tab: string) => void;
-  resetSettings: () => void;
 }
 
 const STORAGE_KEY = 'schoolcal_user_settings';
@@ -41,8 +42,10 @@ function applyThemeAndAccent(settings: UserSettings) {
 export const useSettingsStore = create<SettingsState>((set, get) => ({
   settings: DEFAULT_USER_SETTINGS,
   activeTab: 'today',
+  isLoading: false,
 
-  loadSettings: () => {
+  loadSettings: async (uid?: string) => {
+    // 1. Try local cache first for instant render
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
@@ -50,41 +53,65 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
         const merged = { ...DEFAULT_USER_SETTINGS, ...parsed };
         set({ settings: merged });
         applyThemeAndAccent(merged);
-        return;
       }
     } catch {
       // ignore
     }
-    set({ settings: DEFAULT_USER_SETTINGS });
-    applyThemeAndAccent(DEFAULT_USER_SETTINGS);
+
+    // 2. If authenticated, fetch from Firestore
+    if (uid) {
+      set({ isLoading: true });
+      try {
+        const remoteSettings = await fetchUserDoc<UserSettings & { id: string }>(
+          uid,
+          'settings',
+          'current'
+        );
+        if (remoteSettings) {
+          const merged = { ...DEFAULT_USER_SETTINGS, ...remoteSettings };
+          set({ settings: merged, isLoading: false });
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+          applyThemeAndAccent(merged);
+          return;
+        }
+      } catch (err) {
+        console.error('Error fetching settings from Firestore:', err);
+      }
+      set({ isLoading: false });
+    }
   },
 
-  updateSettings: (updates) => {
+  updateSettings: async (updates, uid?: string) => {
     const newSettings = { ...get().settings, ...updates };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(newSettings));
     set({ settings: newSettings });
     applyThemeAndAccent(newSettings);
+
+    if (uid) {
+      try {
+        await saveUserDoc<UserSettings & { id: string }>(uid, 'settings', {
+          id: 'current',
+          ...newSettings,
+        });
+      } catch (err) {
+        console.error('Error saving settings to Firestore:', err);
+      }
+    }
   },
 
-  setTheme: (theme) => {
-    get().updateSettings({ theme });
+  setTheme: (theme, uid?: string) => {
+    get().updateSettings({ theme }, uid);
   },
 
-  setAccentColor: (accentColor) => {
-    get().updateSettings({ accentColor });
+  setAccentColor: (accentColor, uid?: string) => {
+    get().updateSettings({ accentColor }, uid);
   },
 
-  setState: (state) => {
-    get().updateSettings({ state });
+  setState: (state, uid?: string) => {
+    get().updateSettings({ state }, uid);
   },
 
   setActiveTab: (activeTab) => {
     set({ activeTab });
-  },
-
-  resetSettings: () => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(DEFAULT_USER_SETTINGS));
-    set({ settings: DEFAULT_USER_SETTINGS });
-    applyThemeAndAccent(DEFAULT_USER_SETTINGS);
   },
 }));

@@ -1,10 +1,12 @@
 import { create } from 'zustand';
 import type { Homework, PriorityLevel, TaskStatus } from '../types';
-import { LocalStorageRepository } from '../services/repository/LocalStorageRepository';
-import { MOCK_HOMEWORK } from '../data/mockData';
+import {
+  fetchUserCollection,
+  saveUserDoc,
+  updateUserDoc,
+  deleteUserDoc,
+} from '../services/firebase/firestoreService';
 import confetti from 'canvas-confetti';
-
-const homeworkRepo = new LocalStorageRepository<Homework>('homework', MOCK_HOMEWORK);
 
 interface HomeworkFilter {
   status: 'all' | 'todo' | 'in_progress' | 'done';
@@ -18,19 +20,19 @@ interface HomeworkState {
   isLoading: boolean;
   filter: HomeworkFilter;
 
-  loadHomework: () => Promise<void>;
-  addHomework: (item: Homework) => Promise<void>;
-  updateHomework: (id: string, updates: Partial<Homework>) => Promise<void>;
-  deleteHomework: (id: string) => Promise<void>;
-  toggleComplete: (id: string) => Promise<void>;
+  loadHomework: (uid: string) => Promise<void>;
+  clearHomework: () => void;
+  addHomework: (uid: string, item: Homework) => Promise<void>;
+  updateHomework: (uid: string, id: string, updates: Partial<Homework>) => Promise<void>;
+  deleteHomework: (uid: string, id: string) => Promise<void>;
+  toggleComplete: (uid: string, id: string) => Promise<void>;
   setFilter: (filterUpdates: Partial<HomeworkFilter>) => void;
   resetFilter: () => void;
-  resetToDefault: () => void;
 }
 
 export const useHomeworkStore = create<HomeworkState>((set, get) => ({
   homework: [],
-  isLoading: true,
+  isLoading: false,
   filter: {
     status: 'all',
     subjectId: 'all',
@@ -38,30 +40,40 @@ export const useHomeworkStore = create<HomeworkState>((set, get) => ({
     dueFilter: 'all',
   },
 
-  loadHomework: async () => {
+  loadHomework: async (uid: string) => {
+    if (!uid) return;
     set({ isLoading: true });
-    const items = await homeworkRepo.getAll();
-    set({ homework: items, isLoading: false });
+    try {
+      const items = await fetchUserCollection<Homework>(uid, 'homework');
+      set({ homework: items, isLoading: false });
+    } catch (err) {
+      console.error('Error loading homework from Firestore:', err);
+      set({ isLoading: false });
+    }
   },
 
-  addHomework: async (item) => {
-    await homeworkRepo.create(item);
+  clearHomework: () => {
+    set({ homework: [], isLoading: false });
+  },
+
+  addHomework: async (uid, item) => {
+    await saveUserDoc<Homework>(uid, 'homework', item);
     set({ homework: [item, ...get().homework] });
   },
 
-  updateHomework: async (id, updates) => {
-    await homeworkRepo.update(id, updates);
+  updateHomework: async (uid, id, updates) => {
+    await updateUserDoc<Homework>(uid, 'homework', id, updates);
     set({
       homework: get().homework.map(h => (h.id === id ? { ...h, ...updates } : h)),
     });
   },
 
-  deleteHomework: async (id) => {
-    await homeworkRepo.delete(id);
+  deleteHomework: async (uid, id) => {
+    await deleteUserDoc(uid, 'homework', id);
     set({ homework: get().homework.filter(h => h.id !== id) });
   },
 
-  toggleComplete: async (id) => {
+  toggleComplete: async (uid, id) => {
     const item = get().homework.find(h => h.id === id);
     if (!item) return;
 
@@ -77,11 +89,11 @@ export const useHomeworkStore = create<HomeworkState>((set, get) => ({
           colors: ['#007AFF', '#34C759', '#FF9500', '#AF52DE'],
         });
       } catch {
-        // Fallback silently if canvas not available
+        // ignore
       }
     }
 
-    await get().updateHomework(id, { status: newStatus, completedAt });
+    await get().updateHomework(uid, id, { status: newStatus, completedAt });
   },
 
   setFilter: (filterUpdates) => {
@@ -97,10 +109,5 @@ export const useHomeworkStore = create<HomeworkState>((set, get) => ({
         dueFilter: 'all',
       },
     });
-  },
-
-  resetToDefault: () => {
-    homeworkRepo.resetToDefault();
-    set({ homework: MOCK_HOMEWORK });
   },
 }));

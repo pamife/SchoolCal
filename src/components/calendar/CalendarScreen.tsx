@@ -1,17 +1,18 @@
 import React, { useState } from 'react';
-import { ChevronLeft, ChevronRight, Plus, Calendar as CalendarIcon, Download } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Download } from 'lucide-react';
 import { useCalendarStore } from '../../store/useCalendarStore';
 import { useSchoolStore } from '../../store/useSchoolStore';
 import { useExamStore } from '../../store/useExamStore';
 import { useHomeworkStore } from '../../store/useHomeworkStore';
-import { SegmentedControl, SegmentOption } from '../common/SegmentedControl';
+import { useAuthStore } from '../../store/useAuthStore';
+import { SegmentedControl, type SegmentOption } from '../common/SegmentedControl';
 import { Button } from '../common/Button';
 import { WeekView } from './WeekView';
 import { DayView } from './DayView';
 import { ThreeDayView } from './ThreeDayView';
 import { MonthView } from './MonthView';
 import { EventModal } from './EventModal';
-import { CalendarEvent, CalendarViewType, Exam, ScheduleEntry } from '../../types';
+import type { CalendarEvent, CalendarViewType, Exam, ScheduleEntry } from '../../types';
 import { getWeekDays, formatGermanDate } from '../../utils/dateUtils';
 import { generateIcsCalendar, downloadIcsFile } from '../../services/ical/icalService';
 import { format } from 'date-fns';
@@ -26,6 +27,7 @@ export const CalendarScreen: React.FC<CalendarScreenProps> = ({
   onSelectScheduleEntry,
   onSelectExam,
 }) => {
+  const { user } = useAuthStore();
   const {
     events,
     selectedDate,
@@ -47,6 +49,8 @@ export const CalendarScreen: React.FC<CalendarScreenProps> = ({
   const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
   const [modalInitialDate, setModalInitialDate] = useState<Date>(selectedDate);
 
+  const uid = user?.uid || '';
+
   const viewOptions: SegmentOption<CalendarViewType>[] = [
     { id: 'day', label: 'Tag' },
     { id: '3days', label: '3 Tage' },
@@ -56,7 +60,6 @@ export const CalendarScreen: React.FC<CalendarScreenProps> = ({
 
   const weekDays = getWeekDays(selectedDate, true);
 
-  // Title header text based on active view
   let headerTitle = '';
   if (viewType === 'day') {
     headerTitle = formatGermanDate(selectedDate, 'EEEE, d. MMMM');
@@ -242,12 +245,12 @@ export const CalendarScreen: React.FC<CalendarScreenProps> = ({
         onClose={() => setIsEventModalOpen(false)}
         onSave={(evt) => {
           if (editingEvent) {
-            updateEvent(evt.id, evt);
+            updateEvent(uid, evt.id, evt);
           } else {
-            addEvent(evt);
+            addEvent(uid, evt);
           }
         }}
-        onDelete={(id) => deleteEvent(id)}
+        onDelete={(id) => deleteEvent(uid, id)}
         initialEvent={editingEvent}
         initialDate={modalInitialDate}
         subjects={subjects}

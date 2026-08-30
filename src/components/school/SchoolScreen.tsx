@@ -6,16 +6,12 @@ import {
   RefreshCw,
   Plus,
   Download,
-  Upload,
-  Clock,
-  Sparkles,
-  Trash2,
   Edit2,
-  Calendar,
-  AlertCircle,
+  Trash2,
 } from 'lucide-react';
 import { useSchoolStore } from '../../store/useSchoolStore';
-import { SegmentedControl, SegmentOption } from '../common/SegmentedControl';
+import { useAuthStore } from '../../store/useAuthStore';
+import { SegmentedControl, type SegmentOption } from '../common/SegmentedControl';
 import { Button } from '../common/Button';
 import { Badge } from '../common/Badge';
 import { getSubjectIcon, hexToRgba } from '../../utils/colorUtils';
@@ -25,11 +21,13 @@ import { SubstitutionModal } from './SubstitutionModal';
 import { SubjectModal } from './SubjectModal';
 import { TeacherModal } from './TeacherModal';
 import { RoomModal } from './RoomModal';
-import { Subject, Teacher, Room, ScheduleEntry, Substitution } from '../../types';
+import { EmptyState } from '../common/EmptyState';
+import type { Subject, Teacher, Room, ScheduleEntry, Substitution } from '../../types';
 
 type SchoolSubTab = 'schedule' | 'subjects' | 'teachers' | 'rooms' | 'substitutions';
 
 export const SchoolScreen: React.FC = () => {
+  const { user } = useAuthStore();
   const {
     subjects,
     teachers,
@@ -72,6 +70,8 @@ export const SchoolScreen: React.FC = () => {
 
   const [isRoomModalOpen, setIsRoomModalOpen] = useState(false);
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
+
+  const uid = user?.uid || '';
 
   const tabs: SegmentOption<SchoolSubTab>[] = [
     { id: 'schedule', label: 'Stundenplan' },
@@ -121,15 +121,17 @@ export const SchoolScreen: React.FC = () => {
         {/* Tab specific primary action button */}
         {activeTab === 'schedule' && (
           <div className="flex items-center gap-2 shrink-0">
-            <button
-              type="button"
-              onClick={handleExportCsv}
-              className="p-2 bg-gray-100 dark:bg-ios-dark-secondary text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-ios-dark-tertiary rounded-ios transition-colors text-xs font-semibold flex items-center gap-1.5"
-              title="Als CSV herunterladen"
-            >
-              <Download className="w-4 h-4" />
-              <span className="hidden sm:inline">CSV Export</span>
-            </button>
+            {scheduleEntries.length > 0 && (
+              <button
+                type="button"
+                onClick={handleExportCsv}
+                className="p-2 bg-gray-100 dark:bg-ios-dark-secondary text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-ios-dark-tertiary rounded-ios transition-colors text-xs font-semibold flex items-center gap-1.5"
+                title="Als CSV herunterladen"
+              >
+                <Download className="w-4 h-4" />
+                <span className="hidden sm:inline">CSV Export</span>
+              </button>
+            )}
             <Button
               variant="primary"
               size="sm"
@@ -206,7 +208,6 @@ export const SchoolScreen: React.FC = () => {
       {/* 1. STUNDENPLAN MATRIX VIEW */}
       {activeTab === 'schedule' && (
         <div className="ios-card overflow-hidden">
-          {/* Schedule Table */}
           <div className="overflow-x-auto no-scrollbar">
             <div className="min-w-[640px]">
               {/* Header row */}
@@ -228,14 +229,12 @@ export const SchoolScreen: React.FC = () => {
               <div className="divide-y divide-black/5 dark:divide-white/5">
                 {periods.map((periodNum) => (
                   <div key={periodNum} className="grid grid-cols-6 items-stretch min-h-[68px]">
-                    {/* Period number column */}
                     <div className="p-2 flex flex-col items-center justify-center border-r border-black/5 dark:border-white/5 bg-gray-50/40 dark:bg-ios-dark-secondary/40">
                       <span className="text-xs font-bold text-gray-800 dark:text-gray-200">
                         {periodNum}. Std
                       </span>
                     </div>
 
-                    {/* 5 Day Cells */}
                     {days.map((day) => {
                       const entry = scheduleEntries.find(
                         e => e.dayOfWeek === day.id && e.period === periodNum
@@ -243,7 +242,6 @@ export const SchoolScreen: React.FC = () => {
                       const subject = entry ? subjectMap.get(entry.subjectId) : undefined;
                       const teacher = entry?.teacherId ? teacherMap.get(entry.teacherId) : undefined;
                       const room = entry?.roomId ? roomMap.get(entry.roomId) : undefined;
-                      const Icon = subject ? getSubjectIcon(subject.icon) : Clock;
 
                       return (
                         <div
@@ -288,135 +286,180 @@ export const SchoolScreen: React.FC = () => {
 
       {/* 2. FÄCHER LIST VIEW */}
       {activeTab === 'subjects' && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-          {subjects.map((sub) => {
-            const Icon = getSubjectIcon(sub.icon);
-            const teacher = sub.teacherId ? teacherMap.get(sub.teacherId) : undefined;
-            const room = sub.defaultRoomId ? roomMap.get(sub.defaultRoomId) : undefined;
-            const countLessons = scheduleEntries.filter(e => e.subjectId === sub.id).length;
+        <div>
+          {subjects.length === 0 ? (
+            <EmptyState
+              icon={<BookOpen className="w-8 h-8 text-ios-blue" />}
+              title="Noch keine Schulfächer angelegt"
+              description="Lege deine Schulfächer wie Mathe, Deutsch oder Englisch mit eigener Farbe an."
+              actionLabel="Erstes Fach erstellen"
+              onAction={() => {
+                setSelectedSubject(null);
+                setIsSubjectModalOpen(true);
+              }}
+            />
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+              {subjects.map((sub) => {
+                const Icon = getSubjectIcon(sub.icon);
+                const teacher = sub.teacherId ? teacherMap.get(sub.teacherId) : undefined;
+                const room = sub.defaultRoomId ? roomMap.get(sub.defaultRoomId) : undefined;
+                const countLessons = scheduleEntries.filter(e => e.subjectId === sub.id).length;
 
-            return (
-              <div
-                key={sub.id}
-                onClick={() => {
-                  setSelectedSubject(sub);
-                  setIsSubjectModalOpen(true);
-                }}
-                className="ios-card p-4 flex items-start justify-between gap-3 cursor-pointer hover:shadow-md transition-all group"
-              >
-                <div className="flex items-start gap-3 min-w-0">
+                return (
                   <div
-                    className="w-12 h-12 rounded-2xl flex items-center justify-center text-white shrink-0 shadow-xs"
-                    style={{ backgroundColor: sub.color }}
+                    key={sub.id}
+                    onClick={() => {
+                      setSelectedSubject(sub);
+                      setIsSubjectModalOpen(true);
+                    }}
+                    className="ios-card p-4 flex items-start justify-between gap-3 cursor-pointer hover:shadow-md transition-all group"
                   >
-                    <Icon className="w-6 h-6" />
-                  </div>
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-1.5">
-                      <h4 className="text-sm font-bold text-gray-900 dark:text-white truncate">
-                        {sub.name}
-                      </h4>
-                      <Badge variant="gray" size="sm">
-                        {sub.shortName}
-                      </Badge>
-                    </div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 space-y-0.5">
-                      {teacher && <div>Lehrer: {teacher.name}</div>}
-                      {room && <div>Raum: {room.name}</div>}
-                      <div className="text-[11px] text-ios-blue font-medium">
-                        {countLessons} Std. pro Woche
+                    <div className="flex items-start gap-3 min-w-0">
+                      <div
+                        className="w-12 h-12 rounded-2xl flex items-center justify-center text-white shrink-0 shadow-xs"
+                        style={{ backgroundColor: sub.color }}
+                      >
+                        <Icon className="w-6 h-6" />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <h4 className="text-sm font-bold text-gray-900 dark:text-white truncate">
+                            {sub.name}
+                          </h4>
+                          <Badge variant="gray" size="sm">
+                            {sub.shortName}
+                          </Badge>
+                        </div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 space-y-0.5">
+                          {teacher && <div>Lehrer: {teacher.name}</div>}
+                          {room && <div>Raum: {room.name}</div>}
+                          <div className="text-[11px] text-ios-blue font-medium">
+                            {countLessons} Std. pro Woche
+                          </div>
+                        </div>
                       </div>
                     </div>
+                    <Edit2 className="w-4 h-4 text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-200 transition-colors shrink-0 mt-1" />
                   </div>
-                </div>
-                <Edit2 className="w-4 h-4 text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-200 transition-colors shrink-0 mt-1" />
-              </div>
-            );
-          })}
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
 
       {/* 3. LEHRER LIST VIEW */}
       {activeTab === 'teachers' && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-          {teachers.map((teach) => {
-            const teacherSubjects = subjects.filter(s => teach.subjects?.includes(s.id) || s.teacherId === teach.id);
+        <div>
+          {teachers.length === 0 ? (
+            <EmptyState
+              icon={<User className="w-8 h-8 text-indigo-500" />}
+              title="Noch keine Lehrkräfte eingetragen"
+              description="Füge deine Fachlehrer mit Namen und Kürzel hinzu."
+              actionLabel="Lehrkraft hinzufügen"
+              onAction={() => {
+                setSelectedTeacher(null);
+                setIsTeacherModalOpen(true);
+              }}
+            />
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+              {teachers.map((teach) => {
+                const teacherSubjects = subjects.filter(s => teach.subjects?.includes(s.id) || s.teacherId === teach.id);
 
-            return (
-              <div
-                key={teach.id}
-                onClick={() => {
-                  setSelectedTeacher(teach);
-                  setIsTeacherModalOpen(true);
-                }}
-                className="ios-card p-4 flex items-start justify-between gap-3 cursor-pointer hover:shadow-md transition-all group"
-              >
-                <div className="flex items-start gap-3 min-w-0">
-                  <div className="w-11 h-11 rounded-2xl bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold text-sm shrink-0">
-                    {teach.shortName || teach.name.slice(0, 2).toUpperCase()}
-                  </div>
-                  <div className="min-w-0">
-                    <h4 className="text-sm font-bold text-gray-900 dark:text-white truncate">
-                      {teach.name}
-                    </h4>
-                    {teach.email && (
-                      <p className="text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5">
-                        {teach.email}
-                      </p>
-                    )}
-                    <div className="flex flex-wrap gap-1 mt-2">
-                      {teacherSubjects.map((s) => (
-                        <span
-                          key={s.id}
-                          className="text-[10px] font-bold px-1.5 py-0.5 rounded text-white"
-                          style={{ backgroundColor: s.color }}
-                        >
-                          {s.shortName}
-                        </span>
-                      ))}
+                return (
+                  <div
+                    key={teach.id}
+                    onClick={() => {
+                      setSelectedTeacher(teach);
+                      setIsTeacherModalOpen(true);
+                    }}
+                    className="ios-card p-4 flex items-start justify-between gap-3 cursor-pointer hover:shadow-md transition-all group"
+                  >
+                    <div className="flex items-start gap-3 min-w-0">
+                      <div className="w-11 h-11 rounded-2xl bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold text-sm shrink-0">
+                        {teach.shortName || teach.name.slice(0, 2).toUpperCase()}
+                      </div>
+                      <div className="min-w-0">
+                        <h4 className="text-sm font-bold text-gray-900 dark:text-white truncate">
+                          {teach.name}
+                        </h4>
+                        {teach.email && (
+                          <p className="text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5">
+                            {teach.email}
+                          </p>
+                        )}
+                        <div className="flex flex-wrap gap-1 mt-2">
+                          {teacherSubjects.map((s) => (
+                            <span
+                              key={s.id}
+                              className="text-[10px] font-bold px-1.5 py-0.5 rounded text-white"
+                              style={{ backgroundColor: s.color }}
+                            >
+                              {s.shortName}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
                     </div>
+                    <Edit2 className="w-4 h-4 text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-200 transition-colors shrink-0 mt-1" />
                   </div>
-                </div>
-                <Edit2 className="w-4 h-4 text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-200 transition-colors shrink-0 mt-1" />
-              </div>
-            );
-          })}
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
 
       {/* 4. RÄUME LIST VIEW */}
       {activeTab === 'rooms' && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-          {rooms.map((rm) => (
-            <div
-              key={rm.id}
-              onClick={() => {
-                setSelectedRoom(rm);
+        <div>
+          {rooms.length === 0 ? (
+            <EmptyState
+              icon={<MapPin className="w-8 h-8 text-teal-500" />}
+              title="Noch keine Räume erfasst"
+              description="Erfasse deine Klassenräume, Fachsäle oder Sporthallen."
+              actionLabel="Raum erfassen"
+              onAction={() => {
+                setSelectedRoom(null);
                 setIsRoomModalOpen(true);
               }}
-              className="ios-card p-4 flex items-start justify-between gap-3 cursor-pointer hover:shadow-md transition-all group"
-            >
-              <div className="flex items-start gap-3 min-w-0">
-                <div className="w-11 h-11 rounded-2xl bg-teal-500/15 text-teal-600 dark:text-teal-400 flex items-center justify-center shrink-0">
-                  <MapPin className="w-5 h-5" />
+            />
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+              {rooms.map((rm) => (
+                <div
+                  key={rm.id}
+                  onClick={() => {
+                    setSelectedRoom(rm);
+                    setIsRoomModalOpen(true);
+                  }}
+                  className="ios-card p-4 flex items-start justify-between gap-3 cursor-pointer hover:shadow-md transition-all group"
+                >
+                  <div className="flex items-start gap-3 min-w-0">
+                    <div className="w-11 h-11 rounded-2xl bg-teal-500/15 text-teal-600 dark:text-teal-400 flex items-center justify-center shrink-0">
+                      <MapPin className="w-5 h-5" />
+                    </div>
+                    <div className="min-w-0">
+                      <h4 className="text-sm font-bold text-gray-900 dark:text-white truncate">
+                        {rm.name}
+                      </h4>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                        {rm.building || 'Haupttrakt'} {rm.floor ? `• ${rm.floor}` : ''}
+                      </p>
+                      {rm.notes && (
+                        <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-1 truncate">
+                          {rm.notes}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <Edit2 className="w-4 h-4 text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-200 transition-colors shrink-0 mt-1" />
                 </div>
-                <div className="min-w-0">
-                  <h4 className="text-sm font-bold text-gray-900 dark:text-white truncate">
-                    {rm.name}
-                  </h4>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                    {rm.building || 'Haupttrakt'} {rm.floor ? `• ${rm.floor}` : ''}
-                  </p>
-                  {rm.notes && (
-                    <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-1 truncate">
-                      {rm.notes}
-                    </p>
-                  )}
-                </div>
-              </div>
-              <Edit2 className="w-4 h-4 text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-200 transition-colors shrink-0 mt-1" />
+              ))}
             </div>
-          ))}
+          )}
         </div>
       )}
 
@@ -424,9 +467,16 @@ export const SchoolScreen: React.FC = () => {
       {activeTab === 'substitutions' && (
         <div className="space-y-3">
           {substitutions.length === 0 ? (
-            <div className="ios-card p-8 text-center text-sm text-gray-400">
-              Keine Vertretungen oder Stundenausfälle eingetragen.
-            </div>
+            <EmptyState
+              icon={<RefreshCw className="w-8 h-8 text-amber-500" />}
+              title="Keine Vertretungen eingetragen"
+              description="Hier siehst du geänderte Räume, Vertretungslehrer oder Entfall."
+              actionLabel="Vertretung erfassen"
+              onAction={() => {
+                setSelectedSubst(null);
+                setIsSubstModalOpen(true);
+              }}
+            />
           ) : (
             substitutions.map((subst) => {
               const entry = scheduleEntries.find(e => e.id === subst.scheduleEntryId);
@@ -494,12 +544,12 @@ export const SchoolScreen: React.FC = () => {
         onClose={() => setIsScheduleModalOpen(false)}
         onSave={(entry) => {
           if (selectedEntry) {
-            updateScheduleEntry(entry.id, entry);
+            updateScheduleEntry(uid, entry.id, entry);
           } else {
-            addScheduleEntry(entry);
+            addScheduleEntry(uid, entry);
           }
         }}
-        onDelete={(id) => deleteScheduleEntry(id)}
+        onDelete={(id) => deleteScheduleEntry(uid, id)}
         initialEntry={selectedEntry}
         initialDay={selectedDay}
         initialPeriod={selectedPeriod}
@@ -513,12 +563,12 @@ export const SchoolScreen: React.FC = () => {
         onClose={() => setIsSubstModalOpen(false)}
         onSave={(sub) => {
           if (selectedSubst) {
-            updateSubstitution(sub.id, sub);
+            updateSubstitution(uid, sub.id, sub);
           } else {
-            addSubstitution(sub);
+            addSubstitution(uid, sub);
           }
         }}
-        onDelete={(id) => deleteSubstitution(id)}
+        onDelete={(id) => deleteSubstitution(uid, id)}
         initialSubstitution={selectedSubst}
         scheduleEntries={scheduleEntries}
         subjects={subjects}
@@ -531,12 +581,12 @@ export const SchoolScreen: React.FC = () => {
         onClose={() => setIsSubjectModalOpen(false)}
         onSave={(sub) => {
           if (selectedSubject) {
-            updateSubject(sub.id, sub);
+            updateSubject(uid, sub.id, sub);
           } else {
-            addSubject(sub);
+            addSubject(uid, sub);
           }
         }}
-        onDelete={(id) => deleteSubject(id)}
+        onDelete={(id) => deleteSubject(uid, id)}
         initialSubject={selectedSubject}
         teachers={teachers}
         rooms={rooms}
@@ -547,12 +597,12 @@ export const SchoolScreen: React.FC = () => {
         onClose={() => setIsTeacherModalOpen(false)}
         onSave={(teach) => {
           if (selectedTeacher) {
-            updateTeacher(teach.id, teach);
+            updateTeacher(uid, teach.id, teach);
           } else {
-            addTeacher(teach);
+            addTeacher(uid, teach);
           }
         }}
-        onDelete={(id) => deleteTeacher(id)}
+        onDelete={(id) => deleteTeacher(uid, id)}
         initialTeacher={selectedTeacher}
         subjects={subjects}
       />
@@ -562,12 +612,12 @@ export const SchoolScreen: React.FC = () => {
         onClose={() => setIsRoomModalOpen(false)}
         onSave={(room) => {
           if (selectedRoom) {
-            updateRoom(room.id, room);
+            updateRoom(uid, room.id, room);
           } else {
-            addRoom(room);
+            addRoom(uid, room);
           }
         }}
-        onDelete={(id) => deleteRoom(id)}
+        onDelete={(id) => deleteRoom(uid, id)}
         initialRoom={selectedRoom}
       />
     </div>

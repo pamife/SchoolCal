@@ -4,13 +4,14 @@ import { useHomeworkStore } from './store/useHomeworkStore';
 import { useExamStore } from './store/useExamStore';
 import { useCalendarStore } from './store/useCalendarStore';
 import { useSettingsStore } from './store/useSettingsStore';
-import { useSearchStore } from './store/useSearchStore';
+import { useAuthStore } from './store/useAuthStore';
 
 import { MobileNavBar } from './components/layout/MobileNavBar';
 import { Sidebar } from './components/layout/Sidebar';
 import { TopHeader } from './components/layout/TopHeader';
 import { QuickActionSheet } from './components/layout/QuickActionSheet';
 import { GlobalSearchModal } from './components/search/GlobalSearchModal';
+import { AuthScreen } from './components/auth/AuthScreen';
 
 import { DashboardScreen } from './components/dashboard/DashboardScreen';
 import { CalendarScreen } from './components/calendar/CalendarScreen';
@@ -24,7 +25,8 @@ import { ExamModal } from './components/exams/ExamModal';
 import { ScheduleEntryModal } from './components/school/ScheduleEntryModal';
 import { SubstitutionModal } from './components/school/SubstitutionModal';
 
-import { NavigationTab, QuickActionType, ScheduleEntry, Exam, Homework, CalendarEvent } from './types';
+import type { NavigationTab, QuickActionType, ScheduleEntry, Exam } from './types';
+import { BookOpen } from 'lucide-react';
 
 export function App() {
   const [activeTab, setActiveTab] = useState<NavigationTab>('today');
@@ -40,19 +42,49 @@ export function App() {
   const [selectedScheduleEntry, setSelectedScheduleEntry] = useState<ScheduleEntry | null>(null);
   const [selectedExam, setSelectedExam] = useState<Exam | null>(null);
 
-  const { loadSchoolData, subjects, teachers, rooms, scheduleEntries, addScheduleEntry, updateScheduleEntry, deleteScheduleEntry, addSubstitution } = useSchoolStore();
-  const { loadHomework, addHomework } = useHomeworkStore();
-  const { loadExams, addExam, updateExam, deleteExam } = useExamStore();
-  const { loadEvents, addEvent } = useCalendarStore();
+  const { user, isAuthenticated, isLoading, initAuthListener } = useAuthStore();
+
+  const {
+    subjects,
+    teachers,
+    rooms,
+    scheduleEntries,
+    loadSchoolData,
+    clearSchoolData,
+    addScheduleEntry,
+    updateScheduleEntry,
+    deleteScheduleEntry,
+    addSubstitution,
+  } = useSchoolStore();
+
+  const { loadHomework, clearHomework, addHomework } = useHomeworkStore();
+  const { loadExams, clearExams, addExam, updateExam, deleteExam } = useExamStore();
+  const { loadEvents, clearEvents, addEvent } = useCalendarStore();
   const { loadSettings } = useSettingsStore();
 
+  // Listen to Firebase Auth state
   useEffect(() => {
-    loadSettings();
-    loadSchoolData();
-    loadHomework();
-    loadExams();
-    loadEvents();
-  }, []);
+    const unsubscribe = initAuthListener();
+    return () => unsubscribe();
+  }, [initAuthListener]);
+
+  // When user is authenticated, load their data from Firestore
+  useEffect(() => {
+    if (user?.uid) {
+      loadSettings(user.uid);
+      loadSchoolData(user.uid);
+      loadHomework(user.uid);
+      loadExams(user.uid);
+      loadEvents(user.uid);
+    } else {
+      clearSchoolData();
+      clearHomework();
+      clearExams();
+      clearEvents();
+    }
+  }, [user?.uid]);
+
+  const uid = user?.uid || '';
 
   const handleQuickAction = (action: QuickActionType) => {
     switch (action) {
@@ -82,6 +114,23 @@ export function App() {
     setSelectedExam(exam);
     setIsExamModalOpen(true);
   };
+
+  // Initial App Loading Screen
+  if (isLoading) {
+    return (
+      <div className="h-screen w-screen flex flex-col items-center justify-center bg-ios-light-bg dark:bg-ios-dark-bg text-slate-900 dark:text-white">
+        <div className="w-16 h-16 rounded-[22px] bg-gradient-to-br from-ios-blue to-indigo-600 flex items-center justify-center text-white shadow-xl animate-pulse mb-4">
+          <BookOpen className="w-8 h-8" />
+        </div>
+        <div className="w-6 h-6 border-2 border-ios-blue border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  // If not signed in, show Auth Screen
+  if (!isAuthenticated || !user) {
+    return <AuthScreen />;
+  }
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-ios-light-bg dark:bg-ios-dark-bg text-slate-900 dark:text-white">
@@ -152,14 +201,14 @@ export function App() {
       <EventModal
         isOpen={isEventModalOpen}
         onClose={() => setIsEventModalOpen(false)}
-        onSave={(evt) => addEvent(evt)}
+        onSave={(evt) => addEvent(uid, evt)}
         subjects={subjects}
       />
 
       <HomeworkModal
         isOpen={isHomeworkModalOpen}
         onClose={() => setIsHomeworkModalOpen(false)}
-        onSave={(hw) => addHomework(hw)}
+        onSave={(hw) => addHomework(uid, hw)}
         subjects={subjects}
       />
 
@@ -171,12 +220,12 @@ export function App() {
         }}
         onSave={(ex) => {
           if (selectedExam) {
-            updateExam(ex.id, ex);
+            updateExam(uid, ex.id, ex);
           } else {
-            addExam(ex);
+            addExam(uid, ex);
           }
         }}
-        onDelete={(id) => deleteExam(id)}
+        onDelete={(id) => deleteExam(uid, id)}
         initialExam={selectedExam}
         subjects={subjects}
         teachers={teachers}
@@ -186,7 +235,7 @@ export function App() {
       <SubstitutionModal
         isOpen={isSubstModalOpen}
         onClose={() => setIsSubstModalOpen(false)}
-        onSave={(sub) => addSubstitution(sub)}
+        onSave={(sub) => addSubstitution(uid, sub)}
         scheduleEntries={scheduleEntries}
         subjects={subjects}
         teachers={teachers}
@@ -201,12 +250,12 @@ export function App() {
         }}
         onSave={(entry) => {
           if (selectedScheduleEntry) {
-            updateScheduleEntry(entry.id, entry);
+            updateScheduleEntry(uid, entry.id, entry);
           } else {
-            addScheduleEntry(entry);
+            addScheduleEntry(uid, entry);
           }
         }}
-        onDelete={(id) => deleteScheduleEntry(id)}
+        onDelete={(id) => deleteScheduleEntry(uid, id)}
         initialEntry={selectedScheduleEntry}
         subjects={subjects}
         teachers={teachers}

@@ -1,10 +1,12 @@
 import { create } from 'zustand';
 import type { CalendarEvent, CalendarViewType } from '../types';
-import { LocalStorageRepository } from '../services/repository/LocalStorageRepository';
-import { MOCK_CALENDAR_EVENTS } from '../data/mockData';
+import {
+  fetchUserCollection,
+  saveUserDoc,
+  updateUserDoc,
+  deleteUserDoc,
+} from '../services/firebase/firestoreService';
 import { addDays, addWeeks, addMonths, subDays, subWeeks, subMonths } from 'date-fns';
-
-const eventsRepo = new LocalStorageRepository<CalendarEvent>('calendar_events', MOCK_CALENDAR_EVENTS);
 
 interface CalendarState {
   events: CalendarEvent[];
@@ -12,45 +14,55 @@ interface CalendarState {
   viewType: CalendarViewType;
   isLoading: boolean;
 
-  loadEvents: () => Promise<void>;
-  addEvent: (event: CalendarEvent) => Promise<void>;
-  updateEvent: (id: string, updates: Partial<CalendarEvent>) => Promise<void>;
-  deleteEvent: (id: string) => Promise<void>;
+  loadEvents: (uid: string) => Promise<void>;
+  clearEvents: () => void;
+  addEvent: (uid: string, event: CalendarEvent) => Promise<void>;
+  updateEvent: (uid: string, id: string, updates: Partial<CalendarEvent>) => Promise<void>;
+  deleteEvent: (uid: string, id: string) => Promise<void>;
   
   setSelectedDate: (date: Date) => void;
   setViewType: (view: CalendarViewType) => void;
   goToToday: () => void;
   goToNext: () => void;
   goToPrevious: () => void;
-  resetToDefault: () => void;
 }
 
 export const useCalendarStore = create<CalendarState>((set, get) => ({
   events: [],
   selectedDate: new Date(),
   viewType: 'week',
-  isLoading: true,
+  isLoading: false,
 
-  loadEvents: async () => {
+  loadEvents: async (uid: string) => {
+    if (!uid) return;
     set({ isLoading: true });
-    const items = await eventsRepo.getAll();
-    set({ events: items, isLoading: false });
+    try {
+      const items = await fetchUserCollection<CalendarEvent>(uid, 'events');
+      set({ events: items, isLoading: false });
+    } catch (err) {
+      console.error('Error loading events from Firestore:', err);
+      set({ isLoading: false });
+    }
   },
 
-  addEvent: async (event) => {
-    await eventsRepo.create(event);
+  clearEvents: () => {
+    set({ events: [], selectedDate: new Date(), isLoading: false });
+  },
+
+  addEvent: async (uid, event) => {
+    await saveUserDoc<CalendarEvent>(uid, 'events', event);
     set({ events: [...get().events, event] });
   },
 
-  updateEvent: async (id, updates) => {
-    await eventsRepo.update(id, updates);
+  updateEvent: async (uid, id, updates) => {
+    await updateUserDoc<CalendarEvent>(uid, 'events', id, updates);
     set({
       events: get().events.map(e => (e.id === id ? { ...e, ...updates } : e)),
     });
   },
 
-  deleteEvent: async (id) => {
-    await eventsRepo.delete(id);
+  deleteEvent: async (uid, id) => {
+    await deleteUserDoc(uid, 'events', id);
     set({ events: get().events.filter(e => e.id !== id) });
   },
 
@@ -100,10 +112,5 @@ export const useCalendarStore = create<CalendarState>((set, get) => ({
         set({ selectedDate: subMonths(selectedDate, 1) });
         break;
     }
-  },
-
-  resetToDefault: () => {
-    eventsRepo.resetToDefault();
-    set({ events: MOCK_CALENDAR_EVENTS, selectedDate: new Date() });
   },
 }));

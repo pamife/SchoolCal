@@ -1,39 +1,37 @@
 import { create } from 'zustand';
 import type { UserProfile } from '../types';
-import { MOCK_USER } from '../data/mockData';
-import { isFirebaseConfigured } from '../services/firebase/config';
+import { logoutUser, subscribeToAuthState } from '../services/firebase/authService';
+import { deleteDoc, doc } from 'firebase/firestore';
+import { db } from '../services/firebase/firebaseApp';
 
 interface AuthState {
   user: UserProfile | null;
   isAuthenticated: boolean;
-  isFirebaseActive: boolean;
   isLoading: boolean;
 
-  loginMock: (name?: string, email?: string) => void;
-  logout: () => void;
+  setUser: (user: UserProfile | null) => void;
+  logout: () => Promise<void>;
   updateProfile: (updates: Partial<UserProfile>) => void;
   deleteAccountAndData: () => Promise<void>;
+  initAuthListener: () => () => void;
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
-  user: MOCK_USER,
-  isAuthenticated: true,
-  isFirebaseActive: isFirebaseConfigured(),
-  isLoading: false,
+  user: null,
+  isAuthenticated: false,
+  isLoading: true,
 
-  loginMock: (name = 'Paul Schmidt', email = 'paul.schmidt@schueler-mail.de') => {
-    const user: UserProfile = {
-      uid: 'user-' + Date.now(),
-      displayName: name,
-      email: email,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    set({ user, isAuthenticated: true });
+  setUser: (user) => {
+    set({ user, isAuthenticated: Boolean(user), isLoading: false });
   },
 
-  logout: () => {
-    set({ user: null, isAuthenticated: false });
+  logout: async () => {
+    try {
+      await logoutUser();
+    } catch (err) {
+      console.error('Logout error:', err);
+    }
+    set({ user: null, isAuthenticated: false, isLoading: false });
   },
 
   updateProfile: (updates) => {
@@ -44,19 +42,20 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   deleteAccountAndData: async () => {
-    const keysToRemove = [
-      'schoolcal_subjects',
-      'schoolcal_teachers',
-      'schoolcal_rooms',
-      'schoolcal_schedule',
-      'schoolcal_substitutions',
-      'schoolcal_homework',
-      'schoolcal_exams',
-      'schoolcal_calendar_events',
-      'schoolcal_user_settings',
-    ];
-    keysToRemove.forEach(k => localStorage.removeItem(k));
-    set({ user: null, isAuthenticated: false });
-    window.location.reload();
+    const currentUser = get().user;
+    if (currentUser?.uid) {
+      try {
+        await deleteDoc(doc(db, 'users', currentUser.uid));
+      } catch (err) {
+        console.error('Error deleting user profile:', err);
+      }
+    }
+    await get().logout();
+  },
+
+  initAuthListener: () => {
+    return subscribeToAuthState((profile) => {
+      set({ user: profile, isAuthenticated: Boolean(profile), isLoading: false });
+    });
   },
 }));
