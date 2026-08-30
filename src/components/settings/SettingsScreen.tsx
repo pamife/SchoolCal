@@ -38,6 +38,7 @@ import { AdminModal } from '../admin/AdminModal';
 import { PremiumBadge } from '../licensing/PremiumBadge';
 import { WebUntisSyncTab } from '../school/WebUntisSyncTab';
 import { NotificationSettingsTab } from './NotificationSettingsTab';
+import { AiSettingsCard } from './AiSettingsCard';
 import { exportFullJsonBackup, parseJsonBackup, exportScheduleCsv } from '../../services/export/dataExportService';
 import { generateIcsCalendar, downloadIcsFile } from '../../services/ical/icalService';
 import { format } from 'date-fns';
@@ -384,7 +385,10 @@ export const SettingsScreen: React.FC = () => {
       {/* 5. BENACHRICHTIGUNGEN & NOTIFICATIONS */}
       <NotificationSettingsTab />
 
-      {/* 6. WEBUNTIS SYNCHRONISATION (PLUS) */}
+      {/* 6. 🤖 KI-SCHULASSISTENT & GEMINI API-KEY */}
+      <AiSettingsCard />
+
+      {/* 7. WEBUNTIS SYNCHRONISATION (PLUS) */}
       <WebUntisSyncTab
         onOpenPricing={() => setIsPricingOpen(true)}
         onOpenActivation={() => setIsActivationOpen(true)}
