@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#007AFF" />
+      <stop offset="100%" stop-color="#5856D6" />
+    </linearGradient>
+    <linearGradient id="calGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" />
+      <stop offset="100%" stop-color="#F2F2F7" />
+    </linearGradient>
+    <filter id="dropShadow" x="-10%" y="-10%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="16" stdDeviation="20" flood-color="#000000" flood-opacity="0.25" />
+    </filter>
+  </defs>
+
+  <!-- iOS App Icon Squircle Background -->
+  <rect width="512" height="512" rx="115" fill="url(#bgGrad)" />
+
+  <!-- Calendar Page Base -->
+  <g filter="url(#dropShadow)">
+    <rect x="96" y="112" width="320" height="304" rx="44" fill="url(#calGrad)" />
+    
+    <!-- Red/Blue Calendar Top Header Bar -->
+    <path d="M96 156 C96 131.7 115.7 112 140 112 L372 112 C396.3 112 416 131.7 416 156 L416 188 L96 188 Z" fill="#FF3B30" />
+    
+    <!-- Rings / Spiral Bindings -->
+    <rect x="160" y="84" width="28" height="56" rx="14" fill="#FFFFFF" />
+    <rect x="324" y="84" width="28" height="56" rx="14" fill="#FFFFFF" />
+    
+    <!-- Weekday Name Line -->
+    <rect x="144" y="218" width="64" height="14" rx="7" fill="#8E8E93" fill-opacity="0.5" />
+    <rect x="224" y="218" width="64" height="14" rx="7" fill="#8E8E93" fill-opacity="0.5" />
+    <rect x="304" y="218" width="64" height="14" rx="7" fill="#8E8E93" fill-opacity="0.5" />
+
+    <!-- Schedule / Event blocks inside calendar -->
+    <!-- Lesson 1 (Mathe Blue) -->
+    <rect x="136" y="254" width="240" height="42" rx="12" fill="#007AFF" fill-opacity="0.15" />
+    <rect x="144" y="262" width="6" height="26" rx="3" fill="#007AFF" />
+    <rect x="160" y="264" width="88" height="12" rx="6" fill="#007AFF" />
+    <rect x="160" y="280" width="48" height="8" rx="4" fill="#8E8E93" fill-opacity="0.6" />
+
+    <!-- Lesson 2 (English Purple) -->
+    <rect x="136" y="306" width="240" height="42" rx="12" fill="#5856D6" fill-opacity="0.15" />
+    <rect x="144" y="314" width="6" height="26" rx="3" fill="#5856D6" />
+    <rect x="160" y="316" width="104" height="12" rx="6" fill="#5856D6" />
+    <rect x="160" y="332" width="60" height="8" rx="4" fill="#8E8E93" fill-opacity="0.6" />
+
+    <!-- Checkmark Badge (Task Done) -->
+    <circle cx="344" cy="374" r="18" fill="#34C759" />
+    <path d="M336 374 L342 380 L354 368" fill="none" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" />
+  </g>
+</svg>

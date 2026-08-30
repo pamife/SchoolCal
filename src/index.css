@@ -1,0 +1,140 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --sat: env(safe-area-inset-top, 0px);
+    --sar: env(safe-area-inset-right, 0px);
+    --sab: env(safe-area-inset-bottom, 0px);
+    --sal: env(safe-area-inset-left, 0px);
+    
+    --accent-color: #007AFF;
+    --accent-light: #E5F2FF;
+    --accent-dark: #0056B3;
+  }
+
+  html, body {
+    height: 100%;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Custom input text selection */
+  input, textarea {
+    -webkit-user-select: text;
+    user-select: text;
+  }
+}
+
+@layer utilities {
+  .pt-safe {
+    padding-top: max(var(--sat), 12px);
+  }
+  .pb-safe {
+    padding-bottom: max(var(--sab), 16px);
+  }
+  .pl-safe {
+    padding-left: max(var(--sal), 16px);
+  }
+  .pr-safe {
+    padding-right: max(var(--sar), 16px);
+  }
+  .h-safe-screen {
+    height: 100dvh;
+  }
+  .min-h-safe-screen {
+    min-height: 100dvh;
+  }
+
+  /* Apple Glassmorphism */
+  .ios-glass {
+    background: rgba(255, 255, 255, 0.75);
+    backdrop-filter: blur(25px) saturate(190%);
+    -webkit-backdrop-filter: blur(25px) saturate(190%);
+  }
+
+  .dark .ios-glass {
+    background: rgba(28, 28, 30, 0.75);
+    backdrop-filter: blur(25px) saturate(190%);
+    -webkit-backdrop-filter: blur(25px) saturate(190%);
+  }
+
+  .ios-glass-bar {
+    background: rgba(248, 248, 250, 0.85);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+  }
+
+  .dark .ios-glass-bar {
+    background: rgba(18, 18, 20, 0.85);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+  }
+
+  /* iOS Card */
+  .ios-card {
+    background: #FFFFFF;
+    border-radius: 16px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 14px rgba(0,0,0,0.03);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+  }
+
+  .dark .ios-card {
+    background: #1C1C1E;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .ios-card-secondary {
+    background: #F2F2F7;
+    border-radius: 14px;
+  }
+
+  .dark .ios-card-secondary {
+    background: #2C2C2E;
+    border-radius: 14px;
+  }
+}
+
+/* Custom Sleek Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(142, 142, 147, 0.3);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(142, 142, 147, 0.5);
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Micro-press active effect for iOS buttons */
+.ios-press-active:active {
+  transform: scale(0.97);
+  transition: transform 0.1s ease;
+}

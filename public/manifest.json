@@ -1,0 +1,18 @@
+{
+  "short_name": "SchoolCal",
+  "name": "SchoolCal – Digitaler Schulplaner & Kalender",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "type": "image/svg+xml",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#000000",
+  "theme_color": "#007AFF",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "categories": ["education", "productivity", "utilities"]
+}

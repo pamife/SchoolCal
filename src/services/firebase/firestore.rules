@@ -1,0 +1,71 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper function to check if the user is authenticated and matches the requested UID
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+
+    // User document and all nested collections
+    match /users/{userId} {
+      // User Profile document
+      allow read, write: if isOwner(userId);
+
+      // Subjects collection
+      match /subjects/{subjectId} {
+        allow read, write: if isOwner(userId);
+      }
+
+      // Teachers collection
+      match /teachers/{teacherId} {
+        allow read, write: if isOwner(userId);
+      }
+
+      // Rooms collection
+      match /rooms/{roomId} {
+        allow read, write: if isOwner(userId);
+      }
+
+      // Schedule & Timetable entries
+      match /schedule/{scheduleId} {
+        allow read, write: if isOwner(userId);
+      }
+
+      // Substitutions
+      match /substitutions/{substitutionId} {
+        allow read, write: if isOwner(userId);
+      }
+
+      // Calendar Events
+      match /events/{eventId} {
+        allow read, write: if isOwner(userId);
+      }
+
+      // Homework & Tasks
+      match /homework/{homeworkId} {
+        allow read, write: if isOwner(userId);
+      }
+
+      // Exams & Tests
+      match /exams/{examId} {
+        allow read, write: if isOwner(userId);
+      }
+
+      // Custom Holidays
+      match /holidays/{holidayId} {
+        allow read, write: if isOwner(userId);
+      }
+
+      // User Settings
+      match /settings/{settingsId} {
+        allow read, write: if isOwner(userId);
+      }
+    }
+
+    // Default deny for all other paths
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
