@@ -5,6 +5,8 @@ import {
   sendPasswordResetEmail,
   updateProfile,
   onAuthStateChanged,
+  GoogleAuthProvider,
+  signInWithPopup,
   User as FirebaseUser,
 } from 'firebase/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
@@ -31,7 +33,11 @@ export function translateFirebaseAuthError(errorCode: string): string {
     case 'auth/too-many-requests':
       return 'Zu viele fehlgeschlagene Versuche. Bitte versuche es später noch einmal.';
     case 'auth/popup-closed-by-user':
-      return 'Der Anmeldevorgang wurde abgebrochen.';
+      return 'Der Google-Anmeldevorgang wurde abgebrochen.';
+    case 'auth/cancelled-popup-request':
+      return 'Anfrage abgebrochen.';
+    case 'auth/unauthorized-domain':
+      return 'Diese Domain ist in der Firebase Console noch nicht autorisiert.';
     default:
       return 'Ein unerwarteter Fehler ist aufgetreten. Bitte versuche es erneut.';
   }
@@ -93,6 +99,40 @@ export async function loginWithEmail(email: string, password: string): Promise<U
   };
 
   return fallbackProfile;
+}
+
+export async function signInWithGoogle(): Promise<UserProfile> {
+  const provider = new GoogleAuthProvider();
+  provider.setCustomParameters({ prompt: 'select_account' });
+  const userCredential = await signInWithPopup(auth, provider);
+  const fbUser = userCredential.user;
+
+  const userDocRef = doc(db, 'users', fbUser.uid);
+  try {
+    const snap = await getDoc(userDocRef);
+    if (snap.exists()) {
+      return snap.data() as UserProfile;
+    }
+  } catch (err) {
+    console.warn('Could not read user doc on Google login:', err);
+  }
+
+  const profile: UserProfile = {
+    uid: fbUser.uid,
+    displayName: fbUser.displayName || fbUser.email?.split('@')[0] || 'Schüler',
+    email: fbUser.email || '',
+    photoURL: fbUser.photoURL || undefined,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+
+  try {
+    await setDoc(userDocRef, profile, { merge: true });
+  } catch (err) {
+    console.warn('Firestore initial user doc creation warning:', err);
+  }
+
+  return profile;
 }
 
 export async function logoutUser(): Promise<void> {
