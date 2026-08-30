@@ -9,7 +9,7 @@ import {
   orderBy,
   limit,
 } from 'firebase/firestore';
-import { firestore } from '../firebase/firebaseApp';
+import { firestore, auth } from '../firebase/firebaseApp';
 import { generateLicenseCode, hashLicenseCode, createMaskedPrefix } from '../licensing/licenseCrypto';
 import type { License, UserProfile, UserPlan, AuditLogEntry, LicenseStatus } from '../../types';
 import { formatISO, addDays } from 'date-fns';
@@ -45,6 +45,8 @@ export async function generateLicenseBatch(
     notes?: string;
   }
 ): Promise<GeneratedCodeItem[]> {
+  const effectiveUid = adminUid || auth.currentUser?.uid || 'admin';
+  const effectiveEmail = adminEmail || auth.currentUser?.email || 'admin';
   const { plan, durationDays, count, notes } = params;
   const results: GeneratedCodeItem[] = [];
   const nowIso = formatISO(new Date());
