@@ -18,62 +18,6 @@
     <link rel="manifest" href="/manifest.json" />
     
     <title>SchoolCal – Digitaler Schulplaner & Kalender</title>
-
-    <style>
-      /* Hide all Netlify injected elements */
-      #netlify-drawer,
-      iframe[data-netlify-drawer],
-      [data-netlify-drawer],
-      .netlify-drawer-root,
-      netlify-drawer,
-      #netlify-badge,
-      [data-netlify-deploy-id],
-      div[class*="netlify-drawer"],
-      div[id*="netlify-drawer"],
-      [class*="feedback-drawer"],
-      [id*="feedback-drawer"],
-      [aria-label*="Netlify Drawer"],
-      [aria-label*="feedback"] {
-        display: none !important;
-        visibility: hidden !important;
-        opacity: 0 !important;
-        pointer-events: none !important;
-        width: 0 !important;
-        height: 0 !important;
-        position: absolute !important;
-        left: -9999px !important;
-        z-index: -9999 !important;
-      }
-    </style>
-
-    <script>
-      // Immediately remove Netlify Drawer / Feedback badge from DOM
-      (function() {
-        function removeNetlifyBadge() {
-          const selectors = [
-            '#netlify-drawer',
-            'netlify-drawer',
-            'iframe[data-netlify-drawer]',
-            '[data-netlify-drawer]',
-            '.netlify-drawer-root',
-            '#netlify-badge',
-            '[data-netlify-deploy-id]',
-            'div[class*="netlify"]',
-            'div[id*="netlify"]'
-          ];
-          for (let i = 0; i < selectors.length; i++) {
-            const els = document.querySelectorAll(selectors[i]);
-            for (let j = 0; j < els.length; j++) {
-              els[j].remove();
-            }
-          }
-        }
-        document.addEventListener('DOMContentLoaded', removeNetlifyBadge);
-        window.addEventListener('load', removeNetlifyBadge);
-        const observer = new MutationObserver(removeNetlifyBadge);
-        observer.observe(document.documentElement, { childList: true, subtree: true });
-      })();
-    </script>
   </head>
   <body class="bg-ios-light-bg dark:bg-ios-dark-bg text-slate-900 dark:text-white antialiased selection:bg-ios-blue selection:text-white">
     <div id="root" class="min-h-[100dvh] w-full flex flex-col"></div>
