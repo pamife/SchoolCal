@@ -138,6 +138,29 @@
 
 /* Micro-press active effect for iOS buttons */
 .ios-press-active:active {
-  transform: scale(0.97);
-  transition: transform 0.1s ease;
+  transform: scale(0.96);
+  opacity: 0.85;
+}
+
+/* Hide Netlify Drawer & Collaborative Feedback Badge completely */
+#netlify-drawer,
+iframe[data-netlify-drawer],
+[data-netlify-drawer],
+.netlify-drawer-root,
+netlify-drawer,
+#netlify-badge,
+[data-netlify-deploy-id],
+div[class*="netlify-drawer"],
+div[id*="netlify-drawer"],
+[class*="feedback-drawer"],
+[id*="feedback-drawer"],
+[aria-label*="Netlify Drawer"] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  position: absolute !important;
+  left: -9999px !important;
 }

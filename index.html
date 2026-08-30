@@ -18,6 +18,32 @@
     <link rel="manifest" href="/manifest.json" />
     
     <title>SchoolCal – Digitaler Schulplaner & Kalender</title>
+
+    <style>
+      /* Prevent Netlify Drawer badge from covering mobile navigation bar */
+      #netlify-drawer,
+      iframe[data-netlify-drawer],
+      [data-netlify-drawer],
+      .netlify-drawer-root,
+      netlify-drawer,
+      #netlify-badge,
+      [data-netlify-deploy-id],
+      div[class*="netlify-drawer"],
+      div[id*="netlify-drawer"],
+      [class*="feedback-drawer"],
+      [id*="feedback-drawer"],
+      [aria-label*="Netlify Drawer"] {
+        display: none !important;
+        visibility: hidden !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+        width: 0 !important;
+        height: 0 !important;
+        position: absolute !important;
+        left: -9999px !important;
+        z-index: -9999 !important;
+      }
+    </style>
   </head>
   <body class="bg-ios-light-bg dark:bg-ios-dark-bg text-slate-900 dark:text-white antialiased selection:bg-ios-blue selection:text-white">
     <div id="root" class="min-h-[100dvh] w-full flex flex-col"></div>

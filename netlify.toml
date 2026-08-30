@@ -4,6 +4,7 @@
 
 [build.environment]
   SECRETS_SCAN_ENABLED = "false"
+  NETLIFY_DRAWER_ENABLED = "false"
 
 [[redirects]]
   from = "/*"
