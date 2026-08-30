@@ -18,6 +18,7 @@ import { DashboardScreen } from './components/dashboard/DashboardScreen';
 import { CalendarScreen } from './components/calendar/CalendarScreen';
 import { HomeworkScreen } from './components/homework/HomeworkScreen';
 import { GradesScreen } from './components/grades/GradesScreen';
+import { StatisticsScreen } from './components/statistics/StatisticsScreen';
 import { SchoolScreen } from './components/school/SchoolScreen';
 import { SettingsScreen } from './components/settings/SettingsScreen';
 
@@ -27,8 +28,12 @@ import { ExamModal } from './components/exams/ExamModal';
 import { ScheduleEntryModal } from './components/school/ScheduleEntryModal';
 import { SubstitutionModal } from './components/school/SubstitutionModal';
 import { AiStudyPlannerModal } from './components/exams/AiStudyPlannerModal';
+import { AiAssistantModal } from './components/ai/AiAssistantModal';
 import { PricingModal } from './components/licensing/PricingModal';
 import { LicenseActivationModal } from './components/licensing/LicenseActivationModal';
+import { updateAppBadge } from './services/pwa/badgeService';
+import { evaluatePendingNotifications } from './services/notifications/notificationScheduler';
+import { sendLocalNotification } from './services/notifications/notificationService';
 
 import type { NavigationTab, QuickActionType, ScheduleEntry, Exam } from './types';
 import { BookOpen } from 'lucide-react';
@@ -44,6 +49,7 @@ export function App() {
   const [isSubstModalOpen, setIsSubstModalOpen] = useState(false);
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
   const [isAiPlannerOpen, setIsAiPlannerOpen] = useState(false);
+  const [isAiAssistantOpen, setIsAiAssistantOpen] = useState(false);
   const [isPricingOpen, setIsPricingOpen] = useState(false);
   const [isActivationOpen, setIsActivationOpen] = useState(false);
 
@@ -57,6 +63,7 @@ export function App() {
     teachers,
     rooms,
     scheduleEntries,
+    substitutions,
     loadSchoolData,
     clearSchoolData,
     addScheduleEntry,
@@ -65,7 +72,7 @@ export function App() {
     addSubstitution,
   } = useSchoolStore();
 
-  const { loadHomework, clearHomework, addHomework } = useHomeworkStore();
+  const { homework, loadHomework, clearHomework, addHomework } = useHomeworkStore();
   const { exams, loadExams, clearExams, addExam, updateExam, deleteExam } = useExamStore();
   const { loadEvents, clearEvents, addEvent } = useCalendarStore();
   const { settings, loadSettings } = useSettingsStore();
@@ -95,10 +102,45 @@ export function App() {
     }
   }, [user?.uid]);
 
+  // Sync PWA App Icon Badge on iOS 16.4+ and Desktop
+  useEffect(() => {
+    const openCount = homework.filter((h) => h.status !== 'done').length;
+    updateAppBadge(openCount);
+  }, [homework]);
+
+  // Contextual Notification evaluation
+  useEffect(() => {
+    if (user?.uid && settings.notifications?.enabled) {
+      const pending = evaluatePendingNotifications({
+        scheduleEntries,
+        substitutions,
+        homework,
+        exams,
+        subjects,
+        rooms,
+        teachers,
+        preferences: settings.notifications,
+        userName: user.displayName || 'Schüler',
+      });
+
+      if (pending.length > 0) {
+        const item = pending[0];
+        sendLocalNotification(item.title, {
+          body: item.body,
+          preferences: settings.notifications,
+          isCritical: item.isCritical,
+        });
+      }
+    }
+  }, [homework.length, scheduleEntries.length, substitutions.length, exams.length]);
+
   const uid = user?.uid || '';
 
   const handleQuickAction = (action: QuickActionType) => {
     switch (action) {
+      case 'ai_chat':
+        setIsAiAssistantOpen(true);
+        break;
       case 'ai_plan':
         setIsAiPlannerOpen(true);
         break;
@@ -152,6 +194,7 @@ export function App() {
       <Sidebar
         activeTab={activeTab}
         onTabChange={setActiveTab}
+        onOpenAiAssistant={() => setIsAiAssistantOpen(true)}
       />
 
       {/* Main Content Area */}
@@ -159,6 +202,7 @@ export function App() {
         {/* Top Header */}
         <TopHeader
           onOpenQuickAction={() => setIsQuickActionOpen(true)}
+          onOpenAiAssistant={() => setIsAiAssistantOpen(true)}
         />
 
         {/* Tab View Container */}
@@ -181,6 +225,10 @@ export function App() {
 
           {activeTab === 'tasks' && (
             <HomeworkScreen />
+          )}
+
+          {activeTab === 'statistics' && (
+            <StatisticsScreen />
           )}
 
           {activeTab === 'grades' && (
@@ -253,6 +301,13 @@ export function App() {
         onClose={() => setIsAiPlannerOpen(false)}
         exams={exams}
         subjects={subjects}
+        onOpenPricing={() => setIsPricingOpen(true)}
+        onOpenActivation={() => setIsActivationOpen(true)}
+      />
+
+      <AiAssistantModal
+        isOpen={isAiAssistantOpen}
+        onClose={() => setIsAiAssistantOpen(false)}
         onOpenPricing={() => setIsPricingOpen(true)}
         onOpenActivation={() => setIsActivationOpen(true)}
       />

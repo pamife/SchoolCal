@@ -25,11 +25,19 @@ export const QuickActionSheet: React.FC<QuickActionSheetProps> = ({
 }) => {
   const actions: { id: QuickActionType; label: string; description: string; icon: React.ComponentType<{ className?: string }>; color: string; isPro?: boolean }[] = [
     {
+      id: 'ai_chat',
+      label: '🤖 KI-Schulassistent',
+      description: 'Fragen zu Stundenplan, Aufgaben & Lernzeiten',
+      icon: Brain,
+      color: 'bg-gradient-to-tr from-purple-600 to-indigo-600 text-white',
+      isPro: true,
+    },
+    {
       id: 'ai_plan',
       label: '✨ KI-Lernzeitplaner',
       description: 'Lernstoff optimal bis zur nächsten Klausur verteilen',
-      icon: Brain,
-      color: 'bg-gradient-to-tr from-purple-600 to-indigo-600 text-white',
+      icon: Sparkles,
+      color: 'bg-purple-600 text-white',
       isPro: true,
     },
     {

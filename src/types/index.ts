@@ -1,4 +1,4 @@
-export type NavigationTab = 'today' | 'calendar' | 'tasks' | 'grades' | 'school' | 'settings';
+export type NavigationTab = 'today' | 'calendar' | 'tasks' | 'grades' | 'statistics' | 'school' | 'settings';
 
 export type CalendarViewType = 'day' | '3days' | 'week' | 'month';
 
@@ -170,6 +170,32 @@ export interface Holiday {
   state: string; // Bundesland code (e.g. "BY", "NW", "BW", "BE", "HE", etc.) or "ALL"
 }
 
+// ----------------------------------------------------
+// Notification Preferences & Settings
+// ----------------------------------------------------
+
+export interface NotificationPreferences {
+  enabled: boolean;
+  lessonReminders: boolean;
+  lessonReminderMinutes: number; // e.g. 5, 10, 15, 30
+  roomChanges: boolean;
+  teacherChanges: boolean;
+  cancellations: boolean;
+  substitutions: boolean;
+  homeworkDueDayBefore: boolean;
+  homeworkDue2HoursBefore: boolean;
+  homeworkDue30MinBefore: boolean;
+  examReminder7Days: boolean;
+  examReminder3Days: boolean;
+  examReminder1Day: boolean;
+  examReminderDayOf: boolean;
+  smartDayMorningBrief: boolean;
+  schoolEndSummary: boolean;
+  quietHoursEnabled: boolean;
+  quietHoursStart: string; // HH:mm e.g. "22:00"
+  quietHoursEnd: string;   // HH:mm e.g. "07:00"
+}
+
 export interface UserSettings {
   theme: 'light' | 'dark' | 'system';
   accentColor: string; // e.g. '#007AFF'
@@ -185,6 +211,149 @@ export interface UserSettings {
   webuntisServer?: string;
   webuntisSchool?: string;
   webuntisUsername?: string;
+  notifications?: NotificationPreferences;
+}
+
+// ----------------------------------------------------
+// 🧠 Smart Day Types
+// ----------------------------------------------------
+
+export type SmartDayTimeContext =
+  | 'early_morning'
+  | 'before_school'
+  | 'in_lesson'
+  | 'in_break'
+  | 'after_school'
+  | 'evening'
+  | 'weekend'
+  | 'holiday'
+  | 'free_day';
+
+export interface SmartDayChangeInfo {
+  id: string;
+  scheduleEntryId: string;
+  period: number;
+  subjectName: string;
+  type: SubstitutionType;
+  details: string;
+  originalRoom?: string;
+  newRoom?: string;
+  originalTeacher?: string;
+  newTeacher?: string;
+  note?: string;
+}
+
+export interface SmartDayData {
+  timeContext: SmartDayTimeContext;
+  greeting: string;
+  headline: string;
+  subheadline: string;
+  currentLesson: {
+    entry: ScheduleEntry;
+    subject?: Subject;
+    teacher?: Teacher;
+    room?: Room;
+    substitution?: Substitution;
+    minutesRemaining: number;
+  } | null;
+  nextLesson: {
+    entry: ScheduleEntry;
+    subject?: Subject;
+    teacher?: Teacher;
+    room?: Room;
+    substitution?: Substitution;
+    minutesUntil: number;
+  } | null;
+  todayLessonsCount: number;
+  remainingLessonsCount: number;
+  todayHomework: Homework[];
+  overdueHomework: Homework[];
+  upcomingExams: Array<{
+    exam: Exam;
+    subject?: Subject;
+    daysRemaining: number;
+  }>;
+  activeChanges: SmartDayChangeInfo[];
+  activeHoliday?: Holiday;
+}
+
+// ----------------------------------------------------
+// 📊 School Statistics Types
+// ----------------------------------------------------
+
+export type StatisticsPeriod =
+  | 'today'
+  | 'this_week'
+  | 'last_week'
+  | 'this_month'
+  | 'last_month'
+  | 'school_year';
+
+export interface SubjectStat {
+  subjectId: string;
+  subjectName: string;
+  shortName: string;
+  color: string;
+  lessonMinutes: number;
+  lessonHoursFormatted: string;
+  totalTasks: number;
+  completedTasks: number;
+  openTasks: number;
+  completionRate: number; // 0 - 100
+  averageGrade?: number;
+}
+
+export interface WeeklyTrendPoint {
+  weekLabel: string; // e.g. "KW 34"
+  completedTasks: number;
+  totalTasks: number;
+  lessonHours: number;
+}
+
+export interface SchoolStatistics {
+  period: StatisticsPeriod;
+  periodLabel: string;
+  totalLessonMinutes: number;
+  totalLessonHoursFormatted: string;
+  completedHomeworkCount: number;
+  openHomeworkCount: number;
+  overdueHomeworkCount: number;
+  totalHomeworkCount: number;
+  overallCompletionRate: number; // 0 - 100
+  upcomingExamsCount: number;
+  completedExamsCount: number;
+  subjectStats: SubjectStat[];
+  weeklyTrends: WeeklyTrendPoint[];
+  hasEnoughDataForTrends: boolean;
+}
+
+// ----------------------------------------------------
+// 🤖 AI School Assistant Types
+// ----------------------------------------------------
+
+export type AIChatRole = 'user' | 'assistant' | 'system';
+
+export type AIActionType =
+  | 'CREATE_STUDY_PLAN'
+  | 'CREATE_HOMEWORK'
+  | 'CREATE_CALENDAR_EVENT'
+  | 'NAVIGATE_TAB';
+
+export interface AIActionPayload {
+  type: AIActionType;
+  title: string;
+  description?: string;
+  data: Record<string, any>;
+  requiresConfirmation: boolean;
+}
+
+export interface AIChatMessage {
+  id: string;
+  role: AIChatRole;
+  content: string;
+  timestamp: string;
+  action?: AIActionPayload;
+  actionExecuted?: boolean;
 }
 
 // ----------------------------------------------------
@@ -253,4 +422,6 @@ export type QuickActionType =
   | 'test'
   | 'study'
   | 'substitution'
-  | 'ai_plan';
+  | 'ai_plan'
+  | 'ai_chat';
+

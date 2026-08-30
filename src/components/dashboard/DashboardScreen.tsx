@@ -1,25 +1,22 @@
 import React from 'react';
 import {
   Sparkles,
-  Calendar,
   BookOpen,
-  Clock,
-  AlertTriangle,
-  CheckCircle2,
   ChevronRight,
-  GraduationCap,
   Brain,
   Award,
-  Zap,
+  Bot,
 } from 'lucide-react';
 import { useSchoolStore } from '../../store/useSchoolStore';
 import { useHomeworkStore } from '../../store/useHomeworkStore';
 import { useExamStore } from '../../store/useExamStore';
+import { useCalendarStore } from '../../store/useCalendarStore';
 import { useSettingsStore } from '../../store/useSettingsStore';
 import { useAuthStore } from '../../store/useAuthStore';
-import { getCurrentSchoolPeriod, formatGermanDate, formatGermanWeekday } from '../../utils/dateUtils';
-import { getHolidaysForState } from '../../data/holidays';
-import { NextLessonHero } from './NextLessonHero';
+import { useSubscription } from '../../hooks/useSubscription';
+import { calculateSmartDayData } from '../../utils/smartDayEngine';
+import { SmartDayHero } from './SmartDayHero';
+import { SmartDayChangesBanner } from './SmartDayChangesBanner';
 import { TodayTimeline } from './TodayTimeline';
 import { TodayHomeworkWidget } from './TodayHomeworkWidget';
 import { ExamCountdownWidget } from './ExamCountdownWidget';
@@ -41,102 +38,58 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   const { subjects, teachers, rooms, scheduleEntries, substitutions } = useSchoolStore();
   const { homework, toggleComplete } = useHomeworkStore();
   const { exams } = useExamStore();
+  const { events } = useCalendarStore();
   const { settings } = useSettingsStore();
   const { user } = useAuthStore();
+  const { isPlus, isPro } = useSubscription();
 
   const today = new Date();
   const jsDay = today.getDay();
   const todayDayOfWeek = jsDay === 0 ? 7 : jsDay;
 
-  // Filter schedule for today
+  // Calculate real-time Smart Day data
+  const smartDay = calculateSmartDayData({
+    currentDate: today,
+    scheduleEntries,
+    periodTimes: settings.periodTimes || [],
+    subjects,
+    teachers,
+    rooms,
+    substitutions,
+    homework,
+    exams,
+    calendarEvents: events,
+    holidayState: settings.state || 'BY',
+    userName: user?.displayName || 'Schüler',
+  });
+
   const todayEntries = scheduleEntries
-    .filter(e => e.dayOfWeek === todayDayOfWeek)
+    .filter((e) => e.dayOfWeek === todayDayOfWeek)
     .sort((a, b) => a.period - b.period);
-
-  // Calculate live period status
-  const currentStatus = getCurrentSchoolPeriod(scheduleEntries, settings.periodTimes, today);
-
-  const subjectMap = new Map(subjects.map(s => [s.id, s]));
-  const teacherMap = new Map(teachers.map(t => [t.id, t]));
-  const roomMap = new Map(rooms.map(r => [r.id, r]));
-  const substMap = new Map(substitutions.map(s => [s.scheduleEntryId, s]));
-
-  const activeEntry = currentStatus.currentEntry || currentStatus.nextEntry;
-  const activeSubject = activeEntry ? subjectMap.get(activeEntry.subjectId) : undefined;
-  const activeSubstitution = activeEntry ? substMap.get(activeEntry.id) : undefined;
-  const effectiveTeacherId = activeSubstitution?.newTeacherId || activeEntry?.teacherId;
-  const effectiveRoomId = activeSubstitution?.newRoomId || activeEntry?.roomId;
-  const activeTeacher = effectiveTeacherId ? teacherMap.get(effectiveTeacherId) : undefined;
-  const activeRoom = effectiveRoomId ? roomMap.get(effectiveRoomId) : undefined;
-
-  // Holiday check
-  const stateHolidays = getHolidaysForState(settings.state);
-  const todayIso = today.toISOString().slice(0, 10);
-  const activeHoliday = stateHolidays.find(h => todayIso >= h.startDate && todayIso <= h.endDate);
-
-  // Greeting based on time of day
-  const hours = today.getHours();
-  const greeting = hours < 11 ? 'Guten Morgen' : hours < 14 ? 'Guten Tag' : hours < 18 ? 'Guten Nachmittag' : 'Guten Abend';
-  const firstName = user?.displayName ? user.displayName.split(' ')[0] : 'Schüler';
 
   return (
     <div className="space-y-5 pb-20 ipad:pb-10 max-w-5xl mx-auto">
-      {/* Greeting Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 px-1">
-        <div>
-          <div className="text-xs font-semibold text-ios-blue uppercase tracking-wider">
-            {formatGermanWeekday(today, 'long')}, {formatGermanDate(today, 'd. MMMM')}
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">
-            {greeting}, {firstName} 👋
-          </h1>
-        </div>
-
-        {/* Quick Stats Pill */}
-        <div className="flex items-center gap-2 self-start sm:self-auto">
-          <div className="px-3 py-1.5 rounded-full bg-white dark:bg-ios-dark-secondary border border-black/5 dark:border-white/10 text-xs font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-1.5 shadow-xs">
-            <Clock className="w-3.5 h-3.5 text-ios-blue" />
-            <span>{todayEntries.length} Schulstunden heute</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Holiday / Vacation Alert Banner */}
-      {activeHoliday && (
-        <div className="p-3.5 rounded-2xl bg-gradient-to-r from-emerald-500/15 via-teal-500/10 to-transparent border border-emerald-500/30 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-emerald-500 text-white flex items-center justify-center font-bold text-sm shadow-xs">
-              🏖️
-            </div>
-            <div>
-              <h4 className="text-sm font-bold text-emerald-950 dark:text-emerald-300">
-                {activeHoliday.name} ({activeHoliday.type === 'vacation' ? 'Ferienzeit' : 'Schulfrei'})
-              </h4>
-              <p className="text-xs text-emerald-800 dark:text-emerald-400">
-                Genieße deine schulfreie Zeit! Kalender und Aufgaben stehen dir weiterhin zur Verfügung.
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 1. Hero Widget: Nächste Schulstunde */}
-      <section aria-label="Nächste Schulstunde">
-        <NextLessonHero
-          currentEntry={currentStatus.currentEntry}
-          nextEntry={currentStatus.nextEntry}
-          subject={activeSubject}
-          teacher={activeTeacher}
-          room={activeRoom}
-          substitution={activeSubstitution}
-          statusText={currentStatus.statusText}
-          minutesRemaining={currentStatus.minutesRemainingInCurrent}
-          minutesUntilNext={currentStatus.minutesUntilNext}
+      {/* 🧠 1. Smart Day Hero & Next Lesson */}
+      <section aria-label="Smart Day Übersicht">
+        <SmartDayHero
+          smartDay={smartDay}
           onOpenSchedule={() => onNavigateTab('school')}
+          onOpenTasks={() => onNavigateTab('tasks')}
+          onOpenAiAssistant={() => onOpenQuickAction('ai_chat')}
         />
       </section>
 
-      {/* 🌟 PRO FEATURE HERO: SchoolCal KI-Assistent & Lernplaner */}
+      {/* ⚠️ 2. Smart Day Changes & Substitutions (Plus-Tier/WebUntis) */}
+      {smartDay.activeChanges.length > 0 && (
+        <section aria-label="Stundenplanänderungen">
+          <SmartDayChangesBanner
+            changes={smartDay.activeChanges}
+            onOpenSchoolTab={() => onNavigateTab('school')}
+          />
+        </section>
+      )}
+
+      {/* 🤖 3. KI-Schulassistent & Lernplaner Hero (Pro Feature) */}
       <div className="ios-card p-4 sm:p-5 bg-gradient-to-r from-purple-500/10 via-indigo-500/10 to-blue-500/10 border border-purple-500/20">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-start sm:items-center gap-3">
@@ -146,14 +99,14 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="text-sm sm:text-base font-extrabold text-gray-900 dark:text-white">
-                  SchoolCal KI-Lernzeitplaner
+                  SchoolCal KI-Schulassistent
                 </h3>
                 <span className="text-[9px] font-extrabold uppercase bg-purple-600 text-white px-2 py-0.5 rounded-full shadow-xs">
-                  Pro Feature
+                  Pro
                 </span>
               </div>
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                Berechne optimale tägliche Lerneinheiten für anstehende Klausuren & Prüfungen.
+                Stelle Fragen zu deinem Stundenplan, fälligen Aufgaben oder lass dir einen personalisierten Lernplan berechnen.
               </p>
             </div>
           </div>
@@ -161,26 +114,26 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
           <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
-              onClick={() => onOpenQuickAction('ai_plan')}
+              onClick={() => onOpenQuickAction('ai_chat')}
               className="px-3.5 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all active:scale-95"
             >
-              <Sparkles className="w-3.5 h-3.5 text-amber-300 fill-amber-300" />
-              <span>KI-Lernplan generieren</span>
+              <Bot className="w-3.5 h-3.5" />
+              <span>KI-Assistent fragen</span>
             </button>
 
             <button
               type="button"
-              onClick={() => onNavigateTab('grades')}
-              className="px-3 py-2 rounded-xl bg-white dark:bg-ios-dark-secondary text-gray-700 dark:text-gray-300 hover:bg-gray-100 text-xs font-semibold flex items-center gap-1 border border-black/5 dark:border-white/10 transition-colors"
+              onClick={() => onOpenQuickAction('ai_plan')}
+              className="px-3 py-2 rounded-xl bg-white dark:bg-ios-dark-secondary text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-ios-dark-tertiary text-xs font-semibold flex items-center gap-1.5 border border-black/5 dark:border-white/10 transition-colors"
             >
-              <Award className="w-3.5 h-3.5 text-purple-600" />
-              <span>Notenschnitt</span>
+              <Sparkles className="w-3.5 h-3.5 text-purple-600" />
+              <span>Lernplan berechnen</span>
             </button>
           </div>
         </div>
       </div>
 
-      {/* 2. Grid: Heutiger Stundenplan (Left/Full) + Homework & Exams (Right on iPad) */}
+      {/* 4. Grid: Heutiger Stundenplan (Left) + Tasks & Exams (Right on iPad) */}
       <div className="grid grid-cols-1 ipad:grid-cols-12 gap-5">
         {/* Left column: Heutiger Stundenplan */}
         <div className="ipad:col-span-7 space-y-3">
@@ -207,7 +160,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
             teachers={teachers}
             rooms={rooms}
             substitutions={substitutions}
-            currentPeriodNumber={currentStatus.currentEntry?.period}
+            currentPeriodNumber={smartDay.currentLesson?.entry.period}
             onSelectEntry={onSelectScheduleEntry}
           />
         </div>
@@ -234,3 +187,4 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
     </div>
   );
 };
+

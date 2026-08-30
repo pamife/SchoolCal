@@ -9,6 +9,8 @@ import {
   BookOpen,
   MapPin,
   Award,
+  BarChart3,
+  Bot,
 } from 'lucide-react';
 import type { NavigationTab } from '../../types';
 import { useHomeworkStore } from '../../store/useHomeworkStore';
@@ -23,11 +25,13 @@ import { GERMAN_STATES } from '../../data/holidays';
 interface SidebarProps {
   activeTab: NavigationTab;
   onTabChange: (tab: NavigationTab) => void;
+  onOpenAiAssistant?: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
   activeTab,
   onTabChange,
+  onOpenAiAssistant,
 }) => {
   const { homework } = useHomeworkStore();
   const { exams } = useExamStore();
@@ -40,9 +44,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const stateName = GERMAN_STATES.find(s => s.code === settings.state)?.name || settings.state;
 
   const navItems = [
-    { id: 'today' as NavigationTab, label: 'Heute', icon: Sun, count: null },
+    { id: 'today' as NavigationTab, label: 'Smart Day', icon: Sun, count: null },
     { id: 'calendar' as NavigationTab, label: 'Kalender', icon: Calendar, count: null },
     { id: 'tasks' as NavigationTab, label: 'Aufgaben', icon: CheckCircle2, count: openTasksCount || null },
+    { id: 'statistics' as NavigationTab, label: 'Statistiken', icon: BarChart3, count: null },
     { id: 'grades' as NavigationTab, label: 'Noten & Schnitt', icon: Award, count: null, isPro: true },
     { id: 'school' as NavigationTab, label: 'Schule & Stundenplan', icon: GraduationCap, count: null },
     { id: 'settings' as NavigationTab, label: 'Einstellungen', icon: Settings, count: null },
@@ -128,6 +133,34 @@ export const Sidebar: React.FC<SidebarProps> = ({
           );
         })}
       </div>
+
+      {/* 🤖 KI-Schulassistent Quick Access */}
+      {onOpenAiAssistant && (
+        <button
+          type="button"
+          onClick={onOpenAiAssistant}
+          className="w-full p-3 rounded-2xl bg-gradient-to-r from-purple-500/15 via-indigo-500/10 to-blue-500/10 border border-purple-500/20 hover:border-purple-500/40 text-left transition-all group mb-4"
+        >
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-purple-600 to-indigo-600 text-white flex items-center justify-center shadow-xs shrink-0 group-hover:scale-105 transition-transform">
+              <Bot className="w-4 h-4" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-bold text-gray-900 dark:text-white">
+                  KI-Assistent
+                </span>
+                <span className="text-[8px] font-extrabold uppercase px-1.5 py-0.2 rounded-full bg-purple-600 text-white">
+                  Pro
+                </span>
+              </div>
+              <p className="text-[10px] text-gray-500 dark:text-gray-400 truncate">
+                Stundenplan- & Lernfragen
+              </p>
+            </div>
+          </div>
+        </button>
+      )}
 
       {/* iPad Quick Status Cards */}
       <div className="mt-auto space-y-2 pt-4 border-t border-black/5 dark:border-white/10">

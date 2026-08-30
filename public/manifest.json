@@ -14,5 +14,35 @@
   "theme_color": "#007AFF",
   "display": "standalone",
   "orientation": "portrait-primary",
-  "categories": ["education", "productivity", "utilities"]
+  "categories": ["education", "productivity", "utilities"],
+  "shortcuts": [
+    {
+      "name": "Smart Day & Heute",
+      "short_name": "Smart Day",
+      "description": "Öffne deine heutige Smart Day Übersicht",
+      "url": "/?tab=today",
+      "icons": [{ "src": "/icon.svg", "sizes": "192x192" }]
+    },
+    {
+      "name": "Aufgabe hinzufügen",
+      "short_name": "Aufgabe +",
+      "description": "Neue Hausaufgabe schnell erfassen",
+      "url": "/?action=add_homework",
+      "icons": [{ "src": "/icon.svg", "sizes": "192x192" }]
+    },
+    {
+      "name": "Stundenplan",
+      "short_name": "Stundenplan",
+      "description": "Heutigen und wöchentlichen Stundenplan ansehen",
+      "url": "/?tab=school",
+      "icons": [{ "src": "/icon.svg", "sizes": "192x192" }]
+    },
+    {
+      "name": "Kalender",
+      "short_name": "Kalender",
+      "description": "Schulkalender & Termine öffnen",
+      "url": "/?tab=calendar",
+      "icons": [{ "src": "/icon.svg", "sizes": "192x192" }]
+    }
+  ]
 }

@@ -29,6 +29,28 @@ export const DEFAULT_BREAKS: ScheduleBreak[] = [
   { id: 'break-3', name: 'Mittagspause', afterPeriod: 6, startTime: '13:20', endTime: '14:05' },
 ];
 
+export const DEFAULT_NOTIFICATION_PREFERENCES = {
+  enabled: true,
+  lessonReminders: true,
+  lessonReminderMinutes: 10,
+  roomChanges: true,
+  teacherChanges: true,
+  cancellations: true,
+  substitutions: true,
+  homeworkDueDayBefore: true,
+  homeworkDue2HoursBefore: true,
+  homeworkDue30MinBefore: false,
+  examReminder7Days: true,
+  examReminder3Days: true,
+  examReminder1Day: true,
+  examReminderDayOf: true,
+  smartDayMorningBrief: true,
+  schoolEndSummary: true,
+  quietHoursEnabled: true,
+  quietHoursStart: '22:00',
+  quietHoursEnd: '07:00',
+};
+
 export const DEFAULT_USER_SETTINGS: UserSettings = {
   theme: 'system',
   accentColor: '#007AFF',
@@ -41,6 +63,7 @@ export const DEFAULT_USER_SETTINGS: UserSettings = {
   notificationsEnabled: true,
   dailySummaryTime: '07:15',
   activeTimetableVersion: 'default',
+  notifications: DEFAULT_NOTIFICATION_PREFERENCES,
 };
 
 // No demo data: All datasets start completely empty for each user

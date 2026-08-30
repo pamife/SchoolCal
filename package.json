@@ -8,6 +8,7 @@
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "test:licensing": "tsx scripts/test-licensing.ts",
+    "test:smart": "npx tsx scripts/test-smart-features.ts",
     "preview": "vite preview"
   },
   "dependencies": {

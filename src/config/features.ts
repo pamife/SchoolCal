@@ -25,11 +25,14 @@ export const PLAN_INFO: Record<UserPlan, PlanMeta> = {
     description: 'Dein vollständiger persönlicher Schulplaner – dauerhaft kostenlos.',
     priceLabel: 'Kostenlos',
     features: [
+      'Smart Day – Basis-Tagesübersicht',
+      'Basis-Schulstatistiken (Woche & Aufgaben)',
+      'Grundlegende Unterrichts- & Aufgaben-Erinnerungen',
       'Unbegrenzte Fächer, Lehrer & Räume',
       'Stundenplan mit Glockenzeiten & Pausen',
       'Hausaufgaben- & Aufgabenplaner',
       'Klausuren- & Prüfungskalender',
-      'Apple Kalender (.ics) Export',
+      'Apple Kalender (.ics) & Backup-Export',
       'Bundesland-Ferienkalender 2026/2027',
       'Cloud-Synchronisation über Firebase',
       'iPhone, iPad & Web-App (PWA)',
@@ -44,8 +47,10 @@ export const PLAN_INFO: Record<UserPlan, PlanMeta> = {
     priceLabel: 'Premium Lizenz',
     features: [
       'Alle Standard-Funktionen inklusive',
-      'WebUntis Stundenplan-Synchronisation',
-      'Erweiterte Benachrichtigungen & Erinnerungen',
+      'Erweiterter Smart Day mit Vertretungen & Vorankündigungen',
+      'Detaillierte Fächer-Statistiken & Monats-/Jahresauswertungen',
+      'Erweiterte Benachrichtigungen & Quiet Hours (Ruhezeiten)',
+      'WebUntis Stundenplan-Synchronisation & Vertretungs-Push',
       'Mehrere Stundenplan-Versionen (Woche A/B)',
       'Eigene Akzentfarben & Layout-Anpassungen',
       'Prioritärer Support & schnelle Updates',
@@ -60,11 +65,12 @@ export const PLAN_INFO: Record<UserPlan, PlanMeta> = {
     priceLabel: 'Exklusive Pro Lizenz',
     features: [
       'Alle Plus- und Standard-Funktionen',
-      'Notenverwaltung, Schnitte & Notenstatistiken',
-      'KI-gestützte Lern- & Klausurzeitplanung',
-      'Erweiterte WebUntis Vertretungs-Automation',
-      'Prüfungserfolgs- & Lernziel-Analysen',
-      'Detaillierte PDF-Berichte & Notenspiegel',
+      'KI-Schulassistent mit Echtzeit-Kontext aus Stundenplan & Aufgaben',
+      'KI-Lernzeitplaner & Klausurvorbereitung mit Aktions-Bestätigung',
+      'KI-gestützte Smart-Day-Tagesbriefings & Empfehlungen',
+      'Langzeit-Trendstatistiken & Noten-Analysen',
+      'Notenverwaltung, Schnitte & Notenspiegel',
+      'Detaillierte PDF-Berichte',
       'Alle zukünftigen Premium-Features inklusive',
     ],
   },
@@ -79,8 +85,15 @@ export const FEATURE_GATES = {
   holidays: 'STANDARD',
   periodSchedule: 'STANDARD',
   backupExport: 'STANDARD',
+  smartDayBasic: 'STANDARD',
+  basicStats: 'STANDARD',
+  basicNotifications: 'STANDARD',
 
   // Plus-Tier (Level 1)
+  smartDayAdvanced: 'PLUS',
+  advancedStats: 'PLUS',
+  advancedNotifications: 'PLUS',
+  webuntisNotifications: 'PLUS',
   webuntisSync: 'PLUS',
   advancedReminders: 'PLUS',
   multiWeekSchedule: 'PLUS',
@@ -88,8 +101,11 @@ export const FEATURE_GATES = {
   cloudAutoSync: 'PLUS',
 
   // Pro-Tier (Level 2)
-  gradeAnalytics: 'PRO',
+  aiSchoolAssistant: 'PRO',
+  aiSmartDay: 'PRO',
   aiSmartPlanning: 'PRO',
+  proStats: 'PRO',
+  gradeAnalytics: 'PRO',
   advancedWebUntis: 'PRO',
   examSuccessAnalytics: 'PRO',
   exportPdfReports: 'PRO',
@@ -114,3 +130,4 @@ export function isPlanEligible(userPlan: UserPlan, requiredPlan: UserPlan): bool
 export function getRequiredPlanForFeature(feature: FeatureKey): UserPlan {
   return FEATURE_GATES[feature] ?? 'STANDARD';
 }
+
