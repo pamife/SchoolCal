@@ -36,6 +36,7 @@ import { PricingModal } from '../licensing/PricingModal';
 import { LicenseActivationModal } from '../licensing/LicenseActivationModal';
 import { AdminModal } from '../admin/AdminModal';
 import { PremiumBadge } from '../licensing/PremiumBadge';
+import { WebUntisSyncTab } from '../school/WebUntisSyncTab';
 import { exportFullJsonBackup, parseJsonBackup, exportScheduleCsv } from '../../services/export/dataExportService';
 import { generateIcsCalendar, downloadIcsFile } from '../../services/ical/icalService';
 import { format } from 'date-fns';
@@ -379,7 +380,13 @@ export const SettingsScreen: React.FC = () => {
         </div>
       </div>
 
-      {/* 5. DARSTELLUNG & DESIGN */}
+      {/* 5. WEBUNTIS SYNCHRONISATION (PLUS) */}
+      <WebUntisSyncTab
+        onOpenPricing={() => setIsPricingOpen(true)}
+        onOpenActivation={() => setIsActivationOpen(true)}
+      />
+
+      {/* 6. DARSTELLUNG & DESIGN */}
       <div className="ios-card p-5 space-y-4">
         <div className="flex items-center gap-2.5 pb-2 border-b border-black/5 dark:border-white/10">
           <Palette className="w-5 h-5 text-purple-500" />

@@ -8,6 +8,7 @@ import {
   Search,
   BookOpen,
   MapPin,
+  Award,
 } from 'lucide-react';
 import type { NavigationTab } from '../../types';
 import { useHomeworkStore } from '../../store/useHomeworkStore';
@@ -42,6 +43,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'today' as NavigationTab, label: 'Heute', icon: Sun, count: null },
     { id: 'calendar' as NavigationTab, label: 'Kalender', icon: Calendar, count: null },
     { id: 'tasks' as NavigationTab, label: 'Aufgaben', icon: CheckCircle2, count: openTasksCount || null },
+    { id: 'grades' as NavigationTab, label: 'Noten & Schnitt', icon: Award, count: null, isPro: true },
     { id: 'school' as NavigationTab, label: 'Schule & Stundenplan', icon: GraduationCap, count: null },
     { id: 'settings' as NavigationTab, label: 'Einstellungen', icon: Settings, count: null },
   ];
@@ -74,7 +76,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <Search className="w-4 h-4 text-gray-400" />
           <span>Schnellsuche...</span>
         </div>
-        <kbd className="px-1.5 py-0.5 text-[10px] font-semibold bg-gray-100 dark:bg-ios-dark-tertiary rounded-text-gray-500">
+        <kbd className="px-1.5 py-0.5 text-[10px] font-semibold bg-gray-100 dark:bg-ios-dark-tertiary rounded text-gray-500">
           ⌘K
         </kbd>
       </button>
@@ -103,17 +105,25 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-gray-500 dark:text-gray-400'}`} />
                 <span>{item.label}</span>
               </div>
-              {item.count !== null && item.count > 0 && (
-                <span
-                  className={`text-xs px-2 py-0.5 rounded-full font-bold ${
-                    isActive
-                      ? 'bg-white/20 text-white'
-                      : 'bg-red-500/15 text-red-500 dark:bg-red-500/20 dark:text-red-400'
-                  }`}
-                >
-                  {item.count}
-                </span>
-              )}
+
+              <div className="flex items-center gap-1.5">
+                {item.isPro && (
+                  <span className="text-[9px] font-extrabold uppercase px-1.5 py-0.2 rounded bg-purple-500/20 text-purple-600 dark:text-purple-300">
+                    Pro
+                  </span>
+                )}
+                {item.count !== null && item.count > 0 && (
+                  <span
+                    className={`text-xs px-2 py-0.5 rounded-full font-bold ${
+                      isActive
+                        ? 'bg-white/20 text-white'
+                        : 'bg-red-500/15 text-red-500 dark:bg-red-500/20 dark:text-red-400'
+                    }`}
+                  >
+                    {item.count}
+                  </span>
+                )}
+              </div>
             </button>
           );
         })}

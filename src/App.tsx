@@ -17,6 +17,7 @@ import { AuthScreen } from './components/auth/AuthScreen';
 import { DashboardScreen } from './components/dashboard/DashboardScreen';
 import { CalendarScreen } from './components/calendar/CalendarScreen';
 import { HomeworkScreen } from './components/homework/HomeworkScreen';
+import { GradesScreen } from './components/grades/GradesScreen';
 import { SchoolScreen } from './components/school/SchoolScreen';
 import { SettingsScreen } from './components/settings/SettingsScreen';
 
@@ -171,6 +172,10 @@ export function App() {
 
           {activeTab === 'tasks' && (
             <HomeworkScreen />
+          )}
+
+          {activeTab === 'grades' && (
+            <GradesScreen />
           )}
 
           {activeTab === 'school' && (

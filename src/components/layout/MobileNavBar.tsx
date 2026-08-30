@@ -6,8 +6,9 @@ import {
   CheckCircle2,
   GraduationCap,
   Settings,
+  Award,
 } from 'lucide-react';
-import { NavigationTab } from '../../types';
+import type { NavigationTab } from '../../types';
 import { useHomeworkStore } from '../../store/useHomeworkStore';
 
 interface MobileNavBarProps {
@@ -26,13 +27,14 @@ export const MobileNavBar: React.FC<MobileNavBarProps> = ({
     { id: 'today', label: 'Heute', icon: Sun },
     { id: 'calendar', label: 'Kalender', icon: Calendar },
     { id: 'tasks', label: 'Aufgaben', icon: CheckCircle2, badge: openTasksCount > 0 ? openTasksCount : undefined },
+    { id: 'grades', label: 'Noten', icon: Award },
     { id: 'school', label: 'Schule', icon: GraduationCap },
-    { id: 'settings', label: 'Einstellungen', icon: Settings },
+    { id: 'settings', label: 'Optionen', icon: Settings },
   ];
 
   return (
     <nav aria-label="Mobile Navigation" className="ipad:hidden fixed bottom-0 left-0 right-0 z-40 ios-glass-bar border-t border-black/5 dark:border-white/10 pb-safe">
-      <div className="flex items-center justify-around h-14 max-w-lg mx-auto px-2">
+      <div className="flex items-center justify-around h-14 max-w-lg mx-auto px-1">
         {tabs.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -46,22 +48,22 @@ export const MobileNavBar: React.FC<MobileNavBarProps> = ({
             >
               <div className="relative flex items-center justify-center">
                 <Icon
-                  className={`w-6 h-6 transition-all duration-200 ${
+                  className={`w-5 h-5 transition-all duration-200 ${
                     isActive
                       ? 'text-ios-blue scale-105'
                       : 'text-gray-400 dark:text-gray-500 group-hover:text-gray-700 dark:group-hover:text-gray-300'
                   }`}
                 />
                 {tab.badge !== undefined && (
-                  <span className="absolute -top-1 -right-2 min-w-[17px] h-[17px] px-1 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center shadow-sm">
+                  <span className="absolute -top-1 -right-2 min-w-[15px] h-[15px] px-0.5 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center shadow-sm">
                     {tab.badge}
                   </span>
                 )}
               </div>
               <span
-                className={`text-[10px] mt-0.5 tracking-tight font-medium transition-colors ${
+                className={`text-[9px] mt-0.5 tracking-tight font-medium transition-colors ${
                   isActive
-                    ? 'text-ios-blue font-semibold'
+                    ? 'text-ios-blue font-bold'
                     : 'text-gray-400 dark:text-gray-500'
                 }`}
               >

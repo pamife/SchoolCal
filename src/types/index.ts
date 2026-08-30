@@ -1,4 +1,4 @@
-export type NavigationTab = 'today' | 'calendar' | 'tasks' | 'school' | 'settings';
+export type NavigationTab = 'today' | 'calendar' | 'tasks' | 'grades' | 'school' | 'settings';
 
 export type CalendarViewType = 'day' | '3days' | 'week' | 'month';
 
