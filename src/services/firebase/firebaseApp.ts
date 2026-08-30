@@ -1,23 +1,29 @@
-import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
+import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
+import { getAuth, Auth } from 'firebase/auth';
 import {
   initializeFirestore,
   persistentLocalCache,
   persistentMultipleTabManager,
   getFirestore,
+  Firestore,
 } from 'firebase/firestore';
 import { firebaseConfig, isFirebaseConfigured } from './config';
 
-// Initialize or get existing Firebase App instance
-export const app = getApps().length === 0
-  ? initializeApp(firebaseConfig)
-  : getApp();
+// Initialize Firebase App safely
+let appInstance: FirebaseApp;
+if (getApps().length === 0) {
+  appInstance = initializeApp(firebaseConfig);
+} else {
+  appInstance = getApp();
+}
+
+export const app = appInstance;
 
 // Firebase Auth
-export const auth = getAuth(app);
+export const auth: Auth = getAuth(app);
 
-// Cloud Firestore with Offline Persistence Cache (Multi-Tab support)
-let firestoreInstance;
+// Cloud Firestore with Offline Persistence Cache (graceful fallback)
+let firestoreInstance: Firestore;
 try {
   firestoreInstance = initializeFirestore(app, {
     localCache: persistentLocalCache({
@@ -25,8 +31,12 @@ try {
     }),
   });
 } catch {
-  // If already initialized, get standard instance
-  firestoreInstance = getFirestore(app);
+  try {
+    firestoreInstance = getFirestore(app);
+  } catch (err) {
+    console.error('Firestore init error:', err);
+    firestoreInstance = getFirestore(app);
+  }
 }
 
 export const db = firestoreInstance;
