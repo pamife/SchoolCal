@@ -6,9 +6,10 @@ import {
   Bot,
   User,
   Trash2,
-  Calendar,
-  Clock,
-  BookOpen,
+  Key,
+  Check,
+  X,
+  ExternalLink,
 } from 'lucide-react';
 import { BottomSheet } from '../common/BottomSheet';
 import { FeatureGate } from '../licensing/FeatureGate';
@@ -20,6 +21,11 @@ import { useSettingsStore } from '../../store/useSettingsStore';
 import { useAuthStore } from '../../store/useAuthStore';
 import { buildSafeAISchoolContext } from '../../services/ai/aiContextBuilder';
 import { defaultAIService } from '../../services/ai/BackendAIService';
+import {
+  getEffectiveGeminiApiKey,
+  setCustomGeminiApiKey,
+} from '../../services/ai/geminiApiClient';
+import { MarkdownText } from '../common/MarkdownText';
 import { AiActionCard } from './AiActionCard';
 import type { AIChatMessage } from '../../types';
 
@@ -45,6 +51,10 @@ export const AiAssistantModal: React.FC<AiAssistantModalProps> = ({
 
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [showKeyConfig, setShowKeyConfig] = useState(false);
+  const [customKeyInput, setCustomKeyInput] = useState(() => getEffectiveGeminiApiKey());
+  const [hasApiKey, setHasApiKey] = useState(() => Boolean(getEffectiveGeminiApiKey()));
+
   const [messages, setMessages] = useState<AIChatMessage[]>([
     {
       id: 'welcome',
@@ -61,6 +71,7 @@ export const AiAssistantModal: React.FC<AiAssistantModalProps> = ({
       setTimeout(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
       }, 100);
+      setHasApiKey(Boolean(getEffectiveGeminiApiKey()));
     }
   }, [isOpen, messages, isLoading]);
 
@@ -70,6 +81,12 @@ export const AiAssistantModal: React.FC<AiAssistantModalProps> = ({
     'Wie sieht meine Woche aus?',
     'Ich habe heute von 16 bis 18 Uhr Zeit. Was soll ich lernen?',
   ];
+
+  const handleSaveApiKey = () => {
+    setCustomGeminiApiKey(customKeyInput);
+    setHasApiKey(Boolean(customKeyInput.trim()));
+    setShowKeyConfig(false);
+  };
 
   const handleSendMessage = async (textToSend?: string) => {
     const query = (textToSend || input).trim();
@@ -165,8 +182,27 @@ export const AiAssistantModal: React.FC<AiAssistantModalProps> = ({
                 <Brain className="w-3.5 h-3.5" />
               </div>
               <span className="text-xs font-bold text-gray-800 dark:text-gray-200">
-                Kontextbezogene Schul-KI
+                SchoolCal KI (Gemini)
               </span>
+
+              <button
+                type="button"
+                onClick={() => setShowKeyConfig((prev) => !prev)}
+                className={`text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 transition-all ${
+                  hasApiKey
+                    ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/25'
+                    : 'bg-amber-500/15 text-amber-600 dark:text-amber-400 hover:bg-amber-500/25'
+                }`}
+                title="KI API-Key konfigurieren"
+              >
+                <div
+                  className={`w-1.5 h-1.5 rounded-full ${
+                    hasApiKey ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'
+                  }`}
+                />
+                <Key className="w-2.5 h-2.5" />
+                <span>{hasApiKey ? 'Online' : 'API-Key'}</span>
+              </button>
             </div>
 
             <button
@@ -178,6 +214,73 @@ export const AiAssistantModal: React.FC<AiAssistantModalProps> = ({
               <span>Verlauf leeren</span>
             </button>
           </div>
+
+          {/* Optional API Key Configuration Panel */}
+          {showKeyConfig && (
+            <div className="p-3.5 bg-purple-50 dark:bg-purple-950/40 border-b border-purple-200/50 dark:border-purple-800/40 space-y-2 text-xs">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-gray-900 dark:text-white flex items-center gap-1.5">
+                  <Key className="w-3.5 h-3.5 text-purple-600" />
+                  Google Gemini API-Key (kostenlos)
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setShowKeyConfig(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+
+              <p className="text-[11px] text-gray-600 dark:text-gray-300">
+                Für unbegrenzte, freie Konversationen mit dem echten <strong>Gemini 2.5 Flash Modell</strong> trage deinen kostenlosen API-Key aus Google AI Studio ein:
+              </p>
+
+              <div className="flex items-center gap-2">
+                <input
+                  type="password"
+                  value={customKeyInput}
+                  onChange={(e) => setCustomKeyInput(e.target.value)}
+                  placeholder="AIzaSy..."
+                  className="flex-1 px-3 py-1.5 bg-white dark:bg-ios-dark-secondary rounded-xl border border-black/10 dark:border-white/10 text-xs font-mono text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-purple-600"
+                />
+                <button
+                  type="button"
+                  onClick={handleSaveApiKey}
+                  className="px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs flex items-center gap-1 shrink-0 shadow-xs"
+                >
+                  <Check className="w-3.5 h-3.5" />
+                  <span>Speichern</span>
+                </button>
+              </div>
+
+              <div className="flex items-center justify-between pt-0.5">
+                <a
+                  href="https://aistudio.google.com/app/apikey"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[10px] text-purple-600 dark:text-purple-400 hover:underline flex items-center gap-1 font-medium"
+                >
+                  <ExternalLink className="w-2.5 h-2.5" />
+                  Kostenlosen Key bei Google AI Studio erstellen (1 Klick)
+                </a>
+
+                {customKeyInput && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCustomKeyInput('');
+                      setCustomGeminiApiKey('');
+                      setHasApiKey(false);
+                    }}
+                    className="text-[10px] text-red-500 hover:underline"
+                  >
+                    Key löschen
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Messages Scroll Area */}
           <div className="flex-1 overflow-y-auto p-4 space-y-3.5 no-scrollbar">
@@ -204,10 +307,14 @@ export const AiAssistantModal: React.FC<AiAssistantModalProps> = ({
                     className={`max-w-[85%] sm:max-w-[75%] p-3.5 rounded-2xl text-xs sm:text-sm leading-relaxed ${
                       isUser
                         ? 'bg-ios-blue text-white rounded-tr-xs'
-                        : 'bg-gray-100 dark:bg-ios-dark-secondary text-gray-900 dark:text-white rounded-tl-xs whitespace-pre-wrap'
+                        : 'bg-gray-100 dark:bg-ios-dark-secondary text-gray-900 dark:text-white rounded-tl-xs'
                     }`}
                   >
-                    {msg.content}
+                    {isUser ? (
+                      <span>{msg.content}</span>
+                    ) : (
+                      <MarkdownText content={msg.content} />
+                    )}
 
                     {/* Propose Action Card */}
                     {msg.action && (
@@ -230,7 +337,7 @@ export const AiAssistantModal: React.FC<AiAssistantModalProps> = ({
                 </div>
                 <div className="p-3.5 rounded-2xl bg-gray-100 dark:bg-ios-dark-secondary text-xs rounded-tl-xs flex items-center gap-1.5 text-gray-500">
                   <Sparkles className="w-3.5 h-3.5 animate-spin text-purple-600" />
-                  <span>Analysiere deine SchoolCal-Daten...</span>
+                  <span>Gemini KI denkt nach...</span>
                 </div>
               </div>
             )}
@@ -266,7 +373,7 @@ export const AiAssistantModal: React.FC<AiAssistantModalProps> = ({
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Frage zu Stundenplan, Aufgaben oder Klausuren..."
+              placeholder="Frage zu Stundenplan, Aufgaben, Vorträgen oder Schulthemen..."
               className="flex-1 px-3.5 py-2.5 bg-gray-100 dark:bg-ios-dark-secondary rounded-xl text-xs sm:text-sm font-medium text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-600"
             />
 

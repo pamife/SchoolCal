@@ -1,5 +1,6 @@
 import type { IAIService, AISchoolContext, AIResponse } from './AIServiceInterface';
 import type { AIChatMessage } from '../../types';
+import { callDirectGeminiAPI } from './geminiApiClient';
 
 export class BackendAIService implements IAIService {
   private endpointUrl: string;
@@ -13,6 +14,7 @@ export class BackendAIService implements IAIService {
     context: AISchoolContext,
     conversationHistory: AIChatMessage[] = []
   ): Promise<AIResponse> {
+    // 1. Try serverless backend function first
     try {
       const response = await fetch(this.endpointUrl, {
         method: 'POST',
@@ -28,31 +30,63 @@ export class BackendAIService implements IAIService {
 
       if (response.ok) {
         const data = await response.json();
-        return {
-          text: data.text || 'Keine Antwort erhalten.',
-          action: data.action,
-        };
+        if (data.text) {
+          return {
+            text: data.text,
+            action: data.action,
+          };
+        }
       }
-    } catch (networkError) {
-      console.warn('Backend API unavailable, using client-side context engine:', networkError);
+    } catch {
+      // Backend function unavailable or local dev without Netlify Functions
     }
 
-    // Smart data-driven fallback engine when backend serverless endpoint is offline
+    // 2. Try direct Google Gemini 2.5 Flash / 1.5 Flash API
+    const directGeminiResponse = await callDirectGeminiAPI(prompt, context, conversationHistory);
+    if (directGeminiResponse && directGeminiResponse.text) {
+      return directGeminiResponse;
+    }
+
+    // 3. Truthful local analysis engine if no API key is configured
     return this.generateContextualLocalResponse(prompt, context);
   }
 
   private generateContextualLocalResponse(prompt: string, context: AISchoolContext): AIResponse {
     const lower = prompt.toLowerCase();
 
+    // Check if user is asking about a specific homework item (e.g. "Vortrag", "Kunst", "Bilder", "Arbeitsblatt")
+    const matchedTask = context.openHomework.find(
+      (h) => lower.includes(h.title.toLowerCase()) || lower.includes(h.subjectName.toLowerCase())
+    );
+
+    if (matchedTask) {
+      return {
+        text: `Zu deiner Aufgabe **${matchedTask.title}** (${matchedTask.subjectName}):\n\n` +
+          `• **Fälligkeit:** ${matchedTask.dueDate}${matchedTask.dueTime ? ` um ${matchedTask.dueTime} Uhr` : ''}\n` +
+          `• **Priorität:** ${matchedTask.priority}\n\n` +
+          `💡 **Tipp zur Vorbereitung:**\n` +
+          `1. **Einleitung:** Thema vorstellen und Interesse wecken.\n` +
+          `2. **Hauptteil:** Die wichtigsten 3 Kernpunkte mit Beispielen strukturieren.\n` +
+          `3. **Schluss:** Zusammenfassung und Fazit präsentieren.\n\n` +
+          `*Hinweis: Um detaillierte freie Textanalysen & KI-Recherchen zu nutzen, hinterlege deinen kostenlosen Google Gemini API Key in den Einstellungen.*`,
+      };
+    }
+
     // 1. "Was muss ich heute noch machen?" / Aufgaben
-    if (lower.includes('heute') && (lower.includes('machen') || lower.includes('aufgabe') || lower.includes('hausaufgabe') || lower.includes('fällig') || lower.includes('offen'))) {
+    if (
+      lower.includes('heute') &&
+      (lower.includes('machen') ||
+        lower.includes('aufgabe') ||
+        lower.includes('hausaufgabe') ||
+        lower.includes('fällig') ||
+        lower.includes('offen'))
+    ) {
       if (context.openHomework.length === 0) {
         return {
           text: `🎉 Du hast aktuell **keine offenen Hausaufgaben**! Alle Aufgaben sind erledigt.`,
         };
       }
 
-      const todayTasks = context.openHomework.filter((h) => h.dueDate.includes(context.currentDate.slice(0, 5)) || h.priority === 'high');
       const lines = context.openHomework.map(
         (h) => `• **${h.subjectName}:** ${h.title} (Fällig: ${h.dueDate}${h.dueTime ? ` um ${h.dueTime}` : ''}) [Priorität: ${h.priority}]`
       );
@@ -150,10 +184,7 @@ export class BackendAIService implements IAIService {
         `• **Heute (${context.weekday}):** ${context.todaySchedule.length} Unterrichtsstunden\n` +
         `• **Offene Aufgaben:** ${context.openHomework.length} zu erledigen\n` +
         `• **Klausuren:** ${context.upcomingExams.length} anstehend\n\n` +
-        `Frage mich zum Beispiel:\n` +
-        `* *"Was muss ich heute noch machen?"*\n` +
-        `* *"Wann habe ich meine nächste Klausur?"*\n` +
-        `* *"Ich habe heute von 16 bis 18 Uhr Zeit. Was soll ich lernen?"*`,
+        `💡 *Tipp:* Du kannst deinen kostenlosen Google Gemini API-Key direkt im KI-Assistenten hinterlegen, um jede beliebige Frage mit voller generativer KI zu beantworten.`,
     };
   }
 }
