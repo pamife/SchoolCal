@@ -13,6 +13,7 @@ import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { auth, db } from './firebaseApp';
 import type { UserProfile } from '../../types';
 import { checkAndUpdateUserPlanExpiration } from '../licensing/licenseService';
+import { DEFAULT_SCHOOL_ID } from '../../config/schoolConfig';
 
 export function translateFirebaseAuthError(errorCode: string): string {
   switch (errorCode) {
@@ -66,6 +67,7 @@ export async function registerWithEmail(
     activeLicenseId: null,
     planExpiresAt: null,
     role: 'user',
+    schoolId: DEFAULT_SCHOOL_ID,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   };
@@ -89,7 +91,11 @@ export async function loginWithEmail(email: string, password: string): Promise<U
     const snap = await getDoc(userDocRef);
     if (snap.exists()) {
       const data = snap.data() as UserProfile;
-      return await checkAndUpdateUserPlanExpiration(data);
+      const validated = await checkAndUpdateUserPlanExpiration(data);
+      if (!validated.schoolId) {
+        validated.schoolId = DEFAULT_SCHOOL_ID;
+      }
+      return validated;
     }
   } catch (err) {
     console.warn('Could not load user doc on login:', err);
@@ -105,6 +111,7 @@ export async function loginWithEmail(email: string, password: string): Promise<U
     activeLicenseId: null,
     planExpiresAt: null,
     role: 'user',
+    schoolId: DEFAULT_SCHOOL_ID,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   };
@@ -123,7 +130,12 @@ export async function signInWithGoogle(): Promise<UserProfile> {
     const snap = await getDoc(userDocRef);
     if (snap.exists()) {
       const data = snap.data() as UserProfile;
-      return await checkAndUpdateUserPlanExpiration(data);
+      const validated = await checkAndUpdateUserPlanExpiration(data);
+      if (!validated.schoolId) {
+        validated.schoolId = DEFAULT_SCHOOL_ID;
+        await setDoc(userDocRef, { schoolId: DEFAULT_SCHOOL_ID }, { merge: true });
+      }
+      return validated;
     }
   } catch (err) {
     console.warn('Could not read user doc on Google login:', err);
@@ -139,6 +151,7 @@ export async function signInWithGoogle(): Promise<UserProfile> {
     activeLicenseId: null,
     planExpiresAt: null,
     role: 'user',
+    schoolId: DEFAULT_SCHOOL_ID,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   };
@@ -174,6 +187,9 @@ export function subscribeToAuthState(
       if (snap.exists()) {
         const profile = snap.data() as UserProfile;
         const validated = await checkAndUpdateUserPlanExpiration(profile);
+        if (!validated.schoolId) {
+          validated.schoolId = DEFAULT_SCHOOL_ID;
+        }
         callback(validated);
         return;
       }
@@ -191,9 +207,11 @@ export function subscribeToAuthState(
       activeLicenseId: null,
       planExpiresAt: null,
       role: 'user',
+      schoolId: DEFAULT_SCHOOL_ID,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
     callback(fallbackProfile);
   });
 }
+
