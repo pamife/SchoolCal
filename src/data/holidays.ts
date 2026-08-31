@@ -36,6 +36,14 @@ export const HOLIDAYS_DATABASE: Holiday[] = [
   { id: 'hol-weihnachten-2-2026', name: '2. Weihnachtsfeiertag', startDate: '2026-12-26', endDate: '2026-12-26', type: 'public_holiday', state: 'ALL' },
   { id: 'hol-neujahr-2027', name: 'Neujahr', startDate: '2027-01-01', endDate: '2027-01-01', type: 'public_holiday', state: 'ALL' },
 
+  // Brandenburg (BB) Schulferien 2026/2027 (Christa-und-Peter-Scherpf-Gymnasium)
+  { id: 'bb-sommer-2026', name: 'Sommerferien', startDate: '2026-07-09', endDate: '2026-08-22', type: 'vacation', state: 'BB' },
+  { id: 'bb-herbst-2026', name: 'Herbstferien', startDate: '2026-10-19', endDate: '2026-10-30', type: 'vacation', state: 'BB' },
+  { id: 'bb-weihnachten-2026', name: 'Weihnachtsferien', startDate: '2026-12-23', endDate: '2027-01-02', type: 'vacation', state: 'BB' },
+  { id: 'bb-winter-2027', name: 'Winterferien', startDate: '2027-02-01', endDate: '2027-02-06', type: 'vacation', state: 'BB' },
+  { id: 'bb-ostern-2027', name: 'Osterferien', startDate: '2027-03-22', endDate: '2027-04-03', type: 'vacation', state: 'BB' },
+  { id: 'bb-sommer-2027', name: 'Sommerferien', startDate: '2027-07-01', endDate: '2027-08-14', type: 'vacation', state: 'BB' },
+
   // Bayern (BY) Schulferien 2026/2027
   { id: 'by-sommer-2026', name: 'Sommerferien', startDate: '2026-08-03', endDate: '2026-09-14', type: 'vacation', state: 'BY' },
   { id: 'by-herbst-2026', name: 'Herbstferien', startDate: '2026-11-02', endDate: '2026-11-06', type: 'vacation', state: 'BY' },

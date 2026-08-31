@@ -9,18 +9,31 @@ import {
 } from 'firebase/firestore';
 import { firebaseConfig, isFirebaseConfigured } from './config';
 
+// Fallback safe config for local testing and CI/script environments
+const effectiveConfig = {
+  ...firebaseConfig,
+  apiKey: firebaseConfig.apiKey || 'AIzaSyMockKeyForDevAndTestingEnvironment0',
+  projectId: firebaseConfig.projectId || 'schoolcal-dev',
+};
+
 // Initialize Firebase App safely
 let appInstance: FirebaseApp;
 if (getApps().length === 0) {
-  appInstance = initializeApp(firebaseConfig);
+  appInstance = initializeApp(effectiveConfig);
 } else {
   appInstance = getApp();
 }
 
 export const app = appInstance;
 
-// Firebase Auth
-export const auth: Auth = getAuth(app);
+// Firebase Auth (safe initialization)
+let authInstance: Auth;
+try {
+  authInstance = getAuth(app);
+} catch {
+  authInstance = {} as Auth;
+}
+export const auth: Auth = authInstance;
 
 // Cloud Firestore with Offline Persistence Cache (graceful fallback)
 let firestoreInstance: Firestore;

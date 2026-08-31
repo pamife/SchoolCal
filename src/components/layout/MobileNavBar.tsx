@@ -33,7 +33,7 @@ export const MobileNavBar: React.FC<MobileNavBarProps> = ({
   ];
 
   return (
-    <nav aria-label="Mobile Navigation" className="ipad:hidden fixed bottom-0 left-0 right-0 z-40 ios-glass-bar border-t border-black/5 dark:border-white/10 pb-safe">
+    <nav aria-label="Mobile Navigation" className="ipad:hidden fixed bottom-0 left-0 right-0 z-40 ios-glass-bar border-t border-black/5 dark:border-white/10 pb-safe select-none touch-none">
       <div className="flex items-center justify-around h-14 max-w-lg mx-auto px-1">
         {tabs.map((tab) => {
           const Icon = tab.icon;

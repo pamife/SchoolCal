@@ -21,29 +21,38 @@ service cloud.firestore {
 
     // 1. User Profile Documents: users/{userId}
     match /users/{userId} {
+      // User can read their own profile, Admin can read profile for user management
       allow read: if isOwner(userId) || isAdmin();
       
-      // New user creation
-      allow create: if isOwner(userId);
+      // New user creation: Stricly enforce that users CANNOT assign themselves the admin role
+      allow create: if isOwner(userId) && (
+        !('role' in request.resource.data) ||
+        request.resource.data.role == 'user'
+      );
 
-      // User profile update: users cannot directly grant themselves admin role
+      // User profile update: users cannot modify their own role
       allow update: if (
         isOwner(userId) &&
         !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role'])
       ) || isAdmin();
 
+      // Deletion: User can delete their own account or Admin can delete user
       allow delete: if isOwner(userId) || isAdmin();
 
-      // User Subcollections (subjects, teachers, schedule, homework, exams, etc.)
+      // 1.1 Private User Subcollections (subjects, teachers, rooms, schedule, substitutions, homework, exams, grades, events, settings)
+      // PRIVACY & CONFIDENTIALITY: Strictly isolated to the owner ONLY. Admin CANNOT read or write private student data!
       match /{subcollection}/{document=**} {
-        allow read, write: if isOwner(userId) || isAdmin();
+        allow read, write: if isOwner(userId);
       }
     }
 
     // 2. Licenses Collection: licenses/{licenseId}
     match /licenses/{licenseId} {
-      // Admins can read all; Users can read if they activated it or if available
-      allow read: if isAdmin() || (
+      // Admins can list and read all licenses.
+      // Standard authenticated users can ONLY read the license they have already activated, or fetch a single doc.
+      // Listing (collection query of all licenses) is strictly restricted to Admins to prevent code harvesting.
+      allow list: if isAdmin();
+      allow get: if isAdmin() || (
         isAuthenticated() && (
           resource == null ||
           resource.data.get('activatedByUid', '') == request.auth.uid ||
@@ -54,7 +63,7 @@ service cloud.firestore {
       // Admins can create and delete licenses
       allow create, delete: if isAdmin();
 
-      // License update: Either admin or authenticated user performing valid activation
+      // License update: Either admin or authenticated user performing valid atomic activation
       allow update: if isAdmin() || (
         isAuthenticated() &&
         resource.data.get('status', '') == 'AVAILABLE' &&

@@ -1,8 +1,7 @@
 import { create } from 'zustand';
 import type { UserProfile } from '../types';
 import { logoutUser, subscribeToAuthState } from '../services/firebase/authService';
-import { deleteDoc, doc } from 'firebase/firestore';
-import { db } from '../services/firebase/firebaseApp';
+import { deleteEntireAccountAndData, DeletionResult } from '../services/account/accountDeletionService';
 
 interface AuthState {
   user: UserProfile | null;
@@ -12,7 +11,7 @@ interface AuthState {
   setUser: (user: UserProfile | null) => void;
   logout: () => Promise<void>;
   updateProfile: (updates: Partial<UserProfile>) => void;
-  deleteAccountAndData: () => Promise<void>;
+  deleteAccountAndData: () => Promise<DeletionResult>;
   initAuthListener: () => () => void;
 }
 
@@ -31,6 +30,17 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     } catch (err) {
       console.error('Logout error:', err);
     }
+
+    // Clean up local session data on logout (GDPR hygiene on shared devices)
+    if (typeof window !== 'undefined' && window.localStorage) {
+      try {
+        const keysToClear = ['schoolcal_gemini_api_key', 'schoolcal_user_settings'];
+        keysToClear.forEach(k => localStorage.removeItem(k));
+      } catch {
+        // ignore
+      }
+    }
+
     set({ user: null, isAuthenticated: false, isLoading: false });
   },
 
@@ -43,14 +53,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   deleteAccountAndData: async () => {
     const currentUser = get().user;
-    if (currentUser?.uid) {
-      try {
-        await deleteDoc(doc(db, 'users', currentUser.uid));
-      } catch (err) {
-        console.error('Error deleting user profile:', err);
-      }
-    }
+    const result = await deleteEntireAccountAndData(currentUser);
     await get().logout();
+    return result;
   },
 
   initAuthListener: () => {

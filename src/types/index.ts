@@ -432,6 +432,7 @@ export interface UserProfile {
   activeLicenseId: string | null;
   planExpiresAt: string | null; // ISO string or null for lifetime
   role?: 'admin' | 'user';
+  schoolId?: string; // e.g. "christa-peter-scherpf-gymnasium-prenzlau"
   createdAt: string;
   updatedAt: string;
 }
@@ -445,4 +446,84 @@ export type QuickActionType =
   | 'substitution'
   | 'ai_plan'
   | 'ai_chat';
+
+// ----------------------------------------------------
+// 🏫 Central School Profile & Configuration Types
+// ----------------------------------------------------
+
+export type BreakDisplayMode = 'hidden' | 'banner' | 'block';
+
+export interface SchoolWebUntisConfig {
+  enabled: boolean;
+  server: string;
+  school: string;
+  schoolDisplayName?: string;
+  allowAnonymous?: boolean;
+  supportsTimetable?: boolean;
+  supportsSubstitutions?: boolean;
+  supportsCancellations?: boolean;
+  supportsRooms?: boolean;
+  supportsTeachers?: boolean;
+  supportsHomework?: boolean;
+  supportsExams?: boolean;
+  lastSyncCheck?: string | null;
+}
+
+export interface SchoolProfile {
+  id: string;
+  name: string;
+  city: string;
+  state: string;
+  stateName?: string;
+  country: string;
+  enabled: boolean;
+  timezone: string;
+  address?: string;
+  phone?: string;
+  email?: string;
+  website?: string;
+  openingHours?: string;
+  createdAt: string;
+  updatedAt: string;
+  updatedByUid?: string;
+  webUntisConfig?: SchoolWebUntisConfig;
+}
+
+export interface DayScheduleOverride {
+  monday?: SchedulePeriodTime[];
+  tuesday?: SchedulePeriodTime[];
+  wednesday?: SchedulePeriodTime[];
+  thursday?: SchedulePeriodTime[];
+  friday?: SchedulePeriodTime[];
+}
+
+export interface SchoolSchedulePeriodsDoc {
+  periods: SchedulePeriodTime[];
+  dayOverrides?: DayScheduleOverride;
+  updatedAt: string;
+  updatedByUid?: string;
+}
+
+export interface SchoolScheduleBreaksDoc {
+  breaks: ScheduleBreak[];
+  displayMode: BreakDisplayMode;
+  updatedAt: string;
+  updatedByUid?: string;
+}
+
+export interface SchoolAuditLogEntry {
+  id: string;
+  action:
+    | 'SCHOOL_PROFILE_UPDATED'
+    | 'PERIODS_UPDATED'
+    | 'BREAKS_UPDATED'
+    | 'HOLIDAY_ADDED'
+    | 'HOLIDAY_DELETED'
+    | 'WEBUNTIS_CONFIG_UPDATED';
+  actorUid: string;
+  actorEmail?: string;
+  details?: Record<string, any>;
+  timestamp: string;
+}
+
 

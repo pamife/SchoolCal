@@ -41,6 +41,10 @@ import { PremiumBadge } from '../licensing/PremiumBadge';
 import { WebUntisSyncTab } from '../school/WebUntisSyncTab';
 import { NotificationSettingsTab } from './NotificationSettingsTab';
 import { AiSettingsCard } from './AiSettingsCard';
+import { PrivacyDashboardCard } from './PrivacyDashboardCard';
+import { PrivacyPolicyModal } from '../legal/PrivacyPolicyModal';
+import { ImprintModal } from '../legal/ImprintModal';
+import { TermsModal } from '../legal/TermsModal';
 import { exportFullJsonBackup, parseJsonBackup, exportScheduleCsv } from '../../services/export/dataExportService';
 import { generateIcsCalendar, downloadIcsFile } from '../../services/ical/icalService';
 import { format } from 'date-fns';
@@ -69,6 +73,9 @@ export const SettingsScreen: React.FC = () => {
   const [isActivationOpen, setIsActivationOpen] = useState(false);
   const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
   const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
+  const [isPrivacyModalOpen, setIsPrivacyModalOpen] = useState(false);
+  const [isImprintModalOpen, setIsImprintModalOpen] = useState(false);
+  const [isTermsModalOpen, setIsTermsModalOpen] = useState(false);
   const [helpInitialTab, setHelpInitialTab] = useState<'install' | 'notifications' | 'schedule' | 'webuntis' | 'account' | 'privacy' | 'faq'>('install');
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -772,41 +779,33 @@ export const SettingsScreen: React.FC = () => {
         </div>
       </div>
 
-      {/* 9. ACCOUNT LÖSCHEN */}
-      <div className="ios-card p-5 space-y-4">
-        <div className="flex items-center gap-2.5 pb-2 border-b border-black/5 dark:border-white/10">
-          <ShieldCheck className="w-5 h-5 text-gray-500" />
-          <h3 className="text-base font-bold text-gray-900 dark:text-white">
-            Datenschutz & Account-Verwaltung
-          </h3>
-        </div>
-
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <div>
-            <h4 className="text-sm font-semibold text-red-600 dark:text-red-400">
-              Account & alle Cloud-Daten löschen
-            </h4>
-            <p className="text-xs text-gray-500 dark:text-gray-400">
-              Entfernt unwiderruflich dein Benutzerkonto und alle in Firestore gespeicherten Daten.
-            </p>
-          </div>
-          <Button
-            variant="destructive"
-            size="sm"
-            disabled={isDeleting}
-            onClick={handleDeleteAll}
-            icon={<Trash2 className="w-4 h-4" />}
-          >
-            {isDeleting ? 'Wird gelöscht...' : 'Account & Daten löschen'}
-          </Button>
-        </div>
-      </div>
+      {/* 9. DATENSCHUTZ & PRIVATSPHÄRE DASHBOARD */}
+      <PrivacyDashboardCard
+        onOpenPrivacyModal={() => setIsPrivacyModalOpen(true)}
+        onOpenImprintModal={() => setIsImprintModalOpen(true)}
+        onOpenTermsModal={() => setIsTermsModalOpen(true)}
+      />
 
       {/* Modals */}
       <HelpAndInstallModal
         isOpen={isHelpModalOpen}
         onClose={() => setIsHelpModalOpen(false)}
         initialTab={helpInitialTab}
+      />
+
+      <PrivacyPolicyModal
+        isOpen={isPrivacyModalOpen}
+        onClose={() => setIsPrivacyModalOpen(false)}
+      />
+
+      <ImprintModal
+        isOpen={isImprintModalOpen}
+        onClose={() => setIsImprintModalOpen(false)}
+      />
+
+      <TermsModal
+        isOpen={isTermsModalOpen}
+        onClose={() => setIsTermsModalOpen(false)}
       />
 
       <PeriodTimesModal
