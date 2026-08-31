@@ -1,12 +1,70 @@
-import type { IAIService, AISchoolContext, AIResponse } from './AIServiceInterface';
+import type { IAIService, AISchoolContext, AIResponse, AIHealthStatus } from './AIServiceInterface';
 import type { AIChatMessage } from '../../types';
-import { callDirectGeminiAPI } from './geminiApiClient';
+import { callDirectGeminiAPI, getEffectiveGeminiApiKey } from './geminiApiClient';
 
 export class BackendAIService implements IAIService {
   private endpointUrl: string;
+  private healthCache: { data: AIHealthStatus; expiresAt: number } | null = null;
 
   constructor(endpointUrl: string = '/.netlify/functions/ai-assistant') {
     this.endpointUrl = endpointUrl;
+  }
+
+  /**
+   * Health Check to verify server-side AI availability without leaking keys.
+   * Caches results for 30 seconds to avoid unnecessary roundtrips.
+   */
+  async checkHealth(forceRefresh = false): Promise<AIHealthStatus> {
+    const now = Date.now();
+    if (!forceRefresh && this.healthCache && this.healthCache.expiresAt > now) {
+      return this.healthCache.data;
+    }
+
+    try {
+      const response = await fetch(`${this.endpointUrl}?action=health_check`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      if (response.ok) {
+        const data: AIHealthStatus = await response.json();
+        const result: AIHealthStatus = {
+          ...data,
+          lastChecked: new Date().toISOString(),
+        };
+
+        // Cache for 30 seconds
+        this.healthCache = {
+          data: result,
+          expiresAt: now + 30 * 1000,
+        };
+
+        return result;
+      }
+    } catch {
+      // Netlify function not available (e.g. Vite dev without netlify dev)
+    }
+
+    // Fallback check if user has a custom local key in browser
+    const localKey = getEffectiveGeminiApiKey();
+    const result: AIHealthStatus = {
+      ok: Boolean(localKey),
+      status: localKey ? 'active' : 'offline',
+      configured: Boolean(localKey),
+      provider: localKey ? 'Google Gemini (Lokaler Key)' : 'Google Gemini',
+      model: localKey ? 'gemini-2.5-flash' : undefined,
+      message: localKey
+        ? 'Lokaler Gemini API-Key aktiv.'
+        : 'Netlify Backend-Funktion nicht erreichbar & kein lokaler Key hinterlegt.',
+      lastChecked: new Date().toISOString(),
+    };
+
+    this.healthCache = {
+      data: result,
+      expiresAt: now + 15 * 1000,
+    };
+
+    return result;
   }
 
   async ask(
@@ -28,26 +86,55 @@ export class BackendAIService implements IAIService {
         }),
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        if (data.text) {
-          return {
-            text: data.text,
-            action: data.action,
-          };
+      const data = await response.json().catch(() => ({}));
+
+      if (response.ok && data.ok !== false && data.text) {
+        return {
+          text: data.text,
+          action: data.action,
+        };
+      }
+
+      // Handle specific structured server error codes
+      if (data.errorType === 'INVALID_API_KEY') {
+        return {
+          text: '⚠️ **KI-Authentifizierung fehlgeschlagen:** Der in Netlify hinterlegte Gemini API-Key ist ungültig oder abgelaufen. Bitte prüfe die Netlify Environment Variables.',
+          errorType: 'INVALID_API_KEY',
+        };
+      }
+
+      if (data.errorType === 'RATE_LIMITED') {
+        return {
+          text: '⏳ **KI-Dienst ausgelastet:** Das Gemini API-Limit wurde erreicht. Bitte versuche es in wenigen Augenblicken erneut.',
+          errorType: 'RATE_LIMITED',
+        };
+      }
+
+      if (data.errorType === 'MISSING_API_KEY') {
+        // If server key is missing, check if client has a local key configured
+        const directGemini = await callDirectGeminiAPI(prompt, context, conversationHistory);
+        if (directGemini && directGemini.text) {
+          return directGemini;
         }
+
+        // Return truthful context response with clear status notice
+        const local = this.generateContextualLocalResponse(prompt, context);
+        return {
+          ...local,
+          errorType: 'MISSING_API_KEY',
+        };
       }
     } catch {
       // Backend function unavailable or local dev without Netlify Functions
     }
 
-    // 2. Try direct Google Gemini 2.5 Flash / 1.5 Flash API
+    // 2. Try direct Google Gemini API if local key is stored in browser
     const directGeminiResponse = await callDirectGeminiAPI(prompt, context, conversationHistory);
     if (directGeminiResponse && directGeminiResponse.text) {
       return directGeminiResponse;
     }
 
-    // 3. Truthful local analysis engine if no API key is configured
+    // 3. Contextual local analysis engine fallback
     return this.generateContextualLocalResponse(prompt, context);
   }
 
@@ -69,10 +156,9 @@ export class BackendAIService implements IAIService {
           `• **Fälligkeit:** ${matchedTask.dueDate}${matchedTask.dueTime ? ` um ${matchedTask.dueTime} Uhr` : ''} (${modeText})\n` +
           `• **Priorität:** ${matchedTask.priority}\n\n` +
           `💡 **Tipp zur Vorbereitung:**\n` +
-          `1. **Einleitung:** Thema vorstellen und Interesse wecken.\n` +
+          `1. **Einleitung:** Thema kurz vorstellen und Leitfrage formulieren.\n` +
           `2. **Hauptteil:** Die wichtigsten 3 Kernpunkte mit Beispielen strukturieren.\n` +
-          `3. **Schluss:** Zusammenfassung und Fazit präsentieren.\n\n` +
-          `*Hinweis: Um detaillierte freie Textanalysen & KI-Recherchen zu nutzen, hinterlege deinen kostenlosen Google Gemini API Key in den Einstellungen.*`,
+          `3. **Schluss:** Zusammenfassung und Fazit präsentieren.`,
       };
     }
 
@@ -188,9 +274,10 @@ export class BackendAIService implements IAIService {
         `• **Heute (${context.weekday}):** ${context.todaySchedule.length} Unterrichtsstunden\n` +
         `• **Offene Aufgaben:** ${context.openHomework.length} zu erledigen\n` +
         `• **Klausuren:** ${context.upcomingExams.length} anstehend\n\n` +
-        `💡 *Tipp:* Du kannst deinen kostenlosen Google Gemini API-Key direkt im KI-Assistenten hinterlegen, um jede beliebige Frage mit voller generativer KI zu beantworten.`,
+        `Frag mich gerne zu deinen Fächern, anstehenden Klausuren oder erstelle einen Lernplan für den Nachmittag!`,
     };
   }
 }
 
 export const defaultAIService = new BackendAIService();
+

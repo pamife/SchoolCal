@@ -53,7 +53,14 @@ export const AiAssistantModal: React.FC<AiAssistantModalProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [showKeyConfig, setShowKeyConfig] = useState(false);
   const [customKeyInput, setCustomKeyInput] = useState(() => getEffectiveGeminiApiKey());
-  const [hasApiKey, setHasApiKey] = useState(() => Boolean(getEffectiveGeminiApiKey()));
+  const [aiStatus, setAiStatus] = useState<{
+    status: 'active' | 'missing_key' | 'invalid_key' | 'rate_limited' | 'unreachable' | 'offline';
+    label: string;
+    model?: string;
+  }>({
+    status: 'offline',
+    label: 'Prüfe Status...',
+  });
 
   const [messages, setMessages] = useState<AIChatMessage[]>([
     {
@@ -66,14 +73,57 @@ export const AiAssistantModal: React.FC<AiAssistantModalProps> = ({
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // Check live health status when modal opens
+  const refreshAiStatus = async () => {
+    try {
+      const health = await defaultAIService.checkHealth();
+      if (health.status === 'active') {
+        setAiStatus({
+          status: 'active',
+          label: 'Online',
+          model: health.model || 'Gemini 2.5 Flash',
+        });
+      } else if (health.status === 'missing_key') {
+        setAiStatus({
+          status: 'missing_key',
+          label: 'Nicht konfiguriert',
+        });
+      } else if (health.status === 'invalid_key') {
+        setAiStatus({
+          status: 'invalid_key',
+          label: 'Key ungültig',
+        });
+      } else if (health.status === 'rate_limited') {
+        setAiStatus({
+          status: 'rate_limited',
+          label: 'Ausgelastet',
+        });
+      } else {
+        setAiStatus({
+          status: 'unreachable',
+          label: 'Offline',
+        });
+      }
+    } catch {
+      setAiStatus({
+        status: 'offline',
+        label: 'Offline',
+      });
+    }
+  };
+
   useEffect(() => {
     if (isOpen) {
+      refreshAiStatus();
       setTimeout(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
       }, 100);
-      setHasApiKey(Boolean(getEffectiveGeminiApiKey()));
     }
-  }, [isOpen, messages, isLoading]);
+  }, [isOpen]);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, isLoading]);
 
   const suggestionChips = [
     'Was muss ich heute noch machen?',
@@ -84,8 +134,8 @@ export const AiAssistantModal: React.FC<AiAssistantModalProps> = ({
 
   const handleSaveApiKey = () => {
     setCustomGeminiApiKey(customKeyInput);
-    setHasApiKey(Boolean(customKeyInput.trim()));
     setShowKeyConfig(false);
+    refreshAiStatus();
   };
 
   const handleSendMessage = async (textToSend?: string) => {
@@ -182,26 +232,40 @@ export const AiAssistantModal: React.FC<AiAssistantModalProps> = ({
                 <Brain className="w-3.5 h-3.5" />
               </div>
               <span className="text-xs font-bold text-gray-800 dark:text-gray-200">
-                SchoolCal KI (Gemini)
+                SchoolCal KI
               </span>
 
               <button
                 type="button"
                 onClick={() => setShowKeyConfig((prev) => !prev)}
                 className={`text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 transition-all ${
-                  hasApiKey
+                  aiStatus.status === 'active'
                     ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/25'
-                    : 'bg-amber-500/15 text-amber-600 dark:text-amber-400 hover:bg-amber-500/25'
+                    : aiStatus.status === 'missing_key'
+                    ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 hover:bg-amber-500/25'
+                    : aiStatus.status === 'rate_limited'
+                    ? 'bg-orange-500/15 text-orange-600 dark:text-orange-400 hover:bg-orange-500/25'
+                    : 'bg-red-500/15 text-red-600 dark:text-red-400 hover:bg-red-500/25'
                 }`}
-                title="KI API-Key konfigurieren"
+                title={
+                  aiStatus.status === 'active'
+                    ? `KI ist aktiv (${aiStatus.model || 'Gemini 2.5 Flash'})`
+                    : 'KI-Status prüfen oder optionalen Key konfigurieren'
+                }
               >
                 <div
                   className={`w-1.5 h-1.5 rounded-full ${
-                    hasApiKey ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'
+                    aiStatus.status === 'active'
+                      ? 'bg-emerald-500 animate-pulse'
+                      : aiStatus.status === 'missing_key'
+                      ? 'bg-amber-500'
+                      : aiStatus.status === 'rate_limited'
+                      ? 'bg-orange-500'
+                      : 'bg-red-500'
                   }`}
                 />
                 <Key className="w-2.5 h-2.5" />
-                <span>{hasApiKey ? 'Online' : 'API-Key'}</span>
+                <span>{aiStatus.label}</span>
               </button>
             </div>
 
@@ -221,7 +285,7 @@ export const AiAssistantModal: React.FC<AiAssistantModalProps> = ({
               <div className="flex items-center justify-between">
                 <span className="font-bold text-gray-900 dark:text-white flex items-center gap-1.5">
                   <Key className="w-3.5 h-3.5 text-purple-600" />
-                  Google Gemini API-Key (kostenlos)
+                  Optionaler lokaler Google Gemini API-Key
                 </span>
                 <button
                   type="button"
@@ -233,7 +297,15 @@ export const AiAssistantModal: React.FC<AiAssistantModalProps> = ({
               </div>
 
               <p className="text-[11px] text-gray-600 dark:text-gray-300">
-                Für unbegrenzte, freie Konversationen mit dem echten <strong>Gemini 2.5 Flash Modell</strong> trage deinen kostenlosen API-Key aus Google AI Studio ein:
+                {aiStatus.status === 'active' ? (
+                  <span className="text-emerald-700 dark:text-emerald-400 font-semibold">
+                    ✓ Die KI ist serverseitig in Netlify konfiguriert und einsatzbereit. Du benötigst hier keinen lokalen Key, kannst aber optional einen eigenen eintragen:
+                  </span>
+                ) : (
+                  <span>
+                    Falls kein Server-Key in Netlify hinterlegt ist, kannst du hier deinen persönlichen, kostenlosen API-Key aus Google AI Studio im Browser speichern:
+                  </span>
+                )}
               </p>
 
               <div className="flex items-center gap-2">
@@ -271,7 +343,7 @@ export const AiAssistantModal: React.FC<AiAssistantModalProps> = ({
                     onClick={() => {
                       setCustomKeyInput('');
                       setCustomGeminiApiKey('');
-                      setHasApiKey(false);
+                      refreshAiStatus();
                     }}
                     className="text-[10px] text-red-500 hover:underline"
                   >

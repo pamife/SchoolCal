@@ -1,35 +1,222 @@
 import type { Handler, HandlerEvent, HandlerContext } from '@netlify/functions';
 
+// Simple in-memory rate limiting map per client IP (resets on lambda cold start)
+const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
+const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute
+const MAX_REQUESTS_PER_WINDOW = 30;
+
+function checkRateLimit(clientIp: string): boolean {
+  const now = Date.now();
+  const entry = rateLimitMap.get(clientIp);
+
+  if (!entry || now > entry.resetTime) {
+    rateLimitMap.set(clientIp, { count: 1, resetTime: now + RATE_LIMIT_WINDOW_MS });
+    return true;
+  }
+
+  if (entry.count >= MAX_REQUESTS_PER_WINDOW) {
+    return false;
+  }
+
+  entry.count++;
+  return true;
+}
+
+// Supported stable Gemini models in priority order
+const CANDIDATE_MODELS = [
+  'gemini-2.5-flash',
+  'gemini-2.0-flash',
+  'gemini-1.5-flash',
+  'gemini-2.5-pro',
+  'gemini-1.5-pro',
+];
+
+const CORS_HEADERS = {
+  'Content-Type': 'application/json',
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+};
+
 export const handler: Handler = async (event: HandlerEvent, _context: HandlerContext) => {
   if (event.httpMethod === 'OPTIONS') {
     return {
       statusCode: 200,
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-        'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      },
+      headers: CORS_HEADERS,
       body: '',
     };
+  }
+
+  const clientIp =
+    event.headers['x-forwarded-for']?.split(',')[0]?.trim() ||
+    event.headers['client-ip'] ||
+    'unknown-client';
+
+  // Strictly server-side environment variables - NEVER leaked to frontend
+  const apiKey = process.env.GEMINI_API_KEY || process.env.AI_API_KEY;
+
+  // 1. Health check request (GET or POST with action=health_check)
+  const isHealthCheck =
+    event.httpMethod === 'GET' ||
+    event.queryStringParameters?.action === 'health_check' ||
+    (event.body && (() => {
+      try {
+        return JSON.parse(event.body || '{}').action === 'health_check';
+      } catch {
+        return false;
+      }
+    })());
+
+  if (isHealthCheck) {
+    if (!apiKey) {
+      return {
+        statusCode: 200,
+        headers: CORS_HEADERS,
+        body: JSON.stringify({
+          ok: false,
+          status: 'missing_key',
+          configured: false,
+          provider: 'Google Gemini',
+          message: 'GEMINI_API_KEY ist in den Netlify Environment Variables nicht hinterlegt.',
+        }),
+      };
+    }
+
+    // Ping Gemini with minimal test request
+    try {
+      const testModel = CANDIDATE_MODELS[0];
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${testModel}:generateContent?key=${apiKey}`;
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ role: 'user', parts: [{ text: 'Ping. Antworte mit "OK".' }] }],
+          generationConfig: { maxOutputTokens: 5 },
+        }),
+      });
+
+      if (res.ok) {
+        return {
+          statusCode: 200,
+          headers: CORS_HEADERS,
+          body: JSON.stringify({
+            ok: true,
+            status: 'active',
+            configured: true,
+            provider: 'Google Gemini',
+            model: testModel,
+            message: 'Gemini KI ist betriebsbereit und verbunden.',
+          }),
+        };
+      }
+
+      const errText = await res.text().catch(() => '');
+      if (res.status === 400 || res.status === 403 || errText.includes('API_KEY_INVALID') || errText.includes('API key not valid')) {
+        return {
+          statusCode: 200,
+          headers: CORS_HEADERS,
+          body: JSON.stringify({
+            ok: false,
+            status: 'invalid_key',
+            configured: true,
+            provider: 'Google Gemini',
+            message: 'Der hinterlegte Gemini API-Key ist ungültig oder abgelaufen.',
+          }),
+        };
+      }
+
+      if (res.status === 429) {
+        return {
+          statusCode: 200,
+          headers: CORS_HEADERS,
+          body: JSON.stringify({
+            ok: false,
+            status: 'rate_limited',
+            configured: true,
+            provider: 'Google Gemini',
+            message: 'Gemini API Rate-Limit erreicht. Bitte später erneut versuchen.',
+          }),
+        };
+      }
+
+      return {
+        statusCode: 200,
+        headers: CORS_HEADERS,
+        body: JSON.stringify({
+          ok: false,
+          status: 'unreachable',
+          configured: true,
+          provider: 'Google Gemini',
+          message: `Gemini API antwortete mit Status ${res.status}.`,
+        }),
+      };
+    } catch {
+      return {
+        statusCode: 200,
+        headers: CORS_HEADERS,
+        body: JSON.stringify({
+          ok: false,
+          status: 'unreachable',
+          configured: true,
+          provider: 'Google Gemini',
+          message: 'Verbindung zur Gemini API fehlgeschlagen (Netzwerkfehler).',
+        }),
+      };
+    }
   }
 
   if (event.httpMethod !== 'POST') {
     return {
       statusCode: 405,
+      headers: CORS_HEADERS,
       body: JSON.stringify({ error: 'Method Not Allowed' }),
     };
   }
 
-  try {
-    // Strictly server-side environment variables - NEVER leaked to frontend
-    const apiKey = process.env.GEMINI_API_KEY || process.env.AI_API_KEY;
-    const body = JSON.parse(event.body || '{}');
-    const { prompt, context, conversationHistory } = body;
+  // Rate Limiting Check
+  if (!checkRateLimit(clientIp)) {
+    return {
+      statusCode: 429,
+      headers: CORS_HEADERS,
+      body: JSON.stringify({
+        ok: false,
+        errorType: 'RATE_LIMITED',
+        error: 'Zu viele Anfragen in kurzer Zeit. Bitte warte einen Moment.',
+      }),
+    };
+  }
 
-    if (!prompt) {
+  try {
+    let body: any = {};
+    try {
+      body = JSON.parse(event.body || '{}');
+    } catch {
       return {
         statusCode: 400,
+        headers: CORS_HEADERS,
+        body: JSON.stringify({ error: 'Invalid JSON payload' }),
+      };
+    }
+
+    const { prompt, context = {}, conversationHistory } = body;
+
+    if (!prompt || typeof prompt !== 'string') {
+      return {
+        statusCode: 400,
+        headers: CORS_HEADERS,
         body: JSON.stringify({ error: 'Prompt is required' }),
+      };
+    }
+
+    if (!apiKey) {
+      return {
+        statusCode: 503,
+        headers: CORS_HEADERS,
+        body: JSON.stringify({
+          ok: false,
+          errorType: 'MISSING_API_KEY',
+          error: 'Die KI ist derzeit nicht konfiguriert (GEMINI_API_KEY fehlt in Netlify Environment Variables).',
+        }),
       };
     }
 
@@ -37,14 +224,14 @@ export const handler: Handler = async (event: HandlerEvent, _context: HandlerCon
 Deine Aufgabe ist es, Schülern präzise, freundliche und hilfreiche Auskünfte zu ihrem Stundenplan, ihren Hausaufgaben, Prüfungen und Noten zu geben.
 
 Hier ist der aktuelle, sichere Kontext des Schülers (${context.userName || 'Schüler'}):
-- Datum: ${context.weekday}, ${context.currentDate}
+- Datum: ${context.weekday || 'Heute'}, ${context.currentDate || ''}
 - Schule / Klasse: ${context.schoolName || '–'} / ${context.gradeLevel || '–'}
 - Heutiger Stundenplan:
 ${context.todaySchedule?.length > 0 ? context.todaySchedule.map((s: any) => `  * ${s.period}. Std (${s.startTime}-${s.endTime}): ${s.subjectName}${s.roomName ? ` [Raum ${s.roomName}]` : ''}${s.teacherName ? ` [Lehrer ${s.teacherName}]` : ''}`).join('\n') : '  * Heute kein Unterricht'}
 - Wochenübersicht:
 ${context.weeklyScheduleSummary?.join('\n') || '  * Keine weiteren Tage'}
 - Offene Hausaufgaben & Fälligkeiten:
-${context.openHomework?.length > 0 ? context.openHomework.map((h: any) => `  * [${h.priority.toUpperCase()}] ${h.title} (${h.subjectName}) – Fällig: ${h.dueDate}${h.dueTime ? ` um ${h.dueTime}` : ''} [${h.dueDateMode === 'MANUAL' ? 'Manuell vom Benutzer gewählt' : 'Automatisch vor nächster Unterrichtsstunde'}]`).join('\n') : '  * Keine offenen Aufgaben'}
+${context.openHomework?.length > 0 ? context.openHomework.map((h: any) => `  * [${h.priority?.toUpperCase() || 'NORMAL'}] ${h.title} (${h.subjectName}) – Fällig: ${h.dueDate}${h.dueTime ? ` um ${h.dueTime}` : ''} [${h.dueDateMode === 'MANUAL' ? 'Manuell vom Benutzer gewählt' : 'Automatisch vor nächster Unterrichtsstunde'}]`).join('\n') : '  * Keine offenen Aufgaben'}
 - Bevorstehende Klausuren & Prüfungen:
 ${context.upcomingExams?.length > 0 ? context.upcomingExams.map((e: any) => `  * ${e.title} (${e.subjectName}) am ${e.date} (in ${e.daysLeft} Tagen)${e.topics?.length ? ` - Themen: ${e.topics.join(', ')}` : ''}`).join('\n') : '  * Keine anstehenden Prüfungen'}
 ${context.gradesSummary ? `- Notenschnitt: ${context.gradesSummary.overallAverage || '–'}` : ''}
@@ -77,53 +264,48 @@ WICHTIGE REGELN:
 \`\`\`
 `;
 
-    // Format chat history for Google Gemini API
-    const contents: any[] = [];
+    // Format chat history strictly alternating for Google Gemini API
+    const rawHistory: Array<{ role: 'user' | 'model'; text: string }> = [];
 
     if (conversationHistory && Array.isArray(conversationHistory)) {
-      conversationHistory.forEach((msg: any) => {
-        if (msg.id === 'welcome' || msg.id === 'welcome-reset') return;
-        contents.push({
-          role: msg.role === 'assistant' ? 'model' : 'user',
-          parts: [{ text: msg.content }],
-        });
-      });
+      for (const msg of conversationHistory) {
+        if (!msg || msg.id === 'welcome' || msg.id === 'welcome-reset') continue;
+        const role = msg.role === 'assistant' ? 'model' : 'user';
+        const text = (msg.content || '').trim();
+        if (text) {
+          rawHistory.push({ role, text });
+        }
+      }
     }
 
-    contents.push({
-      role: 'user',
-      parts: [{ text: prompt }],
-    });
+    rawHistory.push({ role: 'user', text: prompt.trim() });
 
-    if (!apiKey) {
-      return {
-        statusCode: 200,
-        headers: {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*',
-        },
-        body: JSON.stringify({
-          text: `Hallo ${context.userName || 'Schüler'}! Ich habe deine SchoolCal-Daten analysiert:\n\n` +
-            `📚 **Heute:** ${context.todaySchedule?.length || 0} Unterrichtsstunden eingetragen.\n` +
-            `📝 **Offene Aufgaben:** ${context.openHomework?.length || 0} anstehend.\n` +
-            `🧪 **Prüfungen:** ${context.upcomingExams?.length || 0} in den nächsten Tagen.\n\n` +
-            `*Hinweis: Um vollen KI-Freitextzugriff freizuschalten, hinterlege den GEMINI_API_KEY in deinen Netlify Environment-Variablen.*`,
-        }),
-      };
+    // Sanitize multi-turn history: must start with 'user' and alternate roles
+    const contents: Array<{ role: string; parts: Array<{ text: string }> }> = [];
+    for (const item of rawHistory) {
+      if (contents.length === 0) {
+        if (item.role === 'user') {
+          contents.push({ role: 'user', parts: [{ text: item.text }] });
+        }
+      } else {
+        const last = contents[contents.length - 1];
+        if (last.role === item.role) {
+          // Merge consecutive same-role messages
+          last.parts[0].text += `\n\n${item.text}`;
+        } else {
+          contents.push({ role: item.role, parts: [{ text: item.text }] });
+        }
+      }
     }
 
-    // List of Gemini models to support latest API versions
-    const candidateModels = [
-      'gemini-3.6-flash',
-      'gemini-2.0-flash',
-      'gemini-1.5-flash',
-      'gemini-1.5-pro',
-      'gemini-2.5-flash',
-    ];
+    if (contents.length === 0) {
+      contents.push({ role: 'user', parts: [{ text: prompt.trim() }] });
+    }
 
-    let lastError: any = null;
+    let lastErrorType = 'UNKNOWN_ERROR';
+    let lastErrorMessage = 'Keine Antwort von Gemini API erhalten.';
 
-    for (const model of candidateModels) {
+    for (const model of CANDIDATE_MODELS) {
       try {
         const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
@@ -155,44 +337,71 @@ WICHTIGE REGELN:
               try {
                 action = JSON.parse(match[1]);
                 rawText = rawText.replace(actionRegex, '').trim();
-              } catch (e) {
-                console.error('Error parsing action JSON from AI:', e);
+              } catch {
+                // Silently ignore action parse error
               }
             }
 
             return {
               statusCode: 200,
-              headers: {
-                'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': '*',
-              },
+              headers: CORS_HEADERS,
               body: JSON.stringify({
+                ok: true,
                 text: rawText,
                 action,
+                model,
               }),
             };
           }
         } else {
-          lastError = await geminiRes.text();
-          console.warn(`Netlify function: Model ${model} returned status ${geminiRes.status}:`, lastError);
+          const errBody = await geminiRes.text().catch(() => '');
+          if (geminiRes.status === 400 || geminiRes.status === 403) {
+            if (errBody.includes('API_KEY_INVALID') || errBody.includes('API key not valid')) {
+              lastErrorType = 'INVALID_API_KEY';
+              lastErrorMessage = 'Der Gemini API-Key ist ungültig oder abgelaufen.';
+              // No need to try other models if the key itself is invalid
+              break;
+            }
+          }
+
+          if (geminiRes.status === 429) {
+            lastErrorType = 'RATE_LIMITED';
+            lastErrorMessage = 'Gemini API Rate-Limit erreicht. Bitte versuche es gleich erneut.';
+            break;
+          }
+
+          if (geminiRes.status === 404) {
+            lastErrorType = 'MODEL_UNAVAILABLE';
+            lastErrorMessage = `Modell ${model} nicht verfügbar.`;
+            continue; // Try next fallback model
+          }
+
+          lastErrorType = 'API_ERROR';
+          lastErrorMessage = `Gemini API Fehler (${geminiRes.status}).`;
         }
-      } catch (err: any) {
-        lastError = err.message;
-        console.warn(`Netlify function: Failed model ${model}:`, err);
+      } catch {
+        lastErrorType = 'NETWORK_ERROR';
+        lastErrorMessage = 'Netzwerkverbindung zu Gemini API fehlgeschlagen.';
       }
     }
 
-    throw new Error(lastError || 'Keine Antwort von Gemini API erhalten.');
-  } catch (error: any) {
-    console.error('AI Assistant function error:', error);
+    return {
+      statusCode: 502,
+      headers: CORS_HEADERS,
+      body: JSON.stringify({
+        ok: false,
+        errorType: lastErrorType,
+        error: lastErrorMessage,
+      }),
+    };
+  } catch {
     return {
       statusCode: 500,
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
-      },
+      headers: CORS_HEADERS,
       body: JSON.stringify({
-        error: error.message || 'Internal Server Error',
+        ok: false,
+        errorType: 'UNKNOWN_ERROR',
+        error: 'Interner Serverfehler beim Verarbeiten der Anfrage.',
       }),
     };
   }

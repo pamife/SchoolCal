@@ -49,6 +49,19 @@ export interface AISchoolContext {
 export interface AIResponse {
   text: string;
   action?: AIActionPayload;
+  errorType?: string;
+}
+
+export type AIHealthState = 'active' | 'missing_key' | 'invalid_key' | 'rate_limited' | 'unreachable' | 'offline';
+
+export interface AIHealthStatus {
+  ok: boolean;
+  status: AIHealthState;
+  configured: boolean;
+  provider: string;
+  model?: string;
+  message: string;
+  lastChecked?: string;
 }
 
 export interface IAIService {
@@ -57,4 +70,6 @@ export interface IAIService {
     context: AISchoolContext,
     conversationHistory?: AIChatMessage[]
   ): Promise<AIResponse>;
+  checkHealth?(forceRefresh?: boolean): Promise<AIHealthStatus>;
 }
+

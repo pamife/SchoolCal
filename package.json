@@ -9,6 +9,7 @@
     "lint": "oxlint",
     "test:licensing": "npx tsx scripts/test-licensing.ts",
     "test:smart": "npx tsx scripts/test-smart-features.ts",
+    "test:ai": "npx tsx scripts/test-ai-assistant.ts",
     "test:onboarding": "npx tsx scripts/test-onboarding-pwa.ts",
     "test:privacy": "npx tsx scripts/test-privacy-security.ts",
     "preview": "vite preview"

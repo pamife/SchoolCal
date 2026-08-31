@@ -68,31 +68,50 @@ WICHTIGE REGELN:
 \`\`\`
 `;
 
-  // Format chat history for Google Gemini API
-  const contents: any[] = [];
+  // Format chat history strictly alternating for Google Gemini API
+  const rawHistory: Array<{ role: 'user' | 'model'; text: string }> = [];
 
   if (conversationHistory && Array.isArray(conversationHistory)) {
-    conversationHistory.forEach((msg) => {
-      if (msg.id === 'welcome' || msg.id === 'welcome-reset') return;
-      contents.push({
-        role: msg.role === 'assistant' ? 'model' : 'user',
-        parts: [{ text: msg.content }],
-      });
-    });
+    for (const msg of conversationHistory) {
+      if (!msg || msg.id === 'welcome' || msg.id === 'welcome-reset') continue;
+      const role = msg.role === 'assistant' ? 'model' : 'user';
+      const text = (msg.content || '').trim();
+      if (text) {
+        rawHistory.push({ role, text });
+      }
+    }
   }
 
-  contents.push({
-    role: 'user',
-    parts: [{ text: prompt }],
-  });
+  rawHistory.push({ role: 'user', text: prompt.trim() });
 
-  // Candidate models: start with gemini-3.6-flash, then 2.0-flash, 1.5-flash
+  // Sanitize multi-turn history: must start with 'user' and alternate roles
+  const contents: Array<{ role: string; parts: Array<{ text: string }> }> = [];
+  for (const item of rawHistory) {
+    if (contents.length === 0) {
+      if (item.role === 'user') {
+        contents.push({ role: 'user', parts: [{ text: item.text }] });
+      }
+    } else {
+      const last = contents[contents.length - 1];
+      if (last.role === item.role) {
+        last.parts[0].text += `\n\n${item.text}`;
+      } else {
+        contents.push({ role: item.role, parts: [{ text: item.text }] });
+      }
+    }
+  }
+
+  if (contents.length === 0) {
+    contents.push({ role: 'user', parts: [{ text: prompt.trim() }] });
+  }
+
+  // Candidate models in priority order
   const candidateModels = [
-    'gemini-3.6-flash',
+    'gemini-2.5-flash',
     'gemini-2.0-flash',
     'gemini-1.5-flash',
+    'gemini-2.5-pro',
     'gemini-1.5-pro',
-    'gemini-2.5-flash',
   ];
 
   for (const model of candidateModels) {
@@ -127,8 +146,8 @@ WICHTIGE REGELN:
             try {
               action = JSON.parse(match[1]);
               rawText = rawText.replace(actionRegex, '').trim();
-            } catch (e) {
-              console.error('Error parsing action JSON from AI:', e);
+            } catch {
+              // Silently ignore action JSON parse errors
             }
           }
 
@@ -137,12 +156,9 @@ WICHTIGE REGELN:
             action,
           };
         }
-      } else {
-        const errText = await response.text();
-        console.warn(`Direct Gemini model ${model} returned status ${response.status}:`, errText);
       }
-    } catch (err) {
-      console.warn(`Direct Gemini model ${model} failed:`, err);
+    } catch {
+      // Try next model
     }
   }
 
