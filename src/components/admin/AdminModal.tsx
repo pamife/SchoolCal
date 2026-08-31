@@ -15,6 +15,7 @@ import { LicenseGeneratorTab } from './LicenseGeneratorTab';
 import { LicenseListTab } from './LicenseListTab';
 import { UserManagementTab } from './UserManagementTab';
 import { AuditLogTab } from './AuditLogTab';
+import { SchoolConfigTab } from './school/SchoolConfigTab';
 import { Shield, RefreshCw } from 'lucide-react';
 
 interface AdminModalProps {
@@ -22,11 +23,11 @@ interface AdminModalProps {
   onClose: () => void;
 }
 
-type AdminTab = 'dashboard' | 'generator' | 'licenses' | 'users' | 'audit';
+type AdminTab = 'dashboard' | 'school' | 'generator' | 'licenses' | 'users' | 'audit';
 
 export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
   const { user } = useAuthStore();
-  const [activeTab, setActiveTab] = useState<AdminTab>('dashboard');
+  const [activeTab, setActiveTab] = useState<AdminTab>('school');
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [licenses, setLicenses] = useState<License[]>([]);
   const [users, setUsers] = useState<UserProfile[]>([]);
@@ -64,6 +65,7 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
   }, [isOpen]);
 
   const tabs: SegmentOption<AdminTab>[] = [
+    { id: 'school', label: 'Schule' },
     { id: 'dashboard', label: 'Dashboard' },
     { id: 'generator', label: 'Generator' },
     { id: 'licenses', label: `Lizenzen (${licenses.length})` },
@@ -79,7 +81,7 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
     >
       <div className="space-y-4 pb-2">
         {/* Navigation & Refresh Header */}
-        <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center justify-between gap-2 overflow-x-auto no-scrollbar">
           <SegmentedControl
             options={tabs}
             value={activeTab}
@@ -91,7 +93,7 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
             type="button"
             onClick={loadData}
             disabled={loading}
-            className="p-1.5 bg-gray-100 dark:bg-ios-dark-secondary rounded-lg text-gray-500 hover:text-gray-900 transition-colors"
+            className="p-1.5 bg-gray-100 dark:bg-ios-dark-secondary rounded-lg text-gray-500 hover:text-gray-900 transition-colors shrink-0"
             title="Daten aktualisieren"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
@@ -99,6 +101,13 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
         </div>
 
         {/* Tab Content */}
+        {activeTab === 'school' && (
+          <SchoolConfigTab
+            adminUid={adminUid}
+            adminEmail={adminEmail}
+          />
+        )}
+
         {activeTab === 'dashboard' && (
           <AdminDashboardTab
             stats={stats}
