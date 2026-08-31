@@ -69,6 +69,10 @@ class HapticsService {
     this.trigger('medium');
   }
 
+  public heavy() {
+    this.trigger('heavy');
+  }
+
   public selection() {
     this.trigger('selection');
   }
