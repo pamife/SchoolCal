@@ -49,9 +49,9 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({
   const [defaultCalendarView, setDefaultCalendarView] = useState<CalendarViewType>(
     settings.defaultCalendarView || 'week'
   );
-  const [schoolName, setSchoolName] = useState(settings.schoolName || '');
+  const [schoolName, setSchoolName] = useState(settings.schoolName || 'Christa-und-Peter-Scherpf-Gymnasium');
   const [gradeLevel, setGradeLevel] = useState(settings.gradeLevel || '');
-  const [selectedState, setSelectedState] = useState(settings.state || 'BY');
+  const [selectedState, setSelectedState] = useState(settings.state || 'BB');
   const [scheduleChoice, setScheduleChoice] = useState<'manual' | 'import' | 'webuntis' | 'later' | null>(null);
 
   // Notification status
@@ -245,7 +245,7 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({
           )}
 
           {/* ========================================================================= */}
-          {/* STEP 2: SCHULE & BUNDESLAND */}
+          {/* STEP 2: DEINE KLASSE & SCHULE */}
           {/* ========================================================================= */}
           {currentStep === 'school' && (
             <motion.div
@@ -260,57 +260,50 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({
                   <GraduationCap className="w-5 h-5" />
                 </div>
                 <h3 className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white tracking-tight">
-                  Deine Schule & Klasse
+                  Deine Klasse & Schule
                 </h3>
                 <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
-                  Für Ferien, Feiertage und optionale WebUntis-Anbindung (optional)
+                  SchoolCal ist exklusiv für deine Schule vorkonfiguriert
                 </p>
               </div>
 
-              <div className="space-y-3 pt-2">
-                <div>
-                  <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">
-                    Bundesland für Schulferien
-                  </label>
-                  <select
-                    value={selectedState}
-                    onChange={(e) => setSelectedState(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-gray-100 dark:bg-ios-dark-secondary rounded-xl text-sm font-semibold text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-ios-blue"
-                  >
-                    {GERMAN_STATES.map((st) => (
-                      <option key={st.code} value={st.code}>
-                        {st.name} ({st.code})
-                      </option>
-                    ))}
-                  </select>
+              <div className="space-y-3.5 pt-2">
+                {/* Fixed School Badge Card */}
+                <div className="p-4 rounded-2xl bg-gradient-to-r from-blue-500/10 via-indigo-500/10 to-teal-500/10 border border-blue-500/20 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-ios-blue px-2 py-0.5 rounded-full bg-blue-500/15">
+                      Unterstützte Schule
+                    </span>
+                    <span className="text-[11px] font-bold text-gray-500 dark:text-gray-400">
+                      Brandenburg (BB) 🇩🇪
+                    </span>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-extrabold text-gray-900 dark:text-white">
+                      Christa-und-Peter-Scherpf-Gymnasium
+                    </h4>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                      📍 Prenzlau, Dr.-Bähr-Straße 1
+                    </p>
+                  </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">
-                      Schulname (optional)
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="z.B. Goethe-Gymnasium"
-                      value={schoolName}
-                      onChange={(e) => setSchoolName(e.target.value)}
-                      className="w-full px-3.5 py-2.5 bg-gray-100 dark:bg-ios-dark-secondary rounded-xl text-sm font-semibold text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-ios-blue"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">
-                      Klasse / Kurs (optional)
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="z.B. 10b oder Q11"
-                      value={gradeLevel}
-                      onChange={(e) => setGradeLevel(e.target.value)}
-                      className="w-full px-3.5 py-2.5 bg-gray-100 dark:bg-ios-dark-secondary rounded-xl text-sm font-semibold text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-ios-blue"
-                    />
-                  </div>
+                {/* Grade / Class input */}
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">
+                    Deine Klasse oder Kursstufe
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="z.B. 10a, 9b, 11-1 oder Q12"
+                    value={gradeLevel}
+                    onChange={(e) => setGradeLevel(e.target.value)}
+                    className="w-full px-3.5 py-2.5 bg-gray-100 dark:bg-ios-dark-secondary rounded-xl text-sm font-semibold text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-ios-blue"
+                  />
+                  <p className="text-[11px] text-gray-400 mt-1">
+                    Wird für deinen Stundenplan und WebUntis-Abgleich verwendet.
+                  </p>
                 </div>
               </div>
             </motion.div>
