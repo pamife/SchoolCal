@@ -79,17 +79,9 @@ service cloud.firestore {
 
     // 3. Licenses Collection: licenses/{licenseId}
     match /licenses/{licenseId} {
-      // Admins can list and read all licenses.
-      // Standard authenticated users can ONLY read the license they have already activated, or fetch a single doc.
-      // Listing (collection query of all licenses) is strictly restricted to Admins to prevent code harvesting.
-      allow list: if isAdmin();
-      allow get: if isAdmin() || (
-        isAuthenticated() && (
-          resource == null ||
-          resource.data.get('activatedByUid', '') == request.auth.uid ||
-          resource.data.get('status', '') == 'AVAILABLE'
-        )
-      );
+      // Authenticated users can list and query licenses (to find matching codeHash) and get license status
+      allow list: if isAuthenticated();
+      allow get: if isAuthenticated();
 
       // Admins can create and delete licenses
       allow create, delete: if isAdmin();

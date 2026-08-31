@@ -42,17 +42,30 @@ export async function activateLicenseCode(
 
   const codeHash = await hashLicenseCode(normalized);
 
-  // 1. Find matching license document by codeHash
-  const licensesRef = collection(firestore, 'licenses');
-  const q = query(licensesRef, where('codeHash', '==', codeHash));
-  const querySnap = await getDocs(q);
-
-  if (querySnap.empty) {
-    throw new Error('Ungültiger Lizenzcode. Bitte überprüfe deine Eingabe auf Tippfehler.');
+  // 1. Find matching license document by codeHash (direct doc check or query)
+  let licenseId: string | null = null;
+  const directDocRef = doc(firestore, 'licenses', codeHash);
+  try {
+    const directDocSnap = await getDoc(directDocRef);
+    if (directDocSnap.exists()) {
+      licenseId = directDocSnap.id;
+    }
+  } catch {
+    // Fall back to query
   }
 
-  const licenseDocSnap = querySnap.docs[0];
-  const licenseId = licenseDocSnap.id;
+  if (!licenseId) {
+    const licensesRef = collection(firestore, 'licenses');
+    const q = query(licensesRef, where('codeHash', '==', codeHash));
+    const querySnap = await getDocs(q);
+
+    if (querySnap.empty) {
+      throw new Error('Ungültiger Lizenzcode. Bitte überprüfe deine Eingabe auf Tippfehler.');
+    }
+
+    const licenseDocSnap = querySnap.docs[0];
+    licenseId = licenseDocSnap.id;
+  }
 
   // 2. Perform atomic transaction to claim license & update user profile
   return await runTransaction(firestore, async (transaction) => {

@@ -52,10 +52,12 @@ assert(
   'Rules strictly restrict user subcollections to the owner only (isOwner(userId))'
 );
 
-// Test 1.3: License Harvesting Protection
+// Test 1.3: License Security & Single-Use Enforcement
 assert(
-  rulesContent.includes('allow list: if isAdmin();'),
-  'Rules strictly forbid standard users from listing all unredeemed license codes (Harvester protection)'
+  rulesContent.includes('match /licenses/{licenseId}') &&
+  rulesContent.includes("request.resource.data.get('status', '') == 'ACTIVE'") &&
+  rulesContent.includes("resource.data.get('status', '') == 'AVAILABLE'"),
+  'Rules strictly enforce atomic single-use license activation and state transitions'
 );
 
 

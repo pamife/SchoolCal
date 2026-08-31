@@ -114,8 +114,18 @@ export const LicenseActivationModal: React.FC<LicenseActivationModalProps> = ({
             disabled={loading || Boolean(successMessage)}
             value={code}
             onChange={handleInputChange}
+            onFocus={(e) => {
+              setTimeout(() => {
+                e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              }, 250);
+            }}
+            autoComplete="off"
+            autoCorrect="off"
+            autoCapitalize="characters"
+            spellCheck={false}
+            inputMode="text"
             placeholder="SCAL-PLUS-7X4K-92PM-Q8FD"
-            className="w-full px-3.5 py-3 bg-gray-100 dark:bg-ios-dark-secondary rounded-xl text-center text-sm font-mono font-bold tracking-wider text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-ios-blue uppercase"
+            className="w-full px-3.5 py-3 bg-gray-100 dark:bg-ios-dark-secondary rounded-xl text-center text-sm font-mono font-bold tracking-wider text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-ios-blue uppercase select-text"
           />
         </div>
 
