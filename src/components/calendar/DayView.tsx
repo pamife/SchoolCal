@@ -13,6 +13,7 @@ import type {
 import { getSubjectIcon, hexToRgba } from '../../utils/colorUtils';
 import { Badge } from '../common/Badge';
 import { Clock, MapPin, User, Plus, AlertCircle, ChevronRight } from 'lucide-react';
+import { haptics } from '../../utils/haptics';
 
 interface DayViewProps {
   selectedDate: Date;
@@ -196,8 +197,11 @@ export const DayView: React.FC<DayViewProps> = ({
               return (
                 <div
                   key={grpEntries[0].id || idx}
-                  onClick={() => onSelectScheduleEntry(grpEntries[0])}
-                  className={`ios-card p-3.5 flex items-center justify-between gap-3 cursor-pointer transition-all hover:shadow-sm ${
+                  onClick={() => {
+                    haptics.selection();
+                    onSelectScheduleEntry(grpEntries[0]);
+                  }}
+                  className={`ios-card p-3.5 flex items-center justify-between gap-3 cursor-pointer transition-all hover:shadow-sm ios-press-active ${
                     isCancelled ? 'opacity-50 bg-red-500/5' : ''
                   }`}
                 >

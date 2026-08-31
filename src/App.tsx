@@ -12,6 +12,7 @@ import { MobileNavBar } from './components/layout/MobileNavBar';
 import { Sidebar } from './components/layout/Sidebar';
 import { TopHeader } from './components/layout/TopHeader';
 import { QuickActionSheet } from './components/layout/QuickActionSheet';
+import { SwipeableTabsContainer } from './components/layout/SwipeableTabsContainer';
 import { GlobalSearchModal } from './components/search/GlobalSearchModal';
 import { AuthScreen } from './components/auth/AuthScreen';
 
@@ -255,42 +256,59 @@ export function App() {
         />
 
         {/* Tab View Container */}
-        <main className="flex-1 p-3.5 sm:p-5 sm:px-6 pb-safe">
-          {activeTab === 'today' && (
-            <DashboardScreen
-              onNavigateTab={setActiveTab}
-              onOpenQuickAction={handleQuickAction}
-              onSelectScheduleEntry={handleSelectScheduleEntry}
-              onSelectExam={handleSelectExam}
-            />
-          )}
+        <main className="flex-1 p-3.5 sm:p-5 sm:px-6 pb-safe flex flex-col min-w-0">
+          <SwipeableTabsContainer
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+            disabled={
+              isQuickActionOpen ||
+              isEventModalOpen ||
+              isHomeworkModalOpen ||
+              isExamModalOpen ||
+              isSubstModalOpen ||
+              isScheduleModalOpen ||
+              isAiPlannerOpen ||
+              isAiAssistantOpen ||
+              isPricingOpen ||
+              isActivationOpen
+            }
+          >
+            {activeTab === 'today' && (
+              <DashboardScreen
+                onNavigateTab={setActiveTab}
+                onOpenQuickAction={handleQuickAction}
+                onSelectScheduleEntry={handleSelectScheduleEntry}
+                onSelectExam={handleSelectExam}
+              />
+            )}
 
-          {activeTab === 'calendar' && (
-            <CalendarScreen
-              onSelectScheduleEntry={handleSelectScheduleEntry}
-              onSelectExam={handleSelectExam}
-            />
-          )}
+            {activeTab === 'calendar' && (
+              <CalendarScreen
+                onSelectScheduleEntry={handleSelectScheduleEntry}
+                onSelectExam={handleSelectExam}
+              />
+            )}
 
-          {activeTab === 'tasks' && (
-            <HomeworkScreen />
-          )}
+            {activeTab === 'tasks' && (
+              <HomeworkScreen />
+            )}
 
-          {activeTab === 'statistics' && (
-            <StatisticsScreen />
-          )}
+            {activeTab === 'statistics' && (
+              <StatisticsScreen />
+            )}
 
-          {activeTab === 'grades' && (
-            <GradesScreen />
-          )}
+            {activeTab === 'grades' && (
+              <GradesScreen />
+            )}
 
-          {activeTab === 'school' && (
-            <SchoolScreen />
-          )}
+            {activeTab === 'school' && (
+              <SchoolScreen />
+            )}
 
-          {activeTab === 'settings' && (
-            <SettingsScreen />
-          )}
+            {activeTab === 'settings' && (
+              <SettingsScreen />
+            )}
+          </SwipeableTabsContainer>
         </main>
       </div>
 

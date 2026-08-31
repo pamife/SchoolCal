@@ -4,6 +4,7 @@ import { de } from 'date-fns/locale';
 import { ScheduleEntry, CalendarEvent, Exam, Subject, Teacher, Room, Substitution } from '../../types';
 import { getSubjectIcon, hexToRgba } from '../../utils/colorUtils';
 import { Clock } from 'lucide-react';
+import { haptics } from '../../utils/haptics';
 
 interface ThreeDayViewProps {
   startDate: Date;
@@ -93,8 +94,11 @@ export const ThreeDayView: React.FC<ThreeDayViewProps> = ({
               {dayExams.map((exam) => (
                 <div
                   key={exam.id}
-                  onClick={() => onSelectExam(exam)}
-                  className="p-2 rounded-xl bg-red-500/15 border border-red-500/30 text-red-700 dark:text-red-300 text-xs font-bold cursor-pointer hover:shadow-xs"
+                  onClick={() => {
+                    haptics.selection();
+                    onSelectExam(exam);
+                  }}
+                  className="p-2 rounded-xl bg-red-500/15 border border-red-500/30 text-red-700 dark:text-red-300 text-xs font-bold cursor-pointer hover:shadow-xs active:scale-95 transition-transform ios-press-active"
                 >
                   <div className="text-[10px] text-red-500 uppercase tracking-wider">
                     Klausur ({exam.startTime || '08:00'})
@@ -118,13 +122,16 @@ export const ThreeDayView: React.FC<ThreeDayViewProps> = ({
                 return (
                   <div
                     key={entry.id}
-                    onClick={() => onSelectScheduleEntry(entry, day)}
+                    onClick={() => {
+                      haptics.selection();
+                      onSelectScheduleEntry(entry, day);
+                    }}
                     style={{
                       borderLeftColor: subject?.color || '#007AFF',
                       borderLeftWidth: '4px',
                       backgroundColor: subject ? hexToRgba(subject.color, 0.08) : undefined,
                     }}
-                    className={`p-2 rounded-xl border border-black/5 dark:border-white/5 cursor-pointer hover:shadow-xs ${
+                    className={`p-2 rounded-xl border border-black/5 dark:border-white/5 cursor-pointer hover:shadow-xs ios-press-active ${
                       isCancelled ? 'opacity-50 line-through bg-red-500/5' : ''
                     }`}
                   >

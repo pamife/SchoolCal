@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, Plus, Download } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useCalendarStore } from '../../store/useCalendarStore';
 import { useSchoolStore } from '../../store/useSchoolStore';
 import { useExamStore } from '../../store/useExamStore';
@@ -17,6 +18,8 @@ import { getWeekDays, formatGermanDate } from '../../utils/dateUtils';
 import { generateIcsCalendar, downloadIcsFile } from '../../services/ical/icalService';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
+import { useSwipeGesture } from '../../hooks/useSwipeGesture';
+import { haptics } from '../../utils/haptics';
 
 interface CalendarScreenProps {
   onSelectScheduleEntry: (entry: ScheduleEntry) => void;
@@ -48,6 +51,18 @@ export const CalendarScreen: React.FC<CalendarScreenProps> = ({
   const [isEventModalOpen, setIsEventModalOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
   const [modalInitialDate, setModalInitialDate] = useState<Date>(selectedDate);
+
+  const [direction, setDirection] = useState<number>(0);
+  const prevDateRef = useRef<number>(selectedDate.getTime());
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    setPrefersReducedMotion(mediaQuery.matches);
+    const handleChange = () => setPrefersReducedMotion(mediaQuery.matches);
+    mediaQuery.addEventListener('change', handleChange);
+    return () => mediaQuery.removeEventListener('change', handleChange);
+  }, []);
 
   const uid = user?.uid || '';
 
@@ -95,6 +110,50 @@ export const CalendarScreen: React.FC<CalendarScreenProps> = ({
     downloadIcsFile(icsContent, `SchoolCal_${format(new Date(), 'yyyy-MM-dd')}.ics`);
   };
 
+  const handlePrevious = () => {
+    setDirection(-1);
+    haptics.selection();
+    goToPrevious();
+  };
+
+  const handleNext = () => {
+    setDirection(1);
+    haptics.selection();
+    goToNext();
+  };
+
+  const handleToday = () => {
+    const nowTime = Date.now();
+    setDirection(nowTime > selectedDate.getTime() ? 1 : -1);
+    haptics.light();
+    goToToday();
+  };
+
+  const swipeHandlers = useSwipeGesture({
+    onSwipeLeft: handleNext,
+    onSwipeRight: handlePrevious,
+    minDistance: 40,
+    velocityThreshold: 0.25,
+    edgeThreshold: 20,
+  });
+
+  const slideVariants = {
+    enter: (dir: number) => ({
+      x: prefersReducedMotion ? 0 : dir > 0 ? 35 : -35,
+      opacity: prefersReducedMotion ? 1 : 0.85,
+    }),
+    center: {
+      x: 0,
+      opacity: 1,
+    },
+    exit: (dir: number) => ({
+      x: prefersReducedMotion ? 0 : dir > 0 ? -35 : 35,
+      opacity: prefersReducedMotion ? 1 : 0.85,
+    }),
+  };
+
+  const currentViewKey = `${viewType}-${format(selectedDate, 'yyyy-MM-dd')}`;
+
   return (
     <div className="space-y-4 pb-24 ipad:pb-10 max-w-5xl mx-auto">
       {/* Calendar Controls Top Bar */}
@@ -104,7 +163,10 @@ export const CalendarScreen: React.FC<CalendarScreenProps> = ({
           <SegmentedControl
             options={viewOptions}
             value={viewType}
-            onChange={setViewType}
+            onChange={(newView) => {
+              haptics.selection();
+              setViewType(newView);
+            }}
             size="sm"
           />
         </div>
@@ -115,23 +177,23 @@ export const CalendarScreen: React.FC<CalendarScreenProps> = ({
           <div className="flex items-center bg-gray-100 dark:bg-ios-dark-secondary rounded-ios p-0.5 border border-black/5 dark:border-white/5">
             <button
               type="button"
-              onClick={goToPrevious}
-              className="p-1.5 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-white dark:hover:bg-ios-dark-card transition-colors"
+              onClick={handlePrevious}
+              className="p-1.5 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-white dark:hover:bg-ios-dark-card transition-colors active:scale-95"
               title="Vorheriger Zeitraum"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
             <button
               type="button"
-              onClick={goToToday}
-              className="px-2.5 py-1 text-xs font-semibold text-gray-800 dark:text-gray-200 hover:bg-white dark:hover:bg-ios-dark-card rounded-lg transition-colors"
+              onClick={handleToday}
+              className="px-2.5 py-1 text-xs font-semibold text-gray-800 dark:text-gray-200 hover:bg-white dark:hover:bg-ios-dark-card rounded-lg transition-colors active:scale-95"
             >
               Heute
             </button>
             <button
               type="button"
-              onClick={goToNext}
-              className="p-1.5 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-white dark:hover:bg-ios-dark-card transition-colors"
+              onClick={handleNext}
+              className="p-1.5 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-white dark:hover:bg-ios-dark-card transition-colors active:scale-95"
               title="Nächster Zeitraum"
             >
               <ChevronRight className="w-4 h-4" />
@@ -142,7 +204,7 @@ export const CalendarScreen: React.FC<CalendarScreenProps> = ({
           <button
             type="button"
             onClick={handleExportIcs}
-            className="p-2 bg-gray-100 dark:bg-ios-dark-secondary text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-ios-dark-tertiary rounded-ios transition-colors"
+            className="p-2 bg-gray-100 dark:bg-ios-dark-secondary text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-ios-dark-tertiary rounded-ios transition-colors active:scale-95"
             title="In Apple Kalender / ICS exportieren"
           >
             <Download className="w-4 h-4" />
@@ -165,78 +227,99 @@ export const CalendarScreen: React.FC<CalendarScreenProps> = ({
         <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white capitalize">
           {headerTitle}
         </h2>
+        <span className="text-xs text-gray-400 font-medium hidden sm:inline">
+          Tippe oder wische zum Blättern
+        </span>
       </div>
 
-      {/* View Render */}
-      <div>
-        {viewType === 'week' && (
-          <WeekView
-            days={weekDays}
-            scheduleEntries={scheduleEntries}
-            events={events}
-            exams={exams}
-            subjects={subjects}
-            teachers={teachers}
-            rooms={rooms}
-            substitutions={substitutions}
-            onSelectEvent={handleEditEvent}
-            onSelectExam={onSelectExam}
-            onSelectScheduleEntry={(entry) => onSelectScheduleEntry(entry)}
-            onEmptySlotClick={(date) => handleOpenNewEvent(date)}
-          />
-        )}
+      {/* View Render with Smooth Horizontal Swipe Gestures */}
+      <div {...swipeHandlers} className="w-full min-w-0 touch-pan-y">
+        <AnimatePresence initial={false} custom={direction} mode="wait">
+          <motion.div
+            key={currentViewKey}
+            custom={direction}
+            variants={slideVariants}
+            initial="enter"
+            animate="center"
+            exit="exit"
+            transition={{
+              type: 'spring',
+              damping: 30,
+              stiffness: 380,
+              mass: 0.8,
+            }}
+            className="w-full min-w-0"
+          >
+            {viewType === 'week' && (
+              <WeekView
+                days={weekDays}
+                scheduleEntries={scheduleEntries}
+                events={events}
+                exams={exams}
+                subjects={subjects}
+                teachers={teachers}
+                rooms={rooms}
+                substitutions={substitutions}
+                onSelectEvent={handleEditEvent}
+                onSelectExam={onSelectExam}
+                onSelectScheduleEntry={(entry) => onSelectScheduleEntry(entry)}
+                onEmptySlotClick={(date) => handleOpenNewEvent(date)}
+              />
+            )}
 
-        {viewType === 'day' && (
-          <DayView
-            selectedDate={selectedDate}
-            scheduleEntries={scheduleEntries}
-            events={events}
-            exams={exams}
-            subjects={subjects}
-            teachers={teachers}
-            rooms={rooms}
-            substitutions={substitutions}
-            onSelectEvent={handleEditEvent}
-            onSelectExam={onSelectExam}
-            onSelectScheduleEntry={onSelectScheduleEntry}
-            onAddEventForDate={handleOpenNewEvent}
-          />
-        )}
+            {viewType === 'day' && (
+              <DayView
+                selectedDate={selectedDate}
+                scheduleEntries={scheduleEntries}
+                events={events}
+                exams={exams}
+                subjects={subjects}
+                teachers={teachers}
+                rooms={rooms}
+                substitutions={substitutions}
+                onSelectEvent={handleEditEvent}
+                onSelectExam={onSelectExam}
+                onSelectScheduleEntry={onSelectScheduleEntry}
+                onAddEventForDate={handleOpenNewEvent}
+              />
+            )}
 
-        {viewType === '3days' && (
-          <ThreeDayView
-            startDate={selectedDate}
-            scheduleEntries={scheduleEntries}
-            events={events}
-            exams={exams}
-            subjects={subjects}
-            teachers={teachers}
-            rooms={rooms}
-            substitutions={substitutions}
-            onSelectEvent={handleEditEvent}
-            onSelectExam={onSelectExam}
-            onSelectScheduleEntry={(entry) => onSelectScheduleEntry(entry)}
-            onAddEventForDate={handleOpenNewEvent}
-          />
-        )}
+            {viewType === '3days' && (
+              <ThreeDayView
+                startDate={selectedDate}
+                scheduleEntries={scheduleEntries}
+                events={events}
+                exams={exams}
+                subjects={subjects}
+                teachers={teachers}
+                rooms={rooms}
+                substitutions={substitutions}
+                onSelectEvent={handleEditEvent}
+                onSelectExam={onSelectExam}
+                onSelectScheduleEntry={(entry) => onSelectScheduleEntry(entry)}
+                onAddEventForDate={handleOpenNewEvent}
+              />
+            )}
 
-        {viewType === 'month' && (
-          <MonthView
-            currentMonth={selectedDate}
-            scheduleEntries={scheduleEntries}
-            events={events}
-            exams={exams}
-            homework={homework}
-            subjects={subjects}
-            teachers={teachers}
-            rooms={rooms}
-            substitutions={substitutions}
-            onSelectEvent={handleEditEvent}
-            onSelectExam={onSelectExam}
-            onSelectScheduleEntry={onSelectScheduleEntry}
-            onAddEventForDate={handleOpenNewEvent}
-          />
-        )}
+            {viewType === 'month' && (
+              <MonthView
+                currentMonth={selectedDate}
+                scheduleEntries={scheduleEntries}
+                events={events}
+                exams={exams}
+                homework={homework}
+                subjects={subjects}
+                teachers={teachers}
+                rooms={rooms}
+                substitutions={substitutions}
+                onSelectEvent={handleEditEvent}
+                onSelectExam={onSelectExam}
+                onSelectScheduleEntry={onSelectScheduleEntry}
+                onAddEventForDate={handleOpenNewEvent}
+              />
+            )}
+          </motion.div>
+        </AnimatePresence>
       </div>
 
       {/* Event Modal */}

@@ -3,6 +3,7 @@ import { CheckCircle2, Circle, Clock, ChevronRight, Plus } from 'lucide-react';
 import { Homework, Subject } from '../../types';
 import { getRelativeDateLabel } from '../../utils/dateUtils';
 import { Badge } from '../common/Badge';
+import { haptics } from '../../utils/haptics';
 
 interface TodayHomeworkWidgetProps {
   homework: Homework[];
@@ -40,7 +41,7 @@ export const TodayHomeworkWidget: React.FC<TodayHomeworkWidgetProps> = ({
           <button
             type="button"
             onClick={onAddHomework}
-            className="w-6 h-6 rounded-full bg-black/5 dark:bg-white/10 flex items-center justify-center text-gray-600 dark:text-gray-300 hover:text-ios-blue transition-colors"
+            className="w-6 h-6 rounded-full bg-black/5 dark:bg-white/10 flex items-center justify-center text-gray-600 dark:text-gray-300 hover:text-ios-blue transition-colors active:scale-90"
             title="Aufgabe hinzufügen"
           >
             <Plus className="w-3.5 h-3.5" />
@@ -73,8 +74,11 @@ export const TodayHomeworkWidget: React.FC<TodayHomeworkWidgetProps> = ({
               >
                 <button
                   type="button"
-                  onClick={() => onToggleComplete(task.id)}
-                  className="mt-0.5 text-gray-400 hover:text-ios-blue dark:hover:text-ios-blue transition-colors shrink-0"
+                  onClick={() => {
+                    haptics.success();
+                    onToggleComplete(task.id);
+                  }}
+                  className="mt-0.5 text-gray-400 hover:text-ios-blue dark:hover:text-ios-blue transition-colors shrink-0 p-1 -m-1 ios-press-active"
                 >
                   <Circle className="w-4 h-4" />
                 </button>

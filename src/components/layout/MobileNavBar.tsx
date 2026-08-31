@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import type { NavigationTab } from '../../types';
 import { useHomeworkStore } from '../../store/useHomeworkStore';
+import { haptics } from '../../utils/haptics';
 
 interface MobileNavBarProps {
   activeTab: NavigationTab;
@@ -33,7 +34,7 @@ export const MobileNavBar: React.FC<MobileNavBarProps> = ({
   ];
 
   return (
-    <nav aria-label="Mobile Navigation" className="ipad:hidden fixed bottom-0 left-0 right-0 z-40 ios-glass-bar border-t border-black/5 dark:border-white/10 pb-safe select-none touch-none">
+    <nav aria-label="Mobile Navigation" className="ipad:hidden fixed bottom-0 left-0 right-0 z-40 ios-glass-bar border-t border-black/5 dark:border-white/10 pb-safe select-none">
       <div className="flex items-center justify-around h-14 max-w-lg mx-auto px-1">
         {tabs.map((tab) => {
           const Icon = tab.icon;
@@ -43,8 +44,13 @@ export const MobileNavBar: React.FC<MobileNavBarProps> = ({
             <button
               key={tab.id}
               type="button"
-              onClick={() => onTabChange(tab.id)}
-              className="relative flex-1 flex flex-col items-center justify-center py-1 transition-all group ios-press-active"
+              onClick={() => {
+                if (!isActive) {
+                  haptics.selection();
+                }
+                onTabChange(tab.id);
+              }}
+              className="relative flex-1 min-h-[48px] flex flex-col items-center justify-center py-1 transition-all group ios-press-active"
             >
               <div className="relative flex items-center justify-center">
                 <Icon
@@ -73,7 +79,7 @@ export const MobileNavBar: React.FC<MobileNavBarProps> = ({
               {isActive && (
                 <motion.div
                   layoutId="mobile-nav-dot"
-                  className="absolute -bottom-1 w-1 h-1 bg-ios-blue rounded-full"
+                  className="absolute -bottom-0.5 w-1 h-1 bg-ios-blue rounded-full"
                   transition={{ type: 'spring', damping: 30, stiffness: 400 }}
                 />
               )}

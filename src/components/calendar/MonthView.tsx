@@ -13,6 +13,7 @@ import {
 import { de } from 'date-fns/locale';
 import { ScheduleEntry, CalendarEvent, Exam, Homework, Subject, Teacher, Room, Substitution } from '../../types';
 import { DayView } from './DayView';
+import { haptics } from '../../utils/haptics';
 
 interface MonthViewProps {
   currentMonth: Date;
@@ -89,8 +90,11 @@ export const MonthView: React.FC<MonthViewProps> = ({
               <button
                 key={day.toISOString()}
                 type="button"
-                onClick={() => setSelectedDay(day)}
-                className={`min-h-[52px] sm:min-h-[64px] p-1.5 rounded-2xl flex flex-col items-center justify-between transition-all relative ${
+                onClick={() => {
+                  haptics.selection();
+                  setSelectedDay(day);
+                }}
+                className={`min-h-[52px] sm:min-h-[64px] p-1.5 rounded-2xl flex flex-col items-center justify-between transition-all relative ios-press-active ${
                   isSelected
                     ? 'bg-ios-blue text-white shadow-md'
                     : isCurrentDay

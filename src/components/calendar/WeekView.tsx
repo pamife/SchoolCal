@@ -12,6 +12,7 @@ import type {
 } from '../../types';
 import { getSubjectIcon, hexToRgba } from '../../utils/colorUtils';
 import { Clock, Plus } from 'lucide-react';
+import { haptics } from '../../utils/haptics';
 
 interface WeekViewProps {
   days: Date[];
@@ -106,8 +107,11 @@ export const WeekView: React.FC<WeekViewProps> = ({
               {dayExams.map((exam) => (
                 <div
                   key={exam.id}
-                  onClick={() => onSelectExam(exam)}
-                  className="p-1.5 rounded-lg bg-red-500/15 border border-red-500/30 text-red-700 dark:text-red-300 text-xs font-bold cursor-pointer hover:scale-[1.02] transition-transform shadow-xs"
+                  onClick={() => {
+                    haptics.selection();
+                    onSelectExam(exam);
+                  }}
+                  className="p-1.5 rounded-lg bg-red-500/15 border border-red-500/30 text-red-700 dark:text-red-300 text-xs font-bold cursor-pointer hover:scale-[1.02] active:scale-95 transition-transform shadow-xs ios-press-active"
                 >
                   <div className="text-[10px] uppercase tracking-wider text-red-500 font-extrabold flex items-center gap-1">
                     <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
@@ -149,13 +153,16 @@ export const WeekView: React.FC<WeekViewProps> = ({
                 return (
                   <div
                     key={entry.id}
-                    onClick={() => onSelectScheduleEntry(entry, day)}
+                    onClick={() => {
+                      haptics.selection();
+                      onSelectScheduleEntry(entry, day);
+                    }}
                     style={{
                       borderLeftColor: subject?.color || '#007AFF',
                       borderLeftWidth: '3px',
                       backgroundColor: subject ? hexToRgba(subject.color, 0.08) : undefined,
                     }}
-                    className={`p-1.5 border border-black/5 dark:border-white/5 text-left transition-all cursor-pointer hover:shadow-xs group ${
+                    className={`p-1.5 border border-black/5 dark:border-white/5 text-left transition-all cursor-pointer hover:shadow-xs group ios-press-active ${
                       isConnectedWithPrev && isConnectedWithNext
                         ? 'rounded-none border-t-0 border-b-0 -mt-1.5'
                         : isConnectedWithPrev
