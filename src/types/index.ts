@@ -107,6 +107,19 @@ export interface CalendarEvent {
   recurrence?: 'none' | 'daily' | 'weekly' | 'biweekly' | 'monthly' | 'custom';
 }
 
+export type DueDateMode = 'AUTO' | 'MANUAL';
+
+export interface DueDateSource {
+  scheduleEntryId?: string | null;
+  lessonDate?: string | null;      // Date of the lesson (YYYY-MM-DD)
+  lessonStartTime?: string | null; // Start time of the lesson (HH:mm)
+  lessonPeriod?: number | null;    // Period number of the lesson
+  calculatedAt?: string | null;    // ISO timestamp when calculated
+  reason?: string | null;          // e.g. 'next_lesson', 'second_next_lesson', 'cancellation_reschedule', 'manual_restore'
+  isShifted?: boolean | null;      // True if postponed/shifted due to cancellation
+  previousDueDate?: string | null; // Previous date before postponement
+}
+
 export interface Homework {
   id: string;
   title: string;
@@ -114,6 +127,8 @@ export interface Homework {
   subjectId: string;
   dueDate: string; // YYYY-MM-DD
   dueTime?: string; // HH:mm
+  dueDateMode?: DueDateMode; // 'AUTO' | 'MANUAL' (default 'AUTO')
+  dueDateSource?: DueDateSource;
   priority: PriorityLevel;
   status: TaskStatus;
   createdAt: string;
@@ -196,6 +211,8 @@ export interface NotificationPreferences {
   quietHoursEnd: string;   // HH:mm e.g. "07:00"
 }
 
+export type AutoDueDateRule = 'next_lesson' | 'second_next_lesson' | 'custom';
+
 export interface UserSettings {
   theme: 'light' | 'dark' | 'system';
   accentColor: string; // e.g. '#007AFF'
@@ -212,6 +229,8 @@ export interface UserSettings {
   webuntisSchool?: string;
   webuntisUsername?: string;
   notifications?: NotificationPreferences;
+  autoDueDateRule?: AutoDueDateRule;
+  subjectDueDateRules?: Record<string, AutoDueDateRule>;
 }
 
 // ----------------------------------------------------

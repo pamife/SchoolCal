@@ -5,6 +5,9 @@ import { Badge } from '../common/Badge';
 import { Zap, RefreshCw, CheckCircle2, Server, School, Lock, ArrowRight, ShieldCheck } from 'lucide-react';
 import { useSettingsStore } from '../../store/useSettingsStore';
 import { useAuthStore } from '../../store/useAuthStore';
+import { useSchoolStore } from '../../store/useSchoolStore';
+import { useHomeworkStore } from '../../store/useHomeworkStore';
+import { recalculateAutoDueDates } from '../../utils/homeworkDueDateEngine';
 
 interface WebUntisSyncTabProps {
   onOpenPricing?: () => void;
@@ -17,6 +20,8 @@ export const WebUntisSyncTab: React.FC<WebUntisSyncTabProps> = ({
 }) => {
   const { settings, updateSettings } = useSettingsStore();
   const { user } = useAuthStore();
+  const { scheduleEntries, substitutions, subjects } = useSchoolStore();
+  const { homework, updateHomework } = useHomeworkStore();
 
   const [server, setServer] = useState(settings.webuntisServer || 'arche.webuntis.com');
   const [school, setSchool] = useState(settings.webuntisSchool || '');
@@ -39,8 +44,33 @@ export const WebUntisSyncTab: React.FC<WebUntisSyncTabProps> = ({
       webuntisUsername: username,
     }, uid);
 
-    setTimeout(() => {
-      setSyncStatus('Stundenplan, Fächer und Vertretungen erfolgreich synchronisiert!');
+    setTimeout(async () => {
+      // Recalculate auto homework due dates
+      const subjectMap = new Map(subjects.map((s) => [s.id, s.name]));
+      const recalc = recalculateAutoDueDates({
+        homeworkList: homework,
+        scheduleEntries,
+        substitutions,
+        holidayState: settings.state,
+        activeTimetableVersion: settings.activeTimetableVersion,
+        settings,
+        subjectNames: subjectMap,
+      });
+
+      if (recalc.hasChanges) {
+        for (const item of recalc.updatedHomework) {
+          await updateHomework(uid, item.id, item);
+        }
+        const noticeCount = recalc.notices.length;
+        setSyncStatus(
+          `Stundenplan synchronisiert! ${noticeCount} Hausaufgabenfrist${
+            noticeCount === 1 ? '' : 'en'
+          } wurde${noticeCount === 1 ? '' : 'n'} automatisch aktualisiert.`
+        );
+      } else {
+        setSyncStatus('Stundenplan, Fächer und Vertretungen erfolgreich synchronisiert!');
+      }
+
       setIsSyncing(false);
     }, 1800);
   };

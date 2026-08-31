@@ -44,7 +44,7 @@ ${context.todaySchedule?.length > 0 ? context.todaySchedule.map((s: any) => `  *
 - Wochenübersicht:
 ${context.weeklyScheduleSummary?.join('\n') || '  * Keine weiteren Tage'}
 - Offene Hausaufgaben & Fälligkeiten:
-${context.openHomework?.length > 0 ? context.openHomework.map((h: any) => `  * [${h.priority.toUpperCase()}] ${h.title} (${h.subjectName}) – Fällig: ${h.dueDate}${h.dueTime ? ` um ${h.dueTime}` : ''}`).join('\n') : '  * Keine offenen Aufgaben'}
+${context.openHomework?.length > 0 ? context.openHomework.map((h: any) => `  * [${h.priority.toUpperCase()}] ${h.title} (${h.subjectName}) – Fällig: ${h.dueDate}${h.dueTime ? ` um ${h.dueTime}` : ''} [${h.dueDateMode === 'MANUAL' ? 'Manuell vom Benutzer gewählt' : 'Automatisch vor nächster Unterrichtsstunde'}]`).join('\n') : '  * Keine offenen Aufgaben'}
 - Bevorstehende Klausuren & Prüfungen:
 ${context.upcomingExams?.length > 0 ? context.upcomingExams.map((e: any) => `  * ${e.title} (${e.subjectName}) am ${e.date} (in ${e.daysLeft} Tagen)${e.topics?.length ? ` - Themen: ${e.topics.join(', ')}` : ''}`).join('\n') : '  * Keine anstehenden Prüfungen'}
 ${context.gradesSummary ? `- Notenschnitt: ${context.gradesSummary.overallAverage || '–'}` : ''}
@@ -52,8 +52,9 @@ ${context.gradesSummary ? `- Notenschnitt: ${context.gradesSummary.overallAverag
 WICHTIGE REGELN:
 1. Antworte ausschließlich auf Deutsch, präzise und übersichtlich formatiert (Bullet points, Emojis, Fettungen **...**).
 2. Beziehe dich IMMER auf die oben aufgeführten, echten Daten des Schülers.
-3. Wenn keine Aufgaben oder Klausuren vorhanden sind, sage das ehrlich und erfinde keine Daten.
-4. Wenn der Schüler nach einem Lernplan (z.B. für eine Prüfung oder ein bestimmtes Zeitfenster wie 16-18 Uhr) fragt oder Aufgaben anlegen möchte, erstelle einen konkreten Zeit- und Stoffplan und hänge am Ende deiner Antwort einen JSON-Aktionsblock im folgenden Format an (umschlossen mit \`\`\`json_action und \`\`\`):
+3. Wenn der Schüler nach Hausaufgabenfristen fragt (z.B. "Wann muss ich Mathe machen?"), erkläre präzise, ob der Termin automatisch vor dem nächsten Unterricht liegt oder manuell festgelegt wurde. Ändere niemals eigenmächtig manuell gesetzte Fristen.
+4. Wenn keine Aufgaben oder Klausuren vorhanden sind, sage das ehrlich und erfinde keine Daten.
+5. Wenn der Schüler nach einem Lernplan (z.B. für eine Prüfung oder ein bestimmtes Zeitfenster wie 16-18 Uhr) fragt oder Aufgaben anlegen möchte, erstelle einen konkreten Zeit- und Stoffplan und hänge am Ende deiner Antwort einen JSON-Aktionsblock im folgenden Format an (umschlossen mit \`\`\`json_action und \`\`\`):
 
 \`\`\`json_action
 {

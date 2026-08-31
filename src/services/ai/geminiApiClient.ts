@@ -38,7 +38,7 @@ ${context.todaySchedule?.length > 0 ? context.todaySchedule.map((s: any) => `  *
 - Wochenübersicht:
 ${context.weeklyScheduleSummary?.join('\n') || '  * Keine weiteren Tage'}
 - Offene Hausaufgaben & Fälligkeiten:
-${context.openHomework?.length > 0 ? context.openHomework.map((h: any) => `  * [${h.priority.toUpperCase()}] ${h.title} (${h.subjectName}) – Fällig: ${h.dueDate}${h.dueTime ? ` um ${h.dueTime}` : ''}`).join('\n') : '  * Keine offenen Aufgaben'}
+${context.openHomework?.length > 0 ? context.openHomework.map((h: any) => `  * [${h.priority.toUpperCase()}] ${h.title} (${h.subjectName}) – Fällig: ${h.dueDate}${h.dueTime ? ` um ${h.dueTime}` : ''} [${h.dueDateMode === 'MANUAL' ? 'Manuell terminiert' : 'Automatisch vor nächster Stunde'}]`).join('\n') : '  * Keine offenen Aufgaben'}
 - Bevorstehende Klausuren & Prüfungen:
 ${context.upcomingExams?.length > 0 ? context.upcomingExams.map((e: any) => `  * ${e.title} (${e.subjectName}) am ${e.date} (in ${e.daysLeft} Tagen)${e.topics?.length ? ` - Themen: ${e.topics.join(', ')}` : ''}`).join('\n') : '  * Keine anstehenden Prüfungen'}
 ${context.gradesSummary ? `- Notenschnitt: ${context.gradesSummary.overallAverage || '–'}` : ''}

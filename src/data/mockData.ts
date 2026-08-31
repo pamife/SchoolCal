@@ -64,6 +64,7 @@ export const DEFAULT_USER_SETTINGS: UserSettings = {
   dailySummaryTime: '07:15',
   activeTimetableVersion: 'default',
   notifications: DEFAULT_NOTIFICATION_PREFERENCES,
+  autoDueDateRule: 'next_lesson',
 };
 
 // No demo data: All datasets start completely empty for each user

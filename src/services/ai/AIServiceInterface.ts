@@ -30,6 +30,7 @@ export interface AISchoolContext {
     dueDate: string;
     dueTime?: string;
     priority: string;
+    dueDateMode?: string; // 'AUTO' | 'MANUAL'
   }>;
   upcomingExams: Array<{
     id: string;

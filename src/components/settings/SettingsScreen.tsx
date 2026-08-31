@@ -388,7 +388,97 @@ export const SettingsScreen: React.FC = () => {
       {/* 6. 🤖 KI-SCHULASSISTENT & GEMINI API-KEY */}
       <AiSettingsCard />
 
-      {/* 7. WEBUNTIS SYNCHRONISATION (PLUS) */}
+      {/* 7. AUTOMATISCHE HAUSAUFGABEN-FRISTEN */}
+      <div className="ios-card p-5 space-y-4">
+        <div className="flex items-center justify-between pb-2 border-b border-black/5 dark:border-white/10">
+          <div className="flex items-center gap-2.5">
+            <Sparkles className="w-5 h-5 text-ios-blue" />
+            <div>
+              <h3 className="text-base font-bold text-gray-900 dark:text-white">
+                Automatische Hausaufgaben-Fristen
+              </h3>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Standardlogik für vorgeschlagene Fälligkeitsdaten beim Erstellen von Aufgaben
+              </p>
+            </div>
+          </div>
+          <Badge variant="blue" size="sm">Standard</Badge>
+        </div>
+
+        <div className="space-y-3">
+          <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+            Standardregel für automatische Fristen
+          </label>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+            {[
+              { id: 'next_lesson', label: 'Nächster Unterricht', desc: 'Frist ist die direkt nächste Stunde dieses Fachs' },
+              { id: 'second_next_lesson', label: 'Übernächster Unterricht', desc: 'Frist ist die übernächste Stunde dieses Fachs' },
+              { id: 'custom', label: 'Benutzerdefiniert', desc: 'Frist wird bei jeder Aufgabe manuell bestimmt' },
+            ].map((rule) => {
+              const isSelected = (settings.autoDueDateRule || 'next_lesson') === rule.id;
+              return (
+                <button
+                  key={rule.id}
+                  type="button"
+                  onClick={() => updateSettings({ autoDueDateRule: rule.id as any }, uid)}
+                  className={`p-3.5 rounded-xl border text-left transition-all flex flex-col justify-between gap-1.5 ${
+                    isSelected
+                      ? 'bg-blue-500/10 border-ios-blue text-ios-blue dark:bg-blue-500/20'
+                      : 'bg-gray-50 dark:bg-ios-dark-secondary border-black/5 dark:border-white/5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-ios-dark-tertiary'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold">{rule.label}</span>
+                    {isSelected && <Check className="w-3.5 h-3.5 text-ios-blue" />}
+                  </div>
+                  <p className="text-[11px] text-gray-500 dark:text-gray-400 leading-tight">
+                    {rule.desc}
+                  </p>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Fachabhängige Regeln (optional) */}
+          {subjects.length > 0 && (
+            <div className="pt-2">
+              <details className="text-xs group">
+                <summary className="font-semibold text-gray-600 dark:text-gray-300 cursor-pointer hover:text-ios-blue flex items-center gap-1.5 list-none">
+                  <span className="group-open:rotate-90 transition-transform">▸</span>
+                  <span>Fachspezifische Regeln anpassen ({subjects.length} Fächer)</span>
+                </summary>
+                <div className="mt-2.5 space-y-2 pl-3 border-l-2 border-ios-blue/30">
+                  {subjects.map((sub) => {
+                    const currentSubRule = settings.subjectDueDateRules?.[sub.id] || settings.autoDueDateRule || 'next_lesson';
+                    return (
+                      <div key={sub.id} className="flex items-center justify-between p-2 rounded-xl bg-gray-50 dark:bg-ios-dark-secondary">
+                        <div className="flex items-center gap-2">
+                          <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: sub.color }} />
+                          <span className="font-semibold text-gray-900 dark:text-white">{sub.name}</span>
+                        </div>
+                        <select
+                          value={currentSubRule}
+                          onChange={(e) => {
+                            const newMap = { ...(settings.subjectDueDateRules || {}), [sub.id]: e.target.value as any };
+                            updateSettings({ subjectDueDateRules: newMap }, uid);
+                          }}
+                          className="px-2 py-1 bg-white dark:bg-ios-dark-tertiary rounded-lg text-xs font-semibold text-gray-900 dark:text-white border border-black/5 focus:outline-none"
+                        >
+                          <option value="next_lesson">Nächste Stunde</option>
+                          <option value="second_next_lesson">Übernächste Stunde</option>
+                        </select>
+                      </div>
+                    );
+                  })}
+                </div>
+              </details>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* 8. WEBUNTIS SYNCHRONISATION (PLUS) */}
       <WebUntisSyncTab
         onOpenPricing={() => setIsPricingOpen(true)}
         onOpenActivation={() => setIsActivationOpen(true)}

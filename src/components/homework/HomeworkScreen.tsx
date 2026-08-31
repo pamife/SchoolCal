@@ -181,6 +181,27 @@ export const HomeworkScreen: React.FC = () => {
         </div>
       )}
 
+      {/* Postponed due date banner if any task was shifted due to cancellation */}
+      {(() => {
+        const shiftedTasks = homework.filter(
+          (h) => h.status !== 'done' && h.dueDateSource?.isShifted
+        );
+        if (shiftedTasks.length === 0) return null;
+        return (
+          <div className="p-3.5 bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-amber-500/5 border border-amber-500/25 rounded-2xl flex items-start gap-3 text-xs">
+            <Sparkles className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+            <div>
+              <div className="font-bold text-amber-900 dark:text-amber-200">
+                ℹ️ Frist automatisch angepasst ({shiftedTasks.length} {shiftedTasks.length === 1 ? 'Aufgabe' : 'Aufgaben'})
+              </div>
+              <p className="text-amber-800/90 dark:text-amber-300/90 mt-0.5">
+                Wegen Unterrichtsausfall wurde die Frist für betroffene Aufgaben automatisch auf den nächsten stattfindenden Unterricht verschoben.
+              </p>
+            </div>
+          </div>
+        );
+      })()}
+
       {/* Tasks List */}
       {filteredTasks.length === 0 ? (
         <EmptyState

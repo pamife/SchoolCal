@@ -103,6 +103,21 @@ export const HomeworkCard: React.FC<HomeworkCardProps> = ({
             </Badge>
           )}
 
+          {/* Auto / Manual Mode Badge */}
+          {homework.dueDateSource?.isShifted ? (
+            <Badge variant="amber" size="sm" className="flex items-center gap-1">
+              <span>⚡ Frist verschoben (Ausfall)</span>
+            </Badge>
+          ) : homework.dueDateMode === 'AUTO' ? (
+            <span className="text-[10px] font-semibold text-blue-600 dark:text-blue-400 bg-blue-500/10 px-1.5 py-0.5 rounded-full flex items-center gap-0.5" title="Automatisch anhand des Stundenplans berechnet">
+              <span>⚡ Auto</span>
+            </span>
+          ) : homework.dueDateMode === 'MANUAL' ? (
+            <span className="text-[10px] font-semibold text-gray-500 dark:text-gray-400 bg-gray-500/10 px-1.5 py-0.5 rounded-full flex items-center gap-0.5" title="Manuell vom Benutzer festgelegt">
+              <span>✏️ Manuell</span>
+            </span>
+          ) : null}
+
           {subject && (
             <span className="text-[11px] text-gray-400 dark:text-gray-500">
               {subject.name}

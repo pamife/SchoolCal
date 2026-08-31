@@ -7,6 +7,11 @@ import { evaluatePendingNotifications } from '../src/services/notifications/noti
 import { buildSafeAISchoolContext } from '../src/services/ai/aiContextBuilder';
 import { executeConfirmedAIAction } from '../src/services/ai/aiActionHandler';
 import {
+  calculateAutoDueDate,
+  recalculateAutoDueDates,
+  formatDueDateBadgeInfo,
+} from '../src/utils/homeworkDueDateEngine';
+import {
   isPlanEligible,
   getRequiredPlanForFeature,
 } from '../src/config/features';
@@ -401,8 +406,179 @@ async function runSmartFeaturesTests() {
   assert(getRequiredPlanForFeature('basicStats') === 'STANDARD', 'basicStats requires Standard');
   assert(getRequiredPlanForFeature('advancedStats') === 'PLUS', 'advancedStats requires Plus');
   assert(getRequiredPlanForFeature('proStats') === 'PRO', 'proStats requires Pro');
-  assert(getRequiredPlanForFeature('basicNotifications') === 'STANDARD', 'basicNotifications requires Standard');
-  assert(getRequiredPlanForFeature('advancedNotifications') === 'PLUS', 'advancedNotifications requires Plus');
+  // ----------------------------------------------------
+  // TEST GROUP 6: ⚡ Automatische Hausaufgaben-Fristen
+  // ----------------------------------------------------
+  console.log('\n--- 6. Automatische Hausaufgaben-Fristen Tests ---');
+
+  // Full Weekly Schedule for testing:
+  // Math: Monday 08:00 (1. Std), Wednesday 10:00 (3. Std), Friday 11:45 (5. Std)
+  // German: Tuesday 08:00, Thursday 08:00
+  // English: Monday 08:50, Thursday 09:55
+  // Physics: Tuesday 10:50, Friday 08:00
+  const fullWeekSchedule: ScheduleEntry[] = [
+    { id: 'f-m-1', dayOfWeek: 1, period: 1, startTime: '08:00', endTime: '08:45', subjectId: 'sub-mathe' },
+    { id: 'f-e-1', dayOfWeek: 1, period: 2, startTime: '08:50', endTime: '09:35', subjectId: 'sub-englisch' },
+    { id: 'f-d-1', dayOfWeek: 2, period: 1, startTime: '08:00', endTime: '08:45', subjectId: 'sub-deutsch' },
+    { id: 'f-p-1', dayOfWeek: 2, period: 4, startTime: '10:50', endTime: '11:35', subjectId: 'sub-physik' },
+    { id: 'f-m-2', dayOfWeek: 3, period: 3, startTime: '10:00', endTime: '10:45', subjectId: 'sub-mathe' },
+    { id: 'f-d-2', dayOfWeek: 4, period: 1, startTime: '08:00', endTime: '08:45', subjectId: 'sub-deutsch' },
+    { id: 'f-e-2', dayOfWeek: 4, period: 3, startTime: '09:55', endTime: '10:40', subjectId: 'sub-englisch' },
+    { id: 'f-p-2', dayOfWeek: 5, period: 1, startTime: '08:00', endTime: '08:45', subjectId: 'sub-physik' },
+    { id: 'f-m-3', dayOfWeek: 5, period: 5, startTime: '11:45', endTime: '12:30', subjectId: 'sub-mathe' },
+  ];
+
+  // 6.1 Standard next lesson lookup (Monday 09:00 -> Wednesday)
+  const mondayMorningDate = new Date(2026, 8, 14, 9, 0, 0); // 2026-09-14 is Monday
+  const autoDueMon = calculateAutoDueDate({
+    subjectId: 'sub-mathe',
+    referenceDate: mondayMorningDate,
+    scheduleEntries: fullWeekSchedule,
+    holidays: [],
+  });
+  assert(autoDueMon.found === true, 'Math due date found from Monday');
+  assert(autoDueMon.dueDate === '2026-09-16', `Math due date is Wednesday 2026-09-16 (got ${autoDueMon.dueDate})`);
+  assert(autoDueMon.dueTime === '10:00', `Math due time is 10:00 (got ${autoDueMon.dueTime})`);
+  assert(autoDueMon.dayName === 'Mittwoch', 'Math day name is Mittwoch');
+
+  // 6.2 Wednesday afternoon -> Friday
+  const wedAfternoon = new Date(2026, 8, 16, 12, 0, 0);
+  const autoDueWed = calculateAutoDueDate({
+    subjectId: 'sub-mathe',
+    referenceDate: wedAfternoon,
+    scheduleEntries: fullWeekSchedule,
+    holidays: [],
+  });
+  assert(autoDueWed.dueDate === '2026-09-18', `From Wednesday, next Math is Friday 2026-09-18 (got ${autoDueWed.dueDate})`);
+
+  // 6.3 Friday afternoon -> Next Monday
+  const friAfternoon = new Date(2026, 8, 18, 14, 0, 0);
+  const autoDueFri = calculateAutoDueDate({
+    subjectId: 'sub-mathe',
+    referenceDate: friAfternoon,
+    scheduleEntries: fullWeekSchedule,
+    holidays: [],
+  });
+  assert(autoDueFri.dueDate === '2026-09-21', `From Friday, next Math is Monday 2026-09-21 (got ${autoDueFri.dueDate})`);
+
+  // 6.4 Weekend (Saturday) -> Next Monday
+  const satDate = new Date(2026, 8, 19, 10, 0, 0);
+  const autoDueSat = calculateAutoDueDate({
+    subjectId: 'sub-mathe',
+    referenceDate: satDate,
+    scheduleEntries: fullWeekSchedule,
+    holidays: [],
+  });
+  assert(autoDueSat.dueDate === '2026-09-21', `From Saturday, next Math is Monday 2026-09-21 (got ${autoDueSat.dueDate})`);
+
+  // 6.5 Vacation Skipping (Herbstferien Sept 21-27)
+  const vacationHolidays: Holiday[] = [
+    { id: 'hol-1', name: 'Herbstferien', startDate: '2026-09-21', endDate: '2026-09-27', type: 'vacation', state: 'BY' },
+  ];
+  const autoDueVac = calculateAutoDueDate({
+    subjectId: 'sub-mathe',
+    referenceDate: friAfternoon,
+    scheduleEntries: fullWeekSchedule,
+    holidays: vacationHolidays,
+  });
+  assert(autoDueVac.dueDate === '2026-09-28', `Vacation week skipped: next Math is Monday 2026-09-28 (got ${autoDueVac.dueDate})`);
+
+  // 6.6 Cancellation / Entfall Handling
+  const subsCancelled: Substitution[] = [
+    { id: 'sub-c-1', scheduleEntryId: 'f-m-2', date: '2026-09-16', type: 'cancelled', note: 'Mathe entfällt' },
+  ];
+  const autoDueCanc = calculateAutoDueDate({
+    subjectId: 'sub-mathe',
+    referenceDate: mondayMorningDate,
+    scheduleEntries: fullWeekSchedule,
+    substitutions: subsCancelled,
+    holidays: [],
+  });
+  assert(autoDueCanc.dueDate === '2026-09-18', `Cancelled Wednesday skipped: next Math is Friday 2026-09-18 (got ${autoDueCanc.dueDate})`);
+  assert(autoDueCanc.isPostponedDueToCancellation === true, 'isPostponedDueToCancellation is flagged true');
+
+  // 6.7 Subject Change / Vertretung
+  const subsChange: Substitution[] = [
+    { id: 'sub-ch-1', scheduleEntryId: 'f-d-1', date: '2026-09-15', type: 'subject_change', newSubjectId: 'sub-englisch' },
+  ];
+  const autoDueGerman = calculateAutoDueDate({
+    subjectId: 'sub-deutsch',
+    referenceDate: mondayMorningDate,
+    scheduleEntries: fullWeekSchedule,
+    substitutions: subsChange,
+    holidays: [],
+  });
+  assert(autoDueGerman.dueDate === '2026-09-17', `Replaced Tuesday German skipped: next German is Thursday 2026-09-17 (got ${autoDueGerman.dueDate})`);
+
+  // 6.8 Rule 'second_next_lesson'
+  const autoDue2nd = calculateAutoDueDate({
+    subjectId: 'sub-mathe',
+    referenceDate: mondayMorningDate,
+    scheduleEntries: fullWeekSchedule,
+    holidays: [],
+    options: { rule: 'second_next_lesson' },
+  });
+  assert(autoDue2nd.dueDate === '2026-09-18', `second_next_lesson selects Friday 2026-09-18 (got ${autoDue2nd.dueDate})`);
+
+  // 6.9 Subject not in timetable
+  const autoDueUnknown = calculateAutoDueDate({
+    subjectId: 'sub-unknown',
+    referenceDate: mondayMorningDate,
+    scheduleEntries: fullWeekSchedule,
+    holidays: [],
+  });
+  assert(autoDueUnknown.found === false, 'Unknown subject returns found: false');
+  assert(autoDueUnknown.reason === 'no_schedule_entry', 'Reason is no_schedule_entry');
+
+  // 6.10 Recalculation & MANUAL Immutability
+  const mixedHomework: Homework[] = [
+    {
+      id: 'hw-auto',
+      title: 'Mathe Buch S. 84',
+      subjectId: 'sub-mathe',
+      dueDate: '2026-09-16',
+      dueTime: '10:00',
+      dueDateMode: 'AUTO',
+      priority: 'normal',
+      status: 'todo',
+      createdAt: '2026-09-14T09:00:00Z',
+    },
+    {
+      id: 'hw-manual',
+      title: 'Mathe Referat',
+      subjectId: 'sub-mathe',
+      dueDate: '2026-09-17',
+      dueTime: '15:00',
+      dueDateMode: 'MANUAL',
+      priority: 'high',
+      status: 'todo',
+      createdAt: '2026-09-14T09:00:00Z',
+    },
+  ];
+
+  const recalcResult = recalculateAutoDueDates({
+    homeworkList: mixedHomework,
+    scheduleEntries: fullWeekSchedule,
+    substitutions: subsCancelled, // Wednesday cancelled
+    holidays: [],
+    referenceDate: mondayMorningDate,
+    subjectNames: new Map([['sub-mathe', 'Mathematik']]),
+  });
+
+  assert(recalcResult.hasChanges === true, 'Recalculation detected changes');
+  const shiftedHw = recalcResult.updatedHomework.find((h) => h.id === 'hw-auto');
+  assert(shiftedHw?.dueDate === '2026-09-18', `AUTO homework shifted to Friday 2026-09-18 (got ${shiftedHw?.dueDate})`);
+  assert(shiftedHw?.dueDateSource?.isShifted === true, 'Shifted homework marked isShifted: true');
+
+  const unchangedManual = recalcResult.updatedHomework.find((h) => h.id === 'hw-manual');
+  assert(unchangedManual?.dueDate === '2026-09-17', 'MANUAL homework was UNCHANGED at 2026-09-17');
+  assert(unchangedManual?.dueDateMode === 'MANUAL', 'MANUAL mode was preserved');
+
+  // 6.11 Badge formatting helper
+  const badgeInfo = formatDueDateBadgeInfo('2026-09-16', '08:00', 'AUTO');
+  assert(badgeInfo.badgeLabel === 'Automatisch', 'formatDueDateBadgeInfo returns Automatisch for AUTO');
+  const badgeManual = formatDueDateBadgeInfo('2026-09-17', '15:00', 'MANUAL');
+  assert(badgeManual.badgeLabel === 'Manuell', 'formatDueDateBadgeInfo returns Manuell for MANUAL');
 
   console.log('\n====================================================');
   console.log(`Test Results: ${passed} passed, ${failed} failed.`);

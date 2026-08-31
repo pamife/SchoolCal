@@ -37,6 +37,7 @@ export async function executeConfirmedAIAction(
             subjectId: u.subjectId || '',
             dueDate: u.date || new Date().toISOString().slice(0, 10),
             dueTime: u.time || '17:00',
+            dueDateMode: 'MANUAL', // Study plan sessions have intentional target dates
             priority: 'high',
             status: 'todo',
             createdAt: new Date().toISOString(),
@@ -62,6 +63,7 @@ export async function executeConfirmedAIAction(
           subjectId: item.subjectId || '',
           dueDate: item.dueDate || new Date().toISOString().slice(0, 10),
           dueTime: item.dueTime || '14:00',
+          dueDateMode: item.dueDateMode || (item.dueDate ? 'MANUAL' : 'AUTO'),
           priority: item.priority || 'normal',
           status: 'todo',
           createdAt: new Date().toISOString(),

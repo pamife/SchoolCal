@@ -60,9 +60,13 @@ export class BackendAIService implements IAIService {
     );
 
     if (matchedTask) {
+      const modeText = matchedTask.dueDateMode === 'MANUAL'
+        ? '✏️ Manuell von dir festgelegt'
+        : '⚡ Automatisch vor deinem nächsten Unterrichtstermin eingeplant';
+
       return {
         text: `Zu deiner Aufgabe **${matchedTask.title}** (${matchedTask.subjectName}):\n\n` +
-          `• **Fälligkeit:** ${matchedTask.dueDate}${matchedTask.dueTime ? ` um ${matchedTask.dueTime} Uhr` : ''}\n` +
+          `• **Fälligkeit:** ${matchedTask.dueDate}${matchedTask.dueTime ? ` um ${matchedTask.dueTime} Uhr` : ''} (${modeText})\n` +
           `• **Priorität:** ${matchedTask.priority}\n\n` +
           `💡 **Tipp zur Vorbereitung:**\n` +
           `1. **Einleitung:** Thema vorstellen und Interesse wecken.\n` +

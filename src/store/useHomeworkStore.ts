@@ -24,6 +24,7 @@ interface HomeworkState {
   clearHomework: () => void;
   addHomework: (uid: string, item: Homework) => Promise<void>;
   updateHomework: (uid: string, id: string, updates: Partial<Homework>) => Promise<void>;
+  bulkUpdateHomework: (uid: string, items: Homework[]) => Promise<void>;
   deleteHomework: (uid: string, id: string) => Promise<void>;
   toggleComplete: (uid: string, id: string) => Promise<void>;
   setFilter: (filterUpdates: Partial<HomeworkFilter>) => void;
@@ -69,6 +70,18 @@ export const useHomeworkStore = create<HomeworkState>((set, get) => ({
     });
     if (uid) {
       await updateUserDoc<Homework>(uid, 'homework', id, updates);
+    }
+  },
+
+  bulkUpdateHomework: async (uid, items) => {
+    const itemMap = new Map(items.map((i) => [i.id, i]));
+    set({
+      homework: get().homework.map((h) => (itemMap.has(h.id) ? itemMap.get(h.id)! : h)),
+    });
+    if (uid) {
+      for (const item of items) {
+        await updateUserDoc<Homework>(uid, 'homework', item.id, item);
+      }
     }
   },
 

@@ -117,11 +117,23 @@ export function evaluatePendingNotifications({
     });
   }
 
-  // 3. Homework Due Reminders
-  if (preferences.homeworkDueDayBefore || preferences.homeworkDue2HoursBefore) {
+  // 3. Homework Due Reminders & Shift Notifications
+  if (preferences.homeworkDueDayBefore || preferences.homeworkDue2HoursBefore || preferences.cancellations) {
     const openHw = homework.filter((h) => h.status !== 'done');
     openHw.forEach((h) => {
       const sub = subjectMap.get(h.subjectId);
+
+      // A. Shift notification if postponed due to cancellation
+      if (h.dueDateSource?.isShifted && preferences.cancellations) {
+        items.push({
+          id: `hw-shifted-${h.id}-${h.dueDate}`,
+          title: `📝 Frist angepasst: ${sub?.name || 'Hausaufgabe'}`,
+          body: `Der Unterricht entfällt. Die Frist für "${h.title}" wurde automatisch auf ${h.dueDate} verschoben.`,
+          type: 'homework',
+        });
+      }
+
+      // B. Normal due reminder
       if (h.dueDate === todayIso && preferences.homeworkDueDayBefore) {
         items.push({
           id: `hw-today-${h.id}`,

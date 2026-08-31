@@ -87,6 +87,7 @@ export function buildSafeAISchoolContext({
       dueDate: h.dueDate,
       dueTime: h.dueTime,
       priority: h.priority,
+      dueDateMode: h.dueDateMode || 'AUTO',
     }));
 
   // Upcoming exams
