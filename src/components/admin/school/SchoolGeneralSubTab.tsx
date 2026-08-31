@@ -68,7 +68,7 @@ export const SchoolGeneralSubTab: React.FC<SchoolGeneralSubTabProps> = ({
               <h4 className="text-sm font-bold text-gray-900 dark:text-white">
                 {profile.name}
               </h4>
-              <Badge variant={enabled ? 'emerald' : 'red'} size="sm">
+              <Badge variant={enabled ? 'green' : 'red'} size="sm">
                 {enabled ? 'Aktiv' : 'Inaktiv'}
               </Badge>
             </div>

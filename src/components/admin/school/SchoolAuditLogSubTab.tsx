@@ -34,11 +34,11 @@ export const SchoolAuditLogSubTab: React.FC = () => {
       case 'BREAKS_UPDATED':
         return { label: 'Pausenzeiten geändert', variant: 'amber' as const };
       case 'HOLIDAY_ADDED':
-        return { label: 'Ferientag hinzugefügt', variant: 'emerald' as const };
+        return { label: 'Ferientag hinzugefügt', variant: 'green' as const };
       case 'HOLIDAY_DELETED':
         return { label: 'Ferientag gelöscht', variant: 'red' as const };
       case 'WEBUNTIS_CONFIG_UPDATED':
-        return { label: 'WebUntis Konfiguration geändert', variant: 'indigo' as const };
+        return { label: 'WebUntis Konfiguration geändert', variant: 'blue' as const };
       default:
         return { label: action, variant: 'gray' as const };
     }
