@@ -12,22 +12,15 @@ import type {
   UserSettings,
 } from '../types';
 
-export const DEFAULT_PERIOD_TIMES: SchedulePeriodTime[] = [
-  { period: 1, startTime: '08:00', endTime: '08:45', label: '1. Stunde' },
-  { period: 2, startTime: '08:50', endTime: '09:35', label: '2. Stunde' },
-  { period: 3, startTime: '09:55', endTime: '10:40', label: '3. Stunde' },
-  { period: 4, startTime: '10:45', endTime: '11:30', label: '4. Stunde' },
-  { period: 5, startTime: '11:45', endTime: '12:30', label: '5. Stunde' },
-  { period: 6, startTime: '12:35', endTime: '13:20', label: '6. Stunde' },
-  { period: 7, startTime: '14:05', endTime: '14:50', label: '7. Stunde' },
-  { period: 8, startTime: '14:55', endTime: '15:40', label: '8. Stunde' },
-];
+import {
+  OFFICIAL_SCHERPF_PERIODS,
+  OFFICIAL_SCHERPF_BREAKS,
+  DEFAULT_SCHOOL_PROFILE,
+} from '../config/schoolConfig';
 
-export const DEFAULT_BREAKS: ScheduleBreak[] = [
-  { id: 'break-1', name: '1. Pause', afterPeriod: 2, startTime: '09:35', endTime: '09:55' },
-  { id: 'break-2', name: '2. Pause', afterPeriod: 4, startTime: '11:30', endTime: '11:45' },
-  { id: 'break-3', name: 'Mittagspause', afterPeriod: 6, startTime: '13:20', endTime: '14:05' },
-];
+export const DEFAULT_PERIOD_TIMES: SchedulePeriodTime[] = OFFICIAL_SCHERPF_PERIODS;
+
+export const DEFAULT_BREAKS: ScheduleBreak[] = OFFICIAL_SCHERPF_BREAKS;
 
 export const DEFAULT_NOTIFICATION_PREFERENCES = {
   enabled: true,
@@ -54,8 +47,8 @@ export const DEFAULT_NOTIFICATION_PREFERENCES = {
 export const DEFAULT_USER_SETTINGS: UserSettings = {
   theme: 'system',
   accentColor: '#007AFF',
-  state: 'BY',
-  schoolName: '',
+  state: 'BB',
+  schoolName: DEFAULT_SCHOOL_PROFILE.name,
   gradeLevel: '',
   periodTimes: DEFAULT_PERIOD_TIMES,
   breaks: DEFAULT_BREAKS,
@@ -63,6 +56,8 @@ export const DEFAULT_USER_SETTINGS: UserSettings = {
   notificationsEnabled: true,
   dailySummaryTime: '07:15',
   activeTimetableVersion: 'default',
+  webuntisServer: 'arche.webuntis.com',
+  webuntisSchool: 'scherpf-gymnasium',
   notifications: DEFAULT_NOTIFICATION_PREFERENCES,
   autoDueDateRule: 'next_lesson',
   onboardingCompleted: false,

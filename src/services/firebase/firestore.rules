@@ -24,16 +24,20 @@ service cloud.firestore {
       // User can read their own profile, Admin can read profile for user management
       allow read: if isOwner(userId) || isAdmin();
       
-      // New user creation: Stricly enforce that users CANNOT assign themselves the admin role
+      // New user creation: Strictly enforce that users CANNOT assign themselves the admin role
+      // and schoolId is strictly set to the exclusive supported school
       allow create: if isOwner(userId) && (
         !('role' in request.resource.data) ||
         request.resource.data.role == 'user'
+      ) && (
+        !('schoolId' in request.resource.data) ||
+        request.resource.data.schoolId == 'christa-peter-scherpf-gymnasium-prenzlau'
       );
 
-      // User profile update: users cannot modify their own role
+      // User profile update: users cannot modify their own role or schoolId
       allow update: if (
         isOwner(userId) &&
-        !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role'])
+        !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'schoolId'])
       ) || isAdmin();
 
       // Deletion: User can delete their own account or Admin can delete user
@@ -46,7 +50,34 @@ service cloud.firestore {
       }
     }
 
-    // 2. Licenses Collection: licenses/{licenseId}
+    // 2. Central School Configuration Documents: schools/{schoolId}
+    // Exclusively for Christa-und-Peter-Scherpf-Gymnasium Prenzlau
+    match /schools/{schoolId} {
+      // Authenticated users can read the configuration of the supported school
+      allow read: if isAuthenticated() && (
+        schoolId == 'christa-peter-scherpf-gymnasium-prenzlau'
+      );
+
+      // ONLY Admins can create or update school configuration
+      allow write: if isAdmin();
+
+      // Subcollections: scheduleConfig, scheduleSettings, holidays
+      match /{subcollection}/{docId} {
+        allow read: if isAuthenticated() && (
+          schoolId == 'christa-peter-scherpf-gymnasium-prenzlau'
+        );
+        allow write: if isAdmin();
+      }
+
+      // School Audit Logs: Immutable log of school configuration changes
+      match /auditLogs/{logId} {
+        allow read: if isAdmin();
+        allow create: if isAdmin();
+        allow update, delete: if false;
+      }
+    }
+
+    // 3. Licenses Collection: licenses/{licenseId}
     match /licenses/{licenseId} {
       // Admins can list and read all licenses.
       // Standard authenticated users can ONLY read the license they have already activated, or fetch a single doc.
@@ -72,7 +103,7 @@ service cloud.firestore {
       );
     }
 
-    // 3. Audit Logs Collection: auditLogs/{logId}
+    // 4. Audit Logs Collection: auditLogs/{logId}
     match /auditLogs/{logId} {
       allow read: if isAdmin();
       allow create: if isAuthenticated();
@@ -85,3 +116,4 @@ service cloud.firestore {
     }
   }
 }
+
