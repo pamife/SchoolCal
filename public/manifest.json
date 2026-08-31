@@ -13,7 +13,7 @@
   "background_color": "#000000",
   "theme_color": "#007AFF",
   "display": "standalone",
-  "orientation": "portrait-primary",
+  "orientation": "any",
   "categories": ["education", "productivity", "utilities"],
   "shortcuts": [
     {

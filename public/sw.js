@@ -1,5 +1,5 @@
 // SchoolCal Service Worker for Offline PWA Support
-const CACHE_NAME = 'schoolcal-v2';
+const CACHE_NAME = 'schoolcal-v3';
 
 // Install event: skip waiting immediately
 self.addEventListener('install', (event) => {
