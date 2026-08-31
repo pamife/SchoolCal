@@ -1,10 +1,9 @@
 /**
  * Automated Test Suite for SchoolCal Touch & Swipe Navigation
  * Tests gesture recognition logic, direction-locking, edge boundaries,
- * tab transitions, and haptic feedback safety.
+ * task swipe actions, bottom sheet gestures, and haptic feedback safety.
  */
 
-import { TAB_ORDER } from '../src/components/layout/SwipeableTabsContainer';
 import { haptics } from '../src/utils/haptics';
 
 function assert(condition: boolean, message: string) {
@@ -20,41 +19,9 @@ console.log('🚀 Running SchoolCal Touch & Swipe Navigation Tests');
 console.log('====================================================\n');
 
 // ----------------------------------------------------
-// 1. Tab Navigation & Sequence Tests
+// 1. Gesture Engine & Direction-Locking Calculations
 // ----------------------------------------------------
-console.log('--- 1. Tab Sequence & Flow Tests ---');
-
-assert(TAB_ORDER.length === 6, 'TAB_ORDER defines exactly 6 primary tabs');
-assert(TAB_ORDER[0] === 'today', 'First tab is today');
-assert(TAB_ORDER[1] === 'calendar', 'Second tab is calendar');
-assert(TAB_ORDER[2] === 'tasks', 'Third tab is tasks');
-assert(TAB_ORDER[3] === 'grades', 'Fourth tab is grades');
-assert(TAB_ORDER[4] === 'school', 'Fifth tab is school');
-assert(TAB_ORDER[5] === 'settings', 'Sixth tab is settings');
-
-// Test tab boundary calculations
-function getNextTab(currentTab: string): string | null {
-  const idx = TAB_ORDER.indexOf(currentTab as any);
-  if (idx === -1 || idx >= TAB_ORDER.length - 1) return null;
-  return TAB_ORDER[idx + 1];
-}
-
-function getPrevTab(currentTab: string): string | null {
-  const idx = TAB_ORDER.indexOf(currentTab as any);
-  if (idx <= 0) return null;
-  return TAB_ORDER[idx - 1];
-}
-
-assert(getNextTab('today') === 'calendar', 'Swipe left from today moves to calendar');
-assert(getNextTab('calendar') === 'tasks', 'Swipe left from calendar moves to tasks');
-assert(getNextTab('settings') === null, 'Swipe left from settings does not overflow (boundary safe)');
-assert(getPrevTab('today') === null, 'Swipe right from today does not underflow (boundary safe)');
-assert(getPrevTab('tasks') === 'calendar', 'Swipe right from tasks moves to calendar');
-
-// ----------------------------------------------------
-// 2. Gesture Engine & Direction-Locking Calculations
-// ----------------------------------------------------
-console.log('\n--- 2. Gesture Engine & Direction-Locking Tests ---');
+console.log('--- 1. Gesture Engine & Direction-Locking Tests ---');
 
 interface MockTouchInput {
   startX: number;
@@ -104,7 +71,7 @@ const edgeThresh = 25;
 const minDist = 45;
 const velThresh = 0.25;
 
-// Test clean horizontal swipe
+// Test clean horizontal swipe (used in Calendar Days/Weeks/Months)
 const cleanLeftSwipe = evaluateGesture({
   startX: 200,
   startY: 300,
@@ -117,7 +84,7 @@ const cleanLeftSwipe = evaluateGesture({
   minDistance: minDist,
   velocityThreshold: velThresh,
 });
-assert(cleanLeftSwipe === 'swipe_left', 'Clean horizontal left swipe triggers swipe_left');
+assert(cleanLeftSwipe === 'swipe_left', 'Clean horizontal left swipe triggers swipe_left (calendar forward)');
 
 const cleanRightSwipe = evaluateGesture({
   startX: 150,
@@ -131,7 +98,7 @@ const cleanRightSwipe = evaluateGesture({
   minDistance: minDist,
   velocityThreshold: velThresh,
 });
-assert(cleanRightSwipe === 'swipe_right', 'Clean horizontal right swipe triggers swipe_right');
+assert(cleanRightSwipe === 'swipe_right', 'Clean horizontal right swipe triggers swipe_right (calendar previous)');
 
 // Test vertical scroll dominance (Direction Locking)
 const verticalScroll = evaluateGesture({
@@ -146,7 +113,7 @@ const verticalScroll = evaluateGesture({
   minDistance: minDist,
   velocityThreshold: velThresh,
 });
-assert(verticalScroll === 'scroll_vertical', 'Vertical scroll gesture is locked and does not trigger tab swipe');
+assert(verticalScroll === 'scroll_vertical', 'Vertical scroll gesture is locked and does not trigger horizontal swipes');
 
 // Test edge gesture exclusion (iOS Safari Back Swipe Safety)
 const edgeSwipeLeft = evaluateGesture({
@@ -208,9 +175,9 @@ const fastFlickSwipe = evaluateGesture({
 assert(fastFlickSwipe === 'swipe_left', 'Fast flick swipe with velocity > 0.25 px/ms triggers swipe_left');
 
 // ----------------------------------------------------
-// 3. Task Swipe Actions & Undo Rollback Tests
+// 2. Task Swipe Actions & Undo Rollback Tests
 // ----------------------------------------------------
-console.log('\n--- 3. Task Swipe Action & Undo Tests ---');
+console.log('\n--- 2. Task Swipe Action & Undo Tests ---');
 
 interface MockTask {
   id: string;
@@ -260,12 +227,27 @@ lastUndoAction!();
 assert(mockTasks.find(t => t.id === 't2')?.title === 'Deutsch Aufsatz', 'Undo successfully restored deleted task');
 
 // ----------------------------------------------------
+// 3. BottomSheet Drag-to-Dismiss Evaluation Tests
+// ----------------------------------------------------
+console.log('\n--- 3. BottomSheet Drag-to-Dismiss Tests ---');
+
+function shouldDismissBottomSheet(offsetY: number, velocityY: number): boolean {
+  return offsetY > 80 || velocityY > 250;
+}
+
+assert(shouldDismissBottomSheet(90, 50) === true, 'Drag offset > 80px triggers dismiss');
+assert(shouldDismissBottomSheet(50, 300) === true, 'Downward flick with velocity > 250 triggers dismiss');
+assert(shouldDismissBottomSheet(30, 50) === false, 'Small drag without velocity does not dismiss');
+assert(shouldDismissBottomSheet(-40, -100) === false, 'Upward drag does not dismiss');
+
+// ----------------------------------------------------
 // 4. Haptics Safety Tests
 // ----------------------------------------------------
 console.log('\n--- 4. Haptics Engine Safety Tests ---');
 
 haptics.light();
 haptics.medium();
+haptics.heavy();
 haptics.selection();
 haptics.success();
 haptics.warning();
