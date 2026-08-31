@@ -92,6 +92,47 @@ export function App() {
     };
   }, [initAuthListener]);
 
+  // Lock window scroll position and prevent iOS elastic rubber-band dragging of the window
+  useEffect(() => {
+    window.scrollTo(0, 0);
+
+    const handleScroll = () => {
+      if (window.scrollY !== 0 || window.scrollX !== 0) {
+        window.scrollTo(0, 0);
+      }
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      let target = e.target as HTMLElement | null;
+      let isScrollable = false;
+
+      while (target && target !== document.body && target !== document.documentElement) {
+        const style = window.getComputedStyle(target);
+        const overflowY = style.overflowY;
+        if (
+          (overflowY === 'auto' || overflowY === 'scroll') &&
+          target.scrollHeight > target.clientHeight
+        ) {
+          isScrollable = true;
+          break;
+        }
+        target = target.parentElement;
+      }
+
+      if (!isScrollable && e.cancelable) {
+        e.preventDefault();
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    document.addEventListener('touchmove', handleTouchMove, { passive: false });
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      document.removeEventListener('touchmove', handleTouchMove);
+    };
+  }, []);
+
   // When user is authenticated, load their data from Firestore
   useEffect(() => {
     if (user?.uid) {
