@@ -52,7 +52,7 @@ export class BackendAIService implements IAIService {
       status: localKey ? 'active' : 'offline',
       configured: Boolean(localKey),
       provider: localKey ? 'Google Gemini (Lokaler Key)' : 'Google Gemini',
-      model: localKey ? 'gemini-2.5-flash' : undefined,
+      model: localKey ? 'gemini-1.5-flash' : undefined,
       message: localKey
         ? 'Lokaler Gemini API-Key aktiv.'
         : 'Netlify Backend-Funktion nicht erreichbar & kein lokaler Key hinterlegt.',

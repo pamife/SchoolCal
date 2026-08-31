@@ -24,11 +24,11 @@ function checkRateLimit(clientIp: string): boolean {
 
 // Supported stable Gemini models in priority order
 const CANDIDATE_MODELS = [
-  'gemini-2.5-flash',
-  'gemini-2.0-flash',
   'gemini-1.5-flash',
-  'gemini-2.5-pro',
+  'gemini-2.0-flash',
   'gemini-1.5-pro',
+  'gemini-2.5-flash',
+  'gemini-2.0-flash-exp',
 ];
 
 const CORS_HEADERS = {
@@ -82,87 +82,83 @@ export const handler: Handler = async (event: HandlerEvent, _context: HandlerCon
       };
     }
 
-    // Ping Gemini with minimal test request
-    try {
-      const testModel = CANDIDATE_MODELS[0];
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${testModel}:generateContent?key=${apiKey}`;
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ role: 'user', parts: [{ text: 'Ping. Antworte mit "OK".' }] }],
-          generationConfig: { maxOutputTokens: 5 },
-        }),
-      });
+    // Ping Gemini with model cascade
+    let lastHealthStatus = 'unreachable';
+    let lastHealthMsg = 'Verbindung zur Gemini API fehlgeschlagen.';
 
-      if (res.ok) {
-        return {
-          statusCode: 200,
-          headers: CORS_HEADERS,
+    for (const model of CANDIDATE_MODELS) {
+      try {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            ok: true,
-            status: 'active',
-            configured: true,
-            provider: 'Google Gemini',
-            model: testModel,
-            message: 'Gemini KI ist betriebsbereit und verbunden.',
+            contents: [{ role: 'user', parts: [{ text: 'Ping. Antworte mit "OK".' }] }],
+            generationConfig: { maxOutputTokens: 5 },
           }),
-        };
-      }
+        });
 
-      const errText = await res.text().catch(() => '');
-      if (res.status === 400 || res.status === 403 || errText.includes('API_KEY_INVALID') || errText.includes('API key not valid')) {
-        return {
-          statusCode: 200,
-          headers: CORS_HEADERS,
-          body: JSON.stringify({
-            ok: false,
-            status: 'invalid_key',
-            configured: true,
-            provider: 'Google Gemini',
-            message: 'Der hinterlegte Gemini API-Key ist ungültig oder abgelaufen.',
-          }),
-        };
-      }
+        if (res.ok) {
+          return {
+            statusCode: 200,
+            headers: CORS_HEADERS,
+            body: JSON.stringify({
+              ok: true,
+              status: 'active',
+              configured: true,
+              provider: 'Google Gemini',
+              model: model,
+              message: 'Gemini KI ist betriebsbereit und verbunden.',
+            }),
+          };
+        }
 
-      if (res.status === 429) {
-        return {
-          statusCode: 200,
-          headers: CORS_HEADERS,
-          body: JSON.stringify({
-            ok: false,
-            status: 'rate_limited',
-            configured: true,
-            provider: 'Google Gemini',
-            message: 'Gemini API Rate-Limit erreicht. Bitte später erneut versuchen.',
-          }),
-        };
-      }
+        const errText = await res.text().catch(() => '');
+        if (res.status === 400 || res.status === 403 || errText.includes('API_KEY_INVALID') || errText.includes('API key not valid')) {
+          return {
+            statusCode: 200,
+            headers: CORS_HEADERS,
+            body: JSON.stringify({
+              ok: false,
+              status: 'invalid_key',
+              configured: true,
+              provider: 'Google Gemini',
+              message: 'Der hinterlegte Gemini API-Key ist ungültig oder abgelaufen.',
+            }),
+          };
+        }
 
-      return {
-        statusCode: 200,
-        headers: CORS_HEADERS,
-        body: JSON.stringify({
-          ok: false,
-          status: 'unreachable',
-          configured: true,
-          provider: 'Google Gemini',
-          message: `Gemini API antwortete mit Status ${res.status}.`,
-        }),
-      };
-    } catch {
-      return {
-        statusCode: 200,
-        headers: CORS_HEADERS,
-        body: JSON.stringify({
-          ok: false,
-          status: 'unreachable',
-          configured: true,
-          provider: 'Google Gemini',
-          message: 'Verbindung zur Gemini API fehlgeschlagen (Netzwerkfehler).',
-        }),
-      };
+        if (res.status === 429) {
+          return {
+            statusCode: 200,
+            headers: CORS_HEADERS,
+            body: JSON.stringify({
+              ok: false,
+              status: 'rate_limited',
+              configured: true,
+              provider: 'Google Gemini',
+              message: 'Gemini API Rate-Limit erreicht. Bitte später erneut versuchen.',
+            }),
+          };
+        }
+
+        lastHealthMsg = `Modell ${model} antwortete mit Status ${res.status}.`;
+      } catch {
+        lastHealthMsg = 'Netzwerkfehler beim Verbindungsaufbau zu Gemini.';
+      }
     }
+
+    return {
+      statusCode: 200,
+      headers: CORS_HEADERS,
+      body: JSON.stringify({
+        ok: false,
+        status: lastHealthStatus,
+        configured: true,
+        provider: 'Google Gemini',
+        message: lastHealthMsg,
+      }),
+    };
   }
 
   if (event.httpMethod !== 'POST') {

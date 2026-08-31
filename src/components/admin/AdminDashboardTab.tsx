@@ -208,7 +208,7 @@ export const AdminDashboardTab: React.FC<AdminDashboardTabProps> = ({
             <div>
               <div className="text-gray-500 text-[11px]">Aktives Modell</div>
               <div className="font-bold text-gray-900 dark:text-white mt-0.5 font-mono text-[11px]">
-                {aiHealth?.model || 'gemini-2.5-flash'}
+                {aiHealth?.model || 'gemini-1.5-flash'}
               </div>
             </div>
           </div>
