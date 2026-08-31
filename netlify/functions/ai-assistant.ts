@@ -22,14 +22,45 @@ function checkRateLimit(clientIp: string): boolean {
   return true;
 }
 
-// Supported stable Gemini models in priority order
-const CANDIDATE_MODELS = [
+// Fallback model list if dynamic discovery is unavailable
+const FALLBACK_MODELS = [
   'gemini-1.5-flash',
   'gemini-2.0-flash',
+  'gemini-1.5-flash-latest',
   'gemini-1.5-pro',
   'gemini-2.5-flash',
+  'gemini-3.6-flash',
   'gemini-2.0-flash-exp',
 ];
+
+// Dynamically query available models for this specific API key from Google
+async function getOrderedGeminiModels(apiKey: string): Promise<string[]> {
+  try {
+    const listRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
+    if (listRes.ok) {
+      const data = await listRes.json();
+      if (Array.isArray(data.models) && data.models.length > 0) {
+        const supported = data.models
+          .filter((m: any) => m.supportedGenerationMethods?.includes('generateContent'))
+          .map((m: any) => m.name.replace(/^models\//, ''));
+
+        if (supported.length > 0) {
+          // Sort: flash models first, then pro, then others
+          return supported.sort((a: string, b: string) => {
+            const aFlash = a.includes('flash') ? 1 : 0;
+            const bFlash = b.includes('flash') ? 1 : 0;
+            if (aFlash !== bFlash) return bFlash - aFlash;
+            return a.localeCompare(b);
+          });
+        }
+      }
+    }
+  } catch {
+    // Fallback to static list if listing query fails
+  }
+
+  return FALLBACK_MODELS;
+}
 
 const CORS_HEADERS = {
   'Content-Type': 'application/json',
@@ -82,11 +113,11 @@ export const handler: Handler = async (event: HandlerEvent, _context: HandlerCon
       };
     }
 
-    // Ping Gemini with model cascade
+    const candidateModels = await getOrderedGeminiModels(apiKey);
     let lastHealthStatus = 'unreachable';
     let lastHealthMsg = 'Verbindung zur Gemini API fehlgeschlagen.';
 
-    for (const model of CANDIDATE_MODELS) {
+    for (const model of candidateModels) {
       try {
         const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
         const res = await fetch(url, {
@@ -301,7 +332,9 @@ WICHTIGE REGELN:
     let lastErrorType = 'UNKNOWN_ERROR';
     let lastErrorMessage = 'Keine Antwort von Gemini API erhalten.';
 
-    for (const model of CANDIDATE_MODELS) {
+    const candidateModels = await getOrderedGeminiModels(apiKey);
+
+    for (const model of candidateModels) {
       try {
         const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
