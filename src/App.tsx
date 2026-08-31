@@ -36,11 +36,13 @@ import { OnboardingModal } from './components/onboarding/OnboardingModal';
 import { updateAppBadge } from './services/pwa/badgeService';
 import { evaluatePendingNotifications } from './services/notifications/notificationScheduler';
 import { sendLocalNotification } from './services/notifications/notificationService';
-
+import { useInputAutoScroll } from './hooks/useInputAutoScroll';
 import type { NavigationTab, QuickActionType, ScheduleEntry, Exam } from './types';
 import { BookOpen } from 'lucide-react';
 
 export function App() {
+  useInputAutoScroll();
+
   const [activeTab, setActiveTab] = useState<NavigationTab>('today');
   const [isQuickActionOpen, setIsQuickActionOpen] = useState(false);
 
@@ -91,47 +93,6 @@ export function App() {
       unsubscribeSchool();
     };
   }, [initAuthListener]);
-
-  // Lock window scroll position and prevent iOS elastic rubber-band dragging of the window
-  useEffect(() => {
-    window.scrollTo(0, 0);
-
-    const handleScroll = () => {
-      if (window.scrollY !== 0 || window.scrollX !== 0) {
-        window.scrollTo(0, 0);
-      }
-    };
-
-    const handleTouchMove = (e: TouchEvent) => {
-      let target = e.target as HTMLElement | null;
-      let isScrollable = false;
-
-      while (target && target !== document.body && target !== document.documentElement) {
-        const style = window.getComputedStyle(target);
-        const overflowY = style.overflowY;
-        if (
-          (overflowY === 'auto' || overflowY === 'scroll') &&
-          target.scrollHeight > target.clientHeight
-        ) {
-          isScrollable = true;
-          break;
-        }
-        target = target.parentElement;
-      }
-
-      if (!isScrollable && e.cancelable) {
-        e.preventDefault();
-      }
-    };
-
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    document.addEventListener('touchmove', handleTouchMove, { passive: false });
-
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-      document.removeEventListener('touchmove', handleTouchMove);
-    };
-  }, []);
 
   // When user is authenticated, load their data from Firestore
   useEffect(() => {
@@ -238,7 +199,7 @@ export function App() {
   }
 
   return (
-    <div className="flex h-full w-full overflow-hidden bg-ios-light-bg dark:bg-ios-dark-bg text-slate-900 dark:text-white">
+    <div className="flex h-full h-dvh w-full overflow-hidden bg-ios-light-bg dark:bg-ios-dark-bg text-slate-900 dark:text-white">
       {/* iPad / Desktop Sidebar */}
       <Sidebar
         activeTab={activeTab}
@@ -247,51 +208,53 @@ export function App() {
       />
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0 h-full overflow-y-auto overscroll-contain">
+      <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden relative">
         {/* Top Header */}
         <TopHeader
           onOpenQuickAction={() => setIsQuickActionOpen(true)}
           onOpenAiAssistant={() => setIsAiAssistantOpen(true)}
         />
 
-        {/* Tab View Container */}
-        <main className="flex-1 p-3.5 sm:p-5 sm:px-6 pb-safe">
-          {activeTab === 'today' && (
-            <DashboardScreen
-              onNavigateTab={setActiveTab}
-              onOpenQuickAction={handleQuickAction}
-              onSelectScheduleEntry={handleSelectScheduleEntry}
-              onSelectExam={handleSelectExam}
-            />
-          )}
+        {/* Tab View Scroll Container with reliable bottom and landscape safe area clearance */}
+        <div className="flex-1 min-w-0 overflow-y-auto overscroll-contain">
+          <main className="min-h-full p-3.5 sm:p-5 sm:px-6 pb-[calc(4.5rem+env(safe-area-inset-bottom,0px))] ipad:pb-8 pl-[max(0.875rem,env(safe-area-inset-left,0px))] pr-[max(0.875rem,env(safe-area-inset-right,0px))]">
+            {activeTab === 'today' && (
+              <DashboardScreen
+                onNavigateTab={setActiveTab}
+                onOpenQuickAction={handleQuickAction}
+                onSelectScheduleEntry={handleSelectScheduleEntry}
+                onSelectExam={handleSelectExam}
+              />
+            )}
 
-          {activeTab === 'calendar' && (
-            <CalendarScreen
-              onSelectScheduleEntry={handleSelectScheduleEntry}
-              onSelectExam={handleSelectExam}
-            />
-          )}
+            {activeTab === 'calendar' && (
+              <CalendarScreen
+                onSelectScheduleEntry={handleSelectScheduleEntry}
+                onSelectExam={handleSelectExam}
+              />
+            )}
 
-          {activeTab === 'tasks' && (
-            <HomeworkScreen />
-          )}
+            {activeTab === 'tasks' && (
+              <HomeworkScreen />
+            )}
 
-          {activeTab === 'statistics' && (
-            <StatisticsScreen />
-          )}
+            {activeTab === 'statistics' && (
+              <StatisticsScreen />
+            )}
 
-          {activeTab === 'grades' && (
-            <GradesScreen />
-          )}
+            {activeTab === 'grades' && (
+              <GradesScreen />
+            )}
 
-          {activeTab === 'school' && (
-            <SchoolScreen />
-          )}
+            {activeTab === 'school' && (
+              <SchoolScreen />
+            )}
 
-          {activeTab === 'settings' && (
-            <SettingsScreen />
-          )}
-        </main>
+            {activeTab === 'settings' && (
+              <SettingsScreen />
+            )}
+          </main>
+        </div>
       </div>
 
       {/* iPhone / Mobile Bottom Bar */}

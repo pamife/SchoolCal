@@ -120,12 +120,12 @@ export const AuthScreen: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center p-4 bg-gradient-to-b from-ios-light-bg via-gray-100 to-ios-light-bg dark:from-ios-dark-bg dark:via-black dark:to-ios-dark-bg select-none">
+    <div className="h-full h-dvh w-full overflow-y-auto overscroll-contain flex flex-col items-center p-4 pt-[max(1.5rem,env(safe-area-inset-top,0px))] pb-[max(1.5rem,env(safe-area-inset-bottom,0px))] pl-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] bg-gradient-to-b from-ios-light-bg via-gray-100 to-ios-light-bg dark:from-ios-dark-bg dark:via-black dark:to-ios-dark-bg select-none">
       <motion.div
         initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
-        className="w-full max-w-md"
+        className="w-full max-w-md my-auto py-4"
       >
         {/* App Logo & Header */}
         <div className="text-center mb-6">

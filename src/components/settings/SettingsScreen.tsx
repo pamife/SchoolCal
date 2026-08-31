@@ -153,7 +153,7 @@ export const SettingsScreen: React.FC = () => {
   const stateHolidays = getHolidaysForState(settings.state);
 
   return (
-    <div className="space-y-6 pb-28 ipad:pb-12 max-w-4xl mx-auto px-1">
+    <div className="space-y-6 pb-4 ipad:pb-6 max-w-4xl mx-auto px-1">
       {/* Header */}
       <div>
         <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">

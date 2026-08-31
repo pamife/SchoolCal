@@ -79,7 +79,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
     .sort((a, b) => a.period - b.period);
 
   return (
-    <div className="space-y-5 pb-20 ipad:pb-10 max-w-5xl mx-auto">
+    <div className="space-y-5 pb-4 ipad:pb-6 max-w-5xl mx-auto">
       {/* 🌟 Welcome Card for New Empty Accounts */}
       {isNewAccount && (
         <section aria-label="Willkommen bei SchoolCal">

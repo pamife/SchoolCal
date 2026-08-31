@@ -18,6 +18,7 @@ import { useCalendarStore } from '../../store/useCalendarStore';
 import { useHomeworkStore } from '../../store/useHomeworkStore';
 import { useExamStore } from '../../store/useExamStore';
 import { NavigationTab } from '../../types';
+import { useKeyboardViewport } from '../../hooks/useKeyboardViewport';
 
 interface GlobalSearchModalProps {
   onNavigateTab: (tab: NavigationTab) => void;
@@ -27,6 +28,7 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
   onNavigateTab,
 }) => {
   const { isOpen, query, closeSearch, setQuery } = useSearchStore();
+  const { isKeyboardOpen, keyboardHeight, viewportHeight } = useKeyboardViewport();
   const { subjects, teachers, rooms, scheduleEntries } = useSchoolStore();
   const { events } = useCalendarStore();
   const { homework } = useHomeworkStore();
@@ -122,7 +124,12 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center p-4 sm:p-6 pt-16 sm:pt-24">
+        <div
+          style={{
+            bottom: isKeyboardOpen && keyboardHeight > 0 ? `${keyboardHeight}px` : 0,
+          }}
+          className="fixed inset-0 z-50 flex items-start justify-center p-3 sm:p-6 pt-[max(2.5rem,env(safe-area-inset-top,0px))] pb-[max(1rem,env(safe-area-inset-bottom,0px))] pl-[max(0.75rem,env(safe-area-inset-left,0px))] pr-[max(0.75rem,env(safe-area-inset-right,0px))] transition-[bottom] duration-150"
+        >
           {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
@@ -138,7 +145,10 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.95, opacity: 0, y: -20 }}
             transition={{ type: 'spring', damping: 26, stiffness: 350 }}
-            className="relative w-full max-w-xl bg-white dark:bg-ios-dark-card rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden border border-black/10 dark:border-white/10 z-10 flex flex-col max-h-[80vh]"
+            style={{
+              maxHeight: isKeyboardOpen ? `${Math.max(220, Math.floor(viewportHeight * 0.85))}px` : undefined,
+            }}
+            className="relative w-full max-w-xl bg-white dark:bg-ios-dark-card rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden border border-black/10 dark:border-white/10 z-10 flex flex-col max-h-[80dvh]"
           >
             {/* Search Input Bar */}
             <div className="flex items-center gap-3 px-4 py-3.5 border-b border-gray-100 dark:border-white/10">

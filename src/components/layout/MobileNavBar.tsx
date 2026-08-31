@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import type { NavigationTab } from '../../types';
 import { useHomeworkStore } from '../../store/useHomeworkStore';
+import { useKeyboardViewport } from '../../hooks/useKeyboardViewport';
 import { haptics } from '../../utils/haptics';
 
 interface MobileNavBarProps {
@@ -22,6 +23,7 @@ export const MobileNavBar: React.FC<MobileNavBarProps> = ({
   onTabChange,
 }) => {
   const { homework } = useHomeworkStore();
+  const { isKeyboardOpen } = useKeyboardViewport();
   const openTasksCount = homework.filter(h => h.status !== 'done').length;
 
   const tabs: { id: NavigationTab; label: string; icon: React.ComponentType<{ className?: string }>; badge?: number }[] = [
@@ -33,8 +35,16 @@ export const MobileNavBar: React.FC<MobileNavBarProps> = ({
     { id: 'settings', label: 'Optionen', icon: Settings },
   ];
 
+  // If mobile keyboard is active, hide the bottom bar to prevent viewport occlusion
+  if (isKeyboardOpen) {
+    return null;
+  }
+
   return (
-    <nav aria-label="Mobile Navigation" className="ipad:hidden fixed bottom-0 left-0 right-0 z-40 ios-glass-bar border-t border-black/5 dark:border-white/10 pb-safe select-none">
+    <nav
+      aria-label="Mobile Navigation"
+      className="ipad:hidden fixed bottom-0 left-0 right-0 z-40 ios-glass-bar border-t border-black/5 dark:border-white/10 pb-[max(0.25rem,env(safe-area-inset-bottom,0px))] pl-[env(safe-area-inset-left,0px)] pr-[env(safe-area-inset-right,0px)] select-none transition-transform duration-200"
+    >
       <div className="flex items-center justify-around h-14 max-w-lg mx-auto px-1">
         {tabs.map((tab) => {
           const Icon = tab.icon;

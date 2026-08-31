@@ -77,7 +77,7 @@ export const TaskActionSheet: React.FC<TaskActionSheetProps> = ({
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: '100%', opacity: 0 }}
             transition={{ type: 'spring', damping: 28, stiffness: 320 }}
-            className="relative w-full sm:max-w-md bg-white/95 dark:bg-ios-dark-card/95 backdrop-blur-2xl rounded-t-[28px] sm:rounded-[24px] shadow-2xl overflow-hidden z-10 border border-black/5 dark:border-white/10 pb-safe select-none"
+            className="relative w-full sm:max-w-md bg-white/95 dark:bg-ios-dark-card/95 backdrop-blur-2xl rounded-t-[28px] sm:rounded-[24px] shadow-2xl overflow-y-auto max-h-[85dvh] z-10 border border-black/5 dark:border-white/10 pb-[max(1.25rem,env(safe-area-inset-bottom,0px))] pl-[env(safe-area-inset-left,0px)] pr-[env(safe-area-inset-right,0px)] select-none"
           >
             {/* iOS Handle */}
             <div className="pt-3 pb-1 flex justify-center">

@@ -149,7 +149,7 @@ export const SchoolScreen: React.FC = () => {
   };
 
   return (
-    <div className="space-y-4 pb-24 ipad:pb-10 max-w-5xl mx-auto">
+    <div className="space-y-4 pb-4 ipad:pb-6 max-w-5xl mx-auto">
       {/* Subtab Navigator & Global Actions */}
       <div className="flex items-center justify-between gap-3 overflow-x-auto no-scrollbar pb-1 px-1">
         <SegmentedControl

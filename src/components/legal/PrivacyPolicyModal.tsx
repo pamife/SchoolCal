@@ -16,7 +16,7 @@ export const PrivacyPolicyModal: React.FC<PrivacyPolicyModalProps> = ({
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 pt-[max(1rem,env(safe-area-inset-top,0px))] pb-[max(1rem,env(safe-area-inset-bottom,0px))] pl-[max(0.75rem,env(safe-area-inset-left,0px))] pr-[max(0.75rem,env(safe-area-inset-right,0px))]">
         {/* Backdrop */}
         <motion.div
           initial={{ opacity: 0 }}
@@ -31,7 +31,7 @@ export const PrivacyPolicyModal: React.FC<PrivacyPolicyModalProps> = ({
           initial={{ scale: 0.96, opacity: 0, y: 10 }}
           animate={{ scale: 1, opacity: 1, y: 0 }}
           exit={{ scale: 0.96, opacity: 0, y: 10 }}
-          className="relative w-full max-w-3xl max-h-[85vh] flex flex-col bg-white dark:bg-ios-dark-card rounded-2xl shadow-2xl z-10 border border-black/5 dark:border-white/10 overflow-hidden"
+          className="relative w-full max-w-3xl max-h-[85dvh] flex flex-col bg-white dark:bg-ios-dark-card rounded-2xl shadow-2xl z-10 border border-black/5 dark:border-white/10 overflow-hidden"
         >
           {/* Header */}
           <div className="p-4 sm:p-5 border-b border-black/5 dark:border-white/10 flex items-center justify-between shrink-0 bg-gray-50/50 dark:bg-ios-dark-secondary/50">

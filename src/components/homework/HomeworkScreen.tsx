@@ -134,7 +134,7 @@ export const HomeworkScreen: React.FC = () => {
   };
 
   return (
-    <div className="space-y-4 pb-24 ipad:pb-10 max-w-5xl mx-auto">
+    <div className="space-y-4 pb-4 ipad:pb-6 max-w-5xl mx-auto">
       {/* Header Controls */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-1">
         <div>

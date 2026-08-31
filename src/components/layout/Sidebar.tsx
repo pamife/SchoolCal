@@ -54,7 +54,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   ];
 
   return (
-    <aside className="hidden ipad:flex flex-col w-64 xl:w-72 bg-gray-50/80 dark:bg-ios-dark-card/90 backdrop-blur-xl border-r border-black/5 dark:border-white/10 shrink-0 h-full overflow-y-auto overscroll-contain no-scrollbar p-4 select-none">
+    <aside className="hidden ipad:flex flex-col w-64 xl:w-72 bg-gray-50/80 dark:bg-ios-dark-card/90 backdrop-blur-xl border-r border-black/5 dark:border-white/10 shrink-0 h-full overflow-y-auto overscroll-contain no-scrollbar p-4 pt-[max(1rem,env(safe-area-inset-top,0px))] pb-[max(1rem,env(safe-area-inset-bottom,0px))] pl-[max(1rem,env(safe-area-inset-left,0px))] select-none">
       {/* Brand Header */}
       <div className="flex items-center gap-3 px-2 py-3 mb-2">
         <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-ios-blue to-indigo-600 flex items-center justify-center text-white shadow-md shadow-blue-500/20">

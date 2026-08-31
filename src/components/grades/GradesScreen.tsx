@@ -64,7 +64,7 @@ export const GradesScreen: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 pb-24 ipad:pb-10 max-w-5xl mx-auto px-1">
+    <div className="space-y-6 pb-4 ipad:pb-6 max-w-5xl mx-auto px-1">
       {/* Screen Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>

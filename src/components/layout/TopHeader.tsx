@@ -26,7 +26,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
   const stateInfo = GERMAN_STATES.find(s => s.code === settings.state);
 
   return (
-    <header className="sticky top-0 z-30 ios-glass-bar border-b border-black/5 dark:border-white/10 px-4 py-2.5 select-none touch-none">
+    <header className="sticky top-0 z-30 ios-glass-bar border-b border-black/5 dark:border-white/10 px-4 py-2.5 pt-[max(0.625rem,env(safe-area-inset-top,0px))] pl-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] select-none shrink-0">
       <div className="flex items-center justify-between max-w-7xl mx-auto">
         {/* Left: Date / Title */}
         <div>

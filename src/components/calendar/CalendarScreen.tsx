@@ -155,7 +155,7 @@ export const CalendarScreen: React.FC<CalendarScreenProps> = ({
   const currentViewKey = `${viewType}-${format(selectedDate, 'yyyy-MM-dd')}`;
 
   return (
-    <div className="space-y-4 pb-24 ipad:pb-10 max-w-5xl mx-auto">
+    <div className="space-y-4 pb-4 ipad:pb-6 max-w-5xl mx-auto">
       {/* Calendar Controls Top Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-1">
         {/* Left: View selector */}

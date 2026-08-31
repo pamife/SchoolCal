@@ -101,7 +101,7 @@ export const QuickActionSheet: React.FC<QuickActionSheetProps> = ({
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: '100%', opacity: 0 }}
             transition={{ type: 'spring', damping: 26, stiffness: 320 }}
-            className="relative w-full sm:max-w-md bg-white dark:bg-ios-dark-card rounded-t-[28px] sm:rounded-[24px] shadow-2xl p-5 pb-safe z-10 border border-black/5 dark:border-white/10 max-h-[85vh] overflow-y-auto"
+            className="relative w-full sm:max-w-md bg-white dark:bg-ios-dark-card rounded-t-[28px] sm:rounded-[24px] shadow-2xl p-5 pb-[max(1.25rem,env(safe-area-inset-bottom,0px))] pl-[max(1.25rem,env(safe-area-inset-left,0px))] pr-[max(1.25rem,env(safe-area-inset-right,0px))] z-10 border border-black/5 dark:border-white/10 max-h-[85dvh] overflow-y-auto"
           >
             {/* iOS Handle */}
             <div className="sm:hidden pt-1 pb-3 flex justify-center">

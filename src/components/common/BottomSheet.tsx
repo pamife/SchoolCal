@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { motion, AnimatePresence, PanInfo } from 'framer-motion';
 import { X } from 'lucide-react';
+import { useKeyboardViewport } from '../../hooks/useKeyboardViewport';
 import { haptics } from '../../utils/haptics';
 
 interface BottomSheetProps {
@@ -16,10 +17,9 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
   onClose,
   title,
   children,
-  maxHeight = 'max-h-[90vh]',
+  maxHeight = 'max-h-[90dvh]',
 }) => {
-  const [viewportBottomOffset, setViewportBottomOffset] = useState(0);
-  const [viewportMaxHeight, setViewportMaxHeight] = useState<string | undefined>(undefined);
+  const { isKeyboardOpen, keyboardHeight, viewportHeight } = useKeyboardViewport();
 
   useEffect(() => {
     if (isOpen) {
@@ -32,38 +32,6 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
     };
   }, [isOpen]);
 
-  // iOS Safari / Android Keyboard Awareness via VisualViewport
-  useEffect(() => {
-    if (!isOpen || typeof window === 'undefined') return;
-
-    const updateViewport = () => {
-      if (window.visualViewport) {
-        const offsetBottom = Math.max(
-          0,
-          window.innerHeight - (window.visualViewport.height + window.visualViewport.offsetTop)
-        );
-        setViewportBottomOffset(offsetBottom);
-        // Ensure max height never exceeds 88% of visible viewport height above keyboard
-        setViewportMaxHeight(`${Math.floor(window.visualViewport.height * 0.88)}px`);
-      }
-    };
-
-    updateViewport();
-
-    const vv = window.visualViewport;
-    if (vv) {
-      vv.addEventListener('resize', updateViewport);
-      vv.addEventListener('scroll', updateViewport);
-    }
-
-    return () => {
-      if (vv) {
-        vv.removeEventListener('resize', updateViewport);
-        vv.removeEventListener('scroll', updateViewport);
-      }
-    };
-  }, [isOpen]);
-
   const handleDragEnd = (_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
     // If dragged down past 80px or with downward velocity > 250, dismiss modal
     if (info.offset.y > 80 || info.velocity.y > 250) {
@@ -72,14 +40,19 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
     }
   };
 
+  // When keyboard is open, restrict max height to visible viewport and lift bottom
+  const calculatedMaxHeight = isKeyboardOpen
+    ? `${Math.max(280, Math.floor(viewportHeight * 0.9))}px`
+    : undefined;
+
   return (
     <AnimatePresence>
       {isOpen && (
         <div
           style={{
-            paddingBottom: viewportBottomOffset > 0 ? `${viewportBottomOffset}px` : undefined,
+            bottom: isKeyboardOpen && keyboardHeight > 0 ? `${keyboardHeight}px` : 0,
           }}
-          className="fixed inset-0 z-50 flex items-end sm:items-center sm:justify-center transition-[padding] duration-150 ease-out"
+          className="fixed inset-0 z-50 flex items-end sm:items-center sm:justify-center transition-[bottom] duration-200 ease-out"
         >
           {/* Backdrop */}
           <motion.div
@@ -106,7 +79,7 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
             dragElastic={{ top: 0.05, bottom: 0.7 }}
             onDragEnd={handleDragEnd}
             style={{
-              maxHeight: viewportMaxHeight || undefined,
+              maxHeight: calculatedMaxHeight || undefined,
             }}
             className={`relative w-full sm:max-w-lg ${maxHeight} flex flex-col bg-white dark:bg-ios-dark-card rounded-t-[28px] sm:rounded-[24px] shadow-2xl overflow-hidden z-10 border border-black/5 dark:border-white/10`}
           >
@@ -117,8 +90,8 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
 
             {/* Header */}
             {title && (
-              <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100 dark:border-white/10 select-none">
-                <h3 className="text-lg font-bold text-gray-900 dark:text-white tracking-tight">
+              <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100 dark:border-white/10 select-none shrink-0">
+                <h3 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white tracking-tight">
                   {title}
                 </h3>
                 <button
@@ -136,7 +109,7 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
 
             {/* Content Body */}
             <div
-              className="flex-1 overflow-y-auto overscroll-contain p-5 pb-safe"
+              className="flex-1 overflow-y-auto overscroll-contain p-4 sm:p-5 pb-[max(1.25rem,env(safe-area-inset-bottom,0px))] pl-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))]"
               style={{ WebkitOverflowScrolling: 'touch' }}
             >
               {children}
