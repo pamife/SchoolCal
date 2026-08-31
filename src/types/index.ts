@@ -296,6 +296,7 @@ export interface SmartDayData {
   }>;
   activeChanges: SmartDayChangeInfo[];
   activeHoliday?: Holiday;
+  activeBreak?: ScheduleBreak | null;
 }
 
 // ----------------------------------------------------

@@ -317,15 +317,15 @@ export const SettingsScreen: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1">
-                Schulname
+              <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 flex items-center justify-between">
+                <span>Schule</span>
+                <span className="text-[10px] text-ios-blue font-bold">Verifiziert</span>
               </label>
               <input
                 type="text"
-                placeholder="z.B. Goethe-Gymnasium"
-                value={schoolName}
-                onChange={(e) => setSchoolName(e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-gray-100 dark:bg-ios-dark-secondary rounded-xl text-sm font-semibold text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-ios-blue"
+                disabled
+                value="Christa-und-Peter-Scherpf-Gymnasium"
+                className="w-full px-3.5 py-2.5 bg-gray-100/70 dark:bg-ios-dark-secondary/70 rounded-xl text-xs font-bold text-gray-600 dark:text-gray-300 cursor-not-allowed border border-black/5 dark:border-white/5"
               />
             </div>
 
@@ -335,7 +335,7 @@ export const SettingsScreen: React.FC = () => {
               </label>
               <input
                 type="text"
-                placeholder="z.B. Klasse 10b"
+                placeholder="z.B. Klasse 10b oder 11-1"
                 value={gradeLevel}
                 onChange={(e) => setGradeLevel(e.target.value)}
                 className="w-full px-3.5 py-2.5 bg-gray-100 dark:bg-ios-dark-secondary rounded-xl text-sm font-semibold text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-ios-blue"
@@ -358,39 +358,59 @@ export const SettingsScreen: React.FC = () => {
             <Clock className="w-5 h-5 text-ios-blue" />
             <div>
               <h3 className="text-base font-bold text-gray-900 dark:text-white">
-                Glockenzeiten & Pausen (Zeitplan)
+                Glockenzeiten & Pausen (Christa-und-Peter-Scherpf-Gymnasium)
               </h3>
               <p className="text-xs text-gray-500 dark:text-gray-400">
-                Definiere die zentralen Stunden- und Pausenzeiten deiner Schule
+                Offizielle Unterrichts- und Pausenzeiten (Zentral verwaltet)
               </p>
             </div>
           </div>
 
-          <Button
-            type="button"
-            variant="primary"
-            size="sm"
-            onClick={() => setIsPeriodTimesOpen(true)}
-          >
-            Zeitplan anpassen
-          </Button>
+          {isAdmin ? (
+            <Button
+              type="button"
+              variant="primary"
+              size="sm"
+              onClick={() => setIsAdminModalOpen(true)}
+            >
+              Schulzeiten bearbeiten (Admin)
+            </Button>
+          ) : (
+            <Badge variant="blue" size="sm">Zentral verwaltet</Badge>
+          )}
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-          {periodTimes.slice(0, 8).map((p) => (
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+          {periodTimes.map((p) => (
             <div
               key={p.period}
-              className="p-2.5 rounded-xl bg-gray-50 dark:bg-ios-dark-secondary text-center"
+              className="p-2.5 rounded-xl bg-gray-50 dark:bg-ios-dark-secondary text-center border border-black/5 dark:border-white/5"
             >
               <div className="text-xs font-bold text-gray-800 dark:text-gray-200">
                 {p.period}. Stunde
               </div>
-              <div className="text-[11px] text-gray-500 font-medium mt-0.5">
+              <div className="text-[11px] text-gray-500 font-semibold mt-0.5">
                 {p.startTime} – {p.endTime}
               </div>
             </div>
           ))}
         </div>
+
+        {breaks.length > 0 && (
+          <div className="pt-2 border-t border-black/5 dark:border-white/5 flex flex-wrap items-center gap-2">
+            <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+              Pausen:
+            </span>
+            {breaks.map((b) => (
+              <span
+                key={b.id}
+                className="px-2.5 py-1 rounded-lg bg-amber-500/10 text-amber-700 dark:text-amber-300 text-xs font-semibold"
+              >
+                {b.name} ({b.startTime}–{b.endTime})
+              </span>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* 5. BENACHRICHTIGUNGEN & NOTIFICATIONS */}

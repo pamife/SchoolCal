@@ -22,12 +22,14 @@ import type {
   Holiday,
 } from '../types';
 import { getHolidaysForState } from '../data/holidays';
+import type { ScheduleBreak } from '../types';
 import { formatGermanDate, formatGermanWeekday } from './dateUtils';
 
 export interface SmartDayParams {
   currentDate?: Date;
   scheduleEntries: ScheduleEntry[];
   periodTimes: SchedulePeriodTime[];
+  breaks?: ScheduleBreak[];
   subjects: Subject[];
   teachers: Teacher[];
   rooms: Room[];
@@ -49,6 +51,7 @@ export function calculateSmartDayData({
   currentDate = new Date(),
   scheduleEntries = [],
   periodTimes = [],
+  breaks = [],
   subjects = [],
   teachers = [],
   rooms = [],
@@ -56,7 +59,7 @@ export function calculateSmartDayData({
   homework = [],
   exams = [],
   calendarEvents = [],
-  holidayState = 'BY',
+  holidayState = 'BB',
   userName = 'Schüler',
 }: SmartDayParams): SmartDayData {
   const subjectMap = new Map(subjects.map((s) => [s.id, s]));
@@ -266,6 +269,17 @@ export function calculateSmartDayData({
     }
   }
 
+  // Detect active named break (e.g. 1. Hofpause, 2. Hofpause, Mittagspause)
+  let activeBreak: ScheduleBreak | null = null;
+  if (timeContext === 'in_break') {
+    activeBreak =
+      breaks.find((b) => {
+        const bStart = timeStringToMinutes(b.startTime);
+        const bEnd = timeStringToMinutes(b.endTime);
+        return currentTotalMinutes >= bStart && currentTotalMinutes < bEnd;
+      }) || null;
+  }
+
   // 7. Greeting & Dynamic Text Generation
   const firstName = userName ? userName.split(' ')[0] : 'Schüler';
   let greeting = 'Guten Tag';
@@ -300,7 +314,9 @@ export function calculateSmartDayData({
     }
     case 'in_break': {
       const nextSubName = nextLesson?.subject?.name || 'die nächste Stunde';
-      headline = `In ${nextLesson?.minutesUntil || 10} Minuten beginnt ${nextSubName}.`;
+      headline = activeBreak
+        ? `☕ ${activeBreak.name}: Noch ${nextLesson?.minutesUntil || 10} Min. bis ${nextSubName}`
+        : `In ${nextLesson?.minutesUntil || 10} Minuten beginnt ${nextSubName}.`;
       const roomText = nextLesson?.room ? ` in Raum ${nextLesson.room.name}` : '';
       subheadline = `Bereite dich auf ${nextSubName}${roomText} vor.`;
       break;
@@ -372,5 +388,6 @@ export function calculateSmartDayData({
     upcomingExams,
     activeChanges,
     activeHoliday,
+    activeBreak,
   };
 }
