@@ -34,8 +34,13 @@ export const SmartDayHero: React.FC<SmartDayHeroProps> = ({
       {/* Date & Dynamic Greeting */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 px-1">
         <div>
-          <div className="text-xs font-bold text-ios-blue uppercase tracking-wider flex items-center gap-1.5">
+          <div className="text-xs font-bold text-ios-blue uppercase tracking-wider flex flex-wrap items-center gap-1.5">
             <span>{formatGermanWeekday(today, 'long')}, {formatGermanDate(today, 'd. MMMM')}</span>
+            {smartDay.activeBreak && (
+              <span className="bg-amber-500/15 text-amber-700 dark:text-amber-300 text-[10px] px-2 py-0.5 rounded-full font-extrabold flex items-center gap-1">
+                ☕ {smartDay.activeBreak.name} ({smartDay.activeBreak.startTime}–{smartDay.activeBreak.endTime})
+              </span>
+            )}
             {smartDay.activeHoliday && (
               <span className="bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 text-[10px] px-2 py-0.5 rounded-full font-extrabold">
                 {smartDay.activeHoliday.name}

@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
-import { Clock, Plus, Trash2, RotateCcw, CheckCircle2, Calendar, Sparkles } from 'lucide-react';
+import { Clock, Plus, Trash2, CheckCircle2, Sparkles } from 'lucide-react';
 import { Button } from '../../common/Button';
-import { Badge } from '../../common/Badge';
 import { OFFICIAL_SCHERPF_PERIODS } from '../../../config/schoolConfig';
 import type { SchedulePeriodTime, DayScheduleOverride } from '../../../types';
 

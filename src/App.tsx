@@ -6,6 +6,7 @@ import { useCalendarStore } from './store/useCalendarStore';
 import { useSettingsStore } from './store/useSettingsStore';
 import { useAuthStore } from './store/useAuthStore';
 import { useGradeStore } from './store/useGradeStore';
+import { useSchoolConfigStore } from './store/useSchoolConfigStore';
 
 import { MobileNavBar } from './components/layout/MobileNavBar';
 import { Sidebar } from './components/layout/Sidebar';
@@ -79,10 +80,16 @@ export function App() {
   const { settings, loadSettings, updateSettings } = useSettingsStore();
   const { loadGrades, clearGrades } = useGradeStore();
 
-  // Listen to Firebase Auth state
+  // Listen to Firebase Auth state and central School Configuration
   useEffect(() => {
-    const unsubscribe = initAuthListener();
-    return () => unsubscribe();
+    const unsubscribeAuth = initAuthListener();
+    useSchoolConfigStore.getState().loadSchoolConfig();
+    const unsubscribeSchool = useSchoolConfigStore.getState().initRealtimeListener();
+
+    return () => {
+      unsubscribeAuth();
+      unsubscribeSchool();
+    };
   }, [initAuthListener]);
 
   // When user is authenticated, load their data from Firestore

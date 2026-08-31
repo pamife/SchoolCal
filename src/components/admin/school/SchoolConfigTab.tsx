@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { School, Clock, Coffee, Calendar, Server, History } from 'lucide-react';
 import { SegmentedControl, type SegmentOption } from '../../common/SegmentedControl';
 import { useSchoolConfigStore } from '../../../store/useSchoolConfigStore';
 import { SchoolGeneralSubTab } from './SchoolGeneralSubTab';

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Server, Zap, ShieldCheck, CheckCircle2, AlertCircle, RefreshCw } from 'lucide-react';
+import { Server, ShieldCheck, CheckCircle2, AlertCircle, RefreshCw } from 'lucide-react';
 import { Button } from '../../common/Button';
 import { Badge } from '../../common/Badge';
 import type { SchoolWebUntisConfig } from '../../../types';
