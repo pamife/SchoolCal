@@ -6,6 +6,8 @@ import {
   Brain,
   Award,
   Bot,
+  Calendar,
+  Plus,
 } from 'lucide-react';
 import { useSchoolStore } from '../../store/useSchoolStore';
 import { useHomeworkStore } from '../../store/useHomeworkStore';
@@ -47,6 +49,9 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   const jsDay = today.getDay();
   const todayDayOfWeek = jsDay === 0 ? 7 : jsDay;
 
+  const isNewAccount =
+    scheduleEntries.length === 0 && homework.length === 0 && exams.length === 0 && events.length === 0;
+
   // Calculate real-time Smart Day data
   const smartDay = calculateSmartDayData({
     currentDate: today,
@@ -69,6 +74,49 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
 
   return (
     <div className="space-y-5 pb-20 ipad:pb-10 max-w-5xl mx-auto">
+      {/* 🌟 Welcome Card for New Empty Accounts */}
+      {isNewAccount && (
+        <section aria-label="Willkommen bei SchoolCal">
+          <div className="ios-card p-5 sm:p-6 bg-gradient-to-br from-blue-500/10 via-indigo-500/5 to-purple-500/10 border border-blue-500/20">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-start sm:items-center gap-3.5">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-ios-blue to-indigo-600 text-white flex items-center justify-center shadow-lg shadow-blue-500/20 shrink-0">
+                  <BookOpen className="w-6 h-6" />
+                </div>
+                <div>
+                  <h2 className="text-base sm:text-lg font-black text-gray-900 dark:text-white tracking-tight">
+                    Willkommen bei SchoolCal 👋
+                  </h2>
+                  <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-300 mt-0.5 font-medium">
+                    Dein Kalender ist noch leer. Füge deinen Stundenplan hinzu, um loszulegen.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => onNavigateTab('school')}
+                  className="px-4 py-2 rounded-xl bg-ios-blue hover:bg-blue-600 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all active:scale-95"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Stundenplan einrichten</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => onOpenQuickAction('event')}
+                  className="px-3.5 py-2 rounded-xl bg-white dark:bg-ios-dark-secondary text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-ios-dark-tertiary text-xs font-semibold flex items-center gap-1.5 border border-black/5 dark:border-white/10 transition-colors"
+                >
+                  <Calendar className="w-4 h-4 text-ios-blue" />
+                  <span>Ersten Termin erstellen</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* 🧠 1. Smart Day Hero & Next Lesson */}
       <section aria-label="Smart Day Übersicht">
         <SmartDayHero

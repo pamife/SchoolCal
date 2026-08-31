@@ -65,6 +65,8 @@ export const DEFAULT_USER_SETTINGS: UserSettings = {
   activeTimetableVersion: 'default',
   notifications: DEFAULT_NOTIFICATION_PREFERENCES,
   autoDueDateRule: 'next_lesson',
+  onboardingCompleted: false,
+  onboardingVersion: 1,
 };
 
 // No demo data: All datasets start completely empty for each user

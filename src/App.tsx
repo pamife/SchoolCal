@@ -31,6 +31,7 @@ import { AiStudyPlannerModal } from './components/exams/AiStudyPlannerModal';
 import { AiAssistantModal } from './components/ai/AiAssistantModal';
 import { PricingModal } from './components/licensing/PricingModal';
 import { LicenseActivationModal } from './components/licensing/LicenseActivationModal';
+import { OnboardingModal } from './components/onboarding/OnboardingModal';
 import { updateAppBadge } from './services/pwa/badgeService';
 import { evaluatePendingNotifications } from './services/notifications/notificationScheduler';
 import { sendLocalNotification } from './services/notifications/notificationService';
@@ -75,7 +76,7 @@ export function App() {
   const { homework, loadHomework, clearHomework, addHomework } = useHomeworkStore();
   const { exams, loadExams, clearExams, addExam, updateExam, deleteExam } = useExamStore();
   const { loadEvents, clearEvents, addEvent } = useCalendarStore();
-  const { settings, loadSettings } = useSettingsStore();
+  const { settings, loadSettings, updateSettings } = useSettingsStore();
   const { loadGrades, clearGrades } = useGradeStore();
 
   // Listen to Firebase Auth state
@@ -367,6 +368,13 @@ export function App() {
         teachers={teachers}
         rooms={rooms}
         periodTimes={settings.periodTimes}
+      />
+
+      <OnboardingModal
+        isOpen={Boolean(isAuthenticated && user && !settings.onboardingCompleted)}
+        onClose={() => updateSettings({ onboardingCompleted: true, onboardingVersion: 1 }, uid)}
+        onNavigateToTab={setActiveTab}
+        onOpenWebUntis={() => setActiveTab('settings')}
       />
     </div>
   );

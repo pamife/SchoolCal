@@ -7,8 +7,9 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
-    "test:licensing": "tsx scripts/test-licensing.ts",
+    "test:licensing": "npx tsx scripts/test-licensing.ts",
     "test:smart": "npx tsx scripts/test-smart-features.ts",
+    "test:onboarding": "npx tsx scripts/test-onboarding-pwa.ts",
     "preview": "vite preview"
   },
   "dependencies": {

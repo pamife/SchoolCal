@@ -231,6 +231,8 @@ export interface UserSettings {
   notifications?: NotificationPreferences;
   autoDueDateRule?: AutoDueDateRule;
   subjectDueDateRules?: Record<string, AutoDueDateRule>;
+  onboardingCompleted?: boolean;
+  onboardingVersion?: number;
 }
 
 // ----------------------------------------------------

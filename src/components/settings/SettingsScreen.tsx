@@ -19,6 +19,7 @@ import {
   KeyRound,
   Shield,
   Crown,
+  HelpCircle,
 } from 'lucide-react';
 import { useSettingsStore } from '../../store/useSettingsStore';
 import { useAuthStore } from '../../store/useAuthStore';
@@ -35,6 +36,7 @@ import { PeriodTimesModal } from '../school/PeriodTimesModal';
 import { PricingModal } from '../licensing/PricingModal';
 import { LicenseActivationModal } from '../licensing/LicenseActivationModal';
 import { AdminModal } from '../admin/AdminModal';
+import { HelpAndInstallModal } from '../help/HelpAndInstallModal';
 import { PremiumBadge } from '../licensing/PremiumBadge';
 import { WebUntisSyncTab } from '../school/WebUntisSyncTab';
 import { NotificationSettingsTab } from './NotificationSettingsTab';
@@ -66,6 +68,8 @@ export const SettingsScreen: React.FC = () => {
   const [isPricingOpen, setIsPricingOpen] = useState(false);
   const [isActivationOpen, setIsActivationOpen] = useState(false);
   const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
+  const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
+  const [helpInitialTab, setHelpInitialTab] = useState<'install' | 'notifications' | 'schedule' | 'webuntis' | 'account' | 'privacy' | 'faq'>('install');
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const uid = user?.uid || '';
@@ -686,7 +690,89 @@ export const SettingsScreen: React.FC = () => {
         </div>
       </div>
 
-      {/* 8. ACCOUNT LÖSCHEN */}
+      {/* 8. HILFE & INSTALLATION */}
+      <div className="ios-card p-5 space-y-4">
+        <div className="flex items-center justify-between pb-2 border-b border-black/5 dark:border-white/10">
+          <div className="flex items-center gap-2.5">
+            <HelpCircle className="w-5 h-5 text-ios-blue" />
+            <div>
+              <h3 className="text-base font-bold text-gray-900 dark:text-white">
+                Hilfe & Installation
+              </h3>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Installationsanleitungen für alle Geräte, Benachrichtigungen, WebUntis & FAQ
+              </p>
+            </div>
+          </div>
+
+          <Button
+            type="button"
+            variant="primary"
+            size="sm"
+            onClick={() => {
+              setHelpInitialTab('install');
+              setIsHelpModalOpen(true);
+            }}
+          >
+            Hilfezentrum öffnen
+          </Button>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+          <button
+            type="button"
+            onClick={() => {
+              setHelpInitialTab('install');
+              setIsHelpModalOpen(true);
+            }}
+            className="p-3.5 rounded-xl bg-gray-50 dark:bg-ios-dark-secondary hover:bg-gray-100 dark:hover:bg-ios-dark-tertiary transition-all text-left flex flex-col justify-between gap-1.5"
+          >
+            <div className="flex items-center gap-2">
+              <Smartphone className="w-4 h-4 text-ios-blue" />
+              <span className="text-xs font-bold text-gray-900 dark:text-white">App installieren</span>
+            </div>
+            <p className="text-[11px] text-gray-500 dark:text-gray-400">
+              iPhone, iPad, Android, Windows & Mac Anleitungen
+            </p>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setHelpInitialTab('faq');
+              setIsHelpModalOpen(true);
+            }}
+            className="p-3.5 rounded-xl bg-gray-50 dark:bg-ios-dark-secondary hover:bg-gray-100 dark:hover:bg-ios-dark-tertiary transition-all text-left flex flex-col justify-between gap-1.5"
+          >
+            <div className="flex items-center gap-2">
+              <HelpCircle className="w-4 h-4 text-purple-600" />
+              <span className="text-xs font-bold text-gray-900 dark:text-white">Häufige Fragen (FAQ)</span>
+            </div>
+            <p className="text-[11px] text-gray-500 dark:text-gray-400">
+              Antworten zu Sync, Offline-Modus & App-Start
+            </p>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setHelpInitialTab('privacy');
+              setIsHelpModalOpen(true);
+            }}
+            className="p-3.5 rounded-xl bg-gray-50 dark:bg-ios-dark-secondary hover:bg-gray-100 dark:hover:bg-ios-dark-tertiary transition-all text-left flex flex-col justify-between gap-1.5"
+          >
+            <div className="flex items-center gap-2">
+              <ShieldCheck className="w-4 h-4 text-emerald-600" />
+              <span className="text-xs font-bold text-gray-900 dark:text-white">Datenschutz</span>
+            </div>
+            <p className="text-[11px] text-gray-500 dark:text-gray-400">
+              Transparenz & Null Werbetracking
+            </p>
+          </button>
+        </div>
+      </div>
+
+      {/* 9. ACCOUNT LÖSCHEN */}
       <div className="ios-card p-5 space-y-4">
         <div className="flex items-center gap-2.5 pb-2 border-b border-black/5 dark:border-white/10">
           <ShieldCheck className="w-5 h-5 text-gray-500" />
@@ -717,6 +803,12 @@ export const SettingsScreen: React.FC = () => {
       </div>
 
       {/* Modals */}
+      <HelpAndInstallModal
+        isOpen={isHelpModalOpen}
+        onClose={() => setIsHelpModalOpen(false)}
+        initialTab={helpInitialTab}
+      />
+
       <PeriodTimesModal
         isOpen={isPeriodTimesOpen}
         onClose={() => setIsPeriodTimesOpen(false)}
