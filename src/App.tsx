@@ -197,7 +197,7 @@ export function App() {
   }
 
   return (
-    <div className="flex h-[100dvh] min-h-[100dvh] w-full overflow-hidden bg-ios-light-bg dark:bg-ios-dark-bg text-slate-900 dark:text-white">
+    <div className="flex h-full w-full overflow-hidden bg-ios-light-bg dark:bg-ios-dark-bg text-slate-900 dark:text-white">
       {/* iPad / Desktop Sidebar */}
       <Sidebar
         activeTab={activeTab}
@@ -214,7 +214,7 @@ export function App() {
         />
 
         {/* Tab View Container */}
-        <main className="flex-1 p-3.5 sm:p-5 sm:px-6">
+        <main className="flex-1 p-3.5 sm:p-5 sm:px-6 pb-safe">
           {activeTab === 'today' && (
             <DashboardScreen
               onNavigateTab={setActiveTab}
