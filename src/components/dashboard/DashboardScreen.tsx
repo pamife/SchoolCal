@@ -24,6 +24,8 @@ import { TodayHomeworkWidget } from './TodayHomeworkWidget';
 import { ExamCountdownWidget } from './ExamCountdownWidget';
 import type { NavigationTab, ScheduleEntry, Exam, QuickActionType } from '../../types';
 
+import { useSchoolConfigStore } from '../../store/useSchoolConfigStore';
+
 interface DashboardScreenProps {
   onNavigateTab: (tab: NavigationTab) => void;
   onOpenQuickAction: (action: QuickActionType) => void;
@@ -44,6 +46,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   const { settings } = useSettingsStore();
   const { user } = useAuthStore();
   const { isPlus, isPro } = useSubscription();
+  const { breaks, getPeriodsForDay } = useSchoolConfigStore();
 
   const today = new Date();
   const jsDay = today.getDay();
@@ -52,11 +55,14 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   const isNewAccount =
     scheduleEntries.length === 0 && homework.length === 0 && exams.length === 0 && events.length === 0;
 
-  // Calculate real-time Smart Day data
+  const currentDayPeriods = getPeriodsForDay(todayDayOfWeek);
+
+  // Calculate real-time Smart Day data using central school configuration
   const smartDay = calculateSmartDayData({
     currentDate: today,
     scheduleEntries,
-    periodTimes: settings.periodTimes || [],
+    periodTimes: currentDayPeriods,
+    breaks,
     subjects,
     teachers,
     rooms,
@@ -64,7 +70,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
     homework,
     exams,
     calendarEvents: events,
-    holidayState: settings.state || 'BY',
+    holidayState: settings.state || 'BB',
     userName: user?.displayName || 'Schüler',
   });
 
