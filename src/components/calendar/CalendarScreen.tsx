@@ -6,6 +6,8 @@ import { useSchoolStore } from '../../store/useSchoolStore';
 import { useExamStore } from '../../store/useExamStore';
 import { useHomeworkStore } from '../../store/useHomeworkStore';
 import { useAuthStore } from '../../store/useAuthStore';
+import { useSettingsStore } from '../../store/useSettingsStore';
+import { useSchoolConfigStore } from '../../store/useSchoolConfigStore';
 import { SegmentedControl, type SegmentOption } from '../common/SegmentedControl';
 import { Button } from '../common/Button';
 import { WeekView } from './WeekView';
@@ -15,6 +17,7 @@ import { MonthView } from './MonthView';
 import { EventModal } from './EventModal';
 import type { CalendarEvent, CalendarViewType, Exam, ScheduleEntry } from '../../types';
 import { getWeekDays, formatGermanDate } from '../../utils/dateUtils';
+import { getHolidaysForState } from '../../data/holidays';
 import { generateIcsCalendar, downloadIcsFile } from '../../services/ical/icalService';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
@@ -47,6 +50,10 @@ export const CalendarScreen: React.FC<CalendarScreenProps> = ({
   const { subjects, teachers, rooms, scheduleEntries, substitutions } = useSchoolStore();
   const { exams } = useExamStore();
   const { homework } = useHomeworkStore();
+  const { settings } = useSettingsStore();
+  const { schoolHolidays } = useSchoolConfigStore();
+
+  const holidays = getHolidaysForState(settings.state || 'BB', schoolHolidays);
 
   const [isEventModalOpen, setIsEventModalOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
@@ -260,6 +267,7 @@ export const CalendarScreen: React.FC<CalendarScreenProps> = ({
                 teachers={teachers}
                 rooms={rooms}
                 substitutions={substitutions}
+                holidays={holidays}
                 onSelectEvent={handleEditEvent}
                 onSelectExam={onSelectExam}
                 onSelectScheduleEntry={(entry) => onSelectScheduleEntry(entry)}
@@ -277,6 +285,7 @@ export const CalendarScreen: React.FC<CalendarScreenProps> = ({
                 teachers={teachers}
                 rooms={rooms}
                 substitutions={substitutions}
+                holidays={holidays}
                 onSelectEvent={handleEditEvent}
                 onSelectExam={onSelectExam}
                 onSelectScheduleEntry={onSelectScheduleEntry}
@@ -294,6 +303,7 @@ export const CalendarScreen: React.FC<CalendarScreenProps> = ({
                 teachers={teachers}
                 rooms={rooms}
                 substitutions={substitutions}
+                holidays={holidays}
                 onSelectEvent={handleEditEvent}
                 onSelectExam={onSelectExam}
                 onSelectScheduleEntry={(entry) => onSelectScheduleEntry(entry)}
@@ -312,6 +322,7 @@ export const CalendarScreen: React.FC<CalendarScreenProps> = ({
                 teachers={teachers}
                 rooms={rooms}
                 substitutions={substitutions}
+                holidays={holidays}
                 onSelectEvent={handleEditEvent}
                 onSelectExam={onSelectExam}
                 onSelectScheduleEntry={onSelectScheduleEntry}

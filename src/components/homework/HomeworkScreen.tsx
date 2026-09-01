@@ -161,8 +161,8 @@ export const HomeworkScreen: React.FC = () => {
             className="border-purple-500/30 text-purple-700 dark:text-purple-300 hover:bg-purple-500/10"
           >
             <span>KI-Lernplaner</span>
-            <span className="text-[9px] font-extrabold uppercase bg-purple-600 text-white px-1.5 py-0.2 rounded-full ml-1">
-              Pro
+            <span className="text-[9px] font-extrabold uppercase bg-purple-600/20 text-purple-700 dark:text-purple-300 px-1.5 py-0.2 rounded-full ml-1 border border-purple-500/30">
+              BETA
             </span>
           </Button>
 
@@ -272,7 +272,151 @@ export const HomeworkScreen: React.FC = () => {
             setIsModalOpen(true);
           }}
         />
+      ) : filterDue === 'all' ? (
+        /* Structured Grouping for Overview */
+        <div className="space-y-6">
+          {(() => {
+            const todayIso = new Date().toISOString().slice(0, 10);
+            const tomorrowIso = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
+
+            const overdue = filteredTasks.filter(t => t.status !== 'done' && t.dueDate < todayIso);
+            const today = filteredTasks.filter(t => t.status !== 'done' && t.dueDate === todayIso);
+            const tomorrow = filteredTasks.filter(t => t.status !== 'done' && t.dueDate === tomorrowIso);
+            const upcoming = filteredTasks.filter(t => t.status !== 'done' && t.dueDate > tomorrowIso);
+            const done = filteredTasks.filter(t => t.status === 'done');
+
+            return (
+              <>
+                {/* 1. Overdue */}
+                {overdue.length > 0 && (
+                  <div className="space-y-2">
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-red-500 flex items-center gap-1.5 px-1">
+                      <span>🔴 Überfällig ({overdue.length})</span>
+                    </h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {overdue.map(task => (
+                        <SwipeableHomeworkCard
+                          key={task.id}
+                          homework={task}
+                          subject={subjectMap.get(task.subjectId)}
+                          onToggleComplete={handleToggleComplete}
+                          onEdit={(hw) => {
+                            setEditingHomework(hw);
+                            setIsModalOpen(true);
+                          }}
+                          onDelete={handleDeleteTask}
+                          onLongPressOpen={(hw) => setActionSheetTask(hw)}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* 2. Today */}
+                {today.length > 0 && (
+                  <div className="space-y-2">
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400 flex items-center gap-1.5 px-1">
+                      <span>⚠️ Heute fällig ({today.length})</span>
+                    </h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {today.map(task => (
+                        <SwipeableHomeworkCard
+                          key={task.id}
+                          homework={task}
+                          subject={subjectMap.get(task.subjectId)}
+                          onToggleComplete={handleToggleComplete}
+                          onEdit={(hw) => {
+                            setEditingHomework(hw);
+                            setIsModalOpen(true);
+                          }}
+                          onDelete={handleDeleteTask}
+                          onLongPressOpen={(hw) => setActionSheetTask(hw)}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* 3. Tomorrow (Für morgen) */}
+                {tomorrow.length > 0 && (
+                  <div className="space-y-2">
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-ios-blue flex items-center gap-1.5 px-1">
+                      <span>📚 Für morgen ({tomorrow.length})</span>
+                    </h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {tomorrow.map(task => (
+                        <SwipeableHomeworkCard
+                          key={task.id}
+                          homework={task}
+                          subject={subjectMap.get(task.subjectId)}
+                          onToggleComplete={handleToggleComplete}
+                          onEdit={(hw) => {
+                            setEditingHomework(hw);
+                            setIsModalOpen(true);
+                          }}
+                          onDelete={handleDeleteTask}
+                          onLongPressOpen={(hw) => setActionSheetTask(hw)}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* 4. Upcoming */}
+                {upcoming.length > 0 && (
+                  <div className="space-y-2">
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 flex items-center gap-1.5 px-1">
+                      <span>📅 Demnächst / Zukünftig ({upcoming.length})</span>
+                    </h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {upcoming.map(task => (
+                        <SwipeableHomeworkCard
+                          key={task.id}
+                          homework={task}
+                          subject={subjectMap.get(task.subjectId)}
+                          onToggleComplete={handleToggleComplete}
+                          onEdit={(hw) => {
+                            setEditingHomework(hw);
+                            setIsModalOpen(true);
+                          }}
+                          onDelete={handleDeleteTask}
+                          onLongPressOpen={(hw) => setActionSheetTask(hw)}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* 5. Done (when viewing all) */}
+                {done.length > 0 && (
+                  <div className="space-y-2 pt-2 border-t border-black/5 dark:border-white/5">
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-gray-400 flex items-center gap-1.5 px-1">
+                      <span>✓ Erledigte Aufgaben ({done.length})</span>
+                    </h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {done.map(task => (
+                        <SwipeableHomeworkCard
+                          key={task.id}
+                          homework={task}
+                          subject={subjectMap.get(task.subjectId)}
+                          onToggleComplete={handleToggleComplete}
+                          onEdit={(hw) => {
+                            setEditingHomework(hw);
+                            setIsModalOpen(true);
+                          }}
+                          onDelete={handleDeleteTask}
+                          onLongPressOpen={(hw) => setActionSheetTask(hw)}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
+            );
+          })()}
+        </div>
       ) : (
+        /* Specific Filter Active (e.g. today, tomorrow, this_week, overdue, done) */
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {filteredTasks.map((task) => (
             <SwipeableHomeworkCard

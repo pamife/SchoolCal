@@ -1,7 +1,7 @@
 import React from 'react';
-import { CheckCircle2, Circle, Clock, ChevronRight, Plus } from 'lucide-react';
+import { CheckCircle2, Circle, Clock, ChevronRight, Plus, BookOpen } from 'lucide-react';
 import { Homework, Subject } from '../../types';
-import { getRelativeDateLabel } from '../../utils/dateUtils';
+import { getHomeworkDueDateStatus } from '../../utils/dateUtils';
 import { Badge } from '../common/Badge';
 import { haptics } from '../../utils/haptics';
 
@@ -21,7 +21,7 @@ export const TodayHomeworkWidget: React.FC<TodayHomeworkWidgetProps> = ({
   onAddHomework,
 }) => {
   const subjectMap = new Map(subjects.map(s => [s.id, s]));
-  const pendingTasks = homework.filter(h => h.status !== 'done').slice(0, 4);
+  const pendingTasks = homework.filter(h => h.status !== 'done').slice(0, 5);
 
   return (
     <div className="ios-card p-4">
@@ -65,7 +65,7 @@ export const TodayHomeworkWidget: React.FC<TodayHomeworkWidgetProps> = ({
         <div className="space-y-2">
           {pendingTasks.map((task) => {
             const subject = subjectMap.get(task.subjectId);
-            const dateLabel = getRelativeDateLabel(task.dueDate);
+            const dueStatus = getHomeworkDueDateStatus(task.dueDate, task.status === 'done');
 
             return (
               <div
@@ -87,7 +87,7 @@ export const TodayHomeworkWidget: React.FC<TodayHomeworkWidgetProps> = ({
                   <p className="text-xs font-semibold text-gray-900 dark:text-white leading-tight truncate">
                     {task.title}
                   </p>
-                  <div className="flex items-center gap-2 mt-1">
+                  <div className="flex flex-wrap items-center gap-1.5 mt-1">
                     {subject && (
                       <span
                         className="text-[10px] font-bold px-1.5 py-0.5 rounded leading-none text-white"
@@ -96,15 +96,12 @@ export const TodayHomeworkWidget: React.FC<TodayHomeworkWidgetProps> = ({
                         {subject.shortName}
                       </span>
                     )}
-                    <span className="text-[11px] text-gray-500 dark:text-gray-400 flex items-center gap-1">
-                      <Clock className="w-3 h-3 text-gray-400" />
-                      {dateLabel}
+                    <Badge variant={dueStatus.badgeVariant} size="sm" className="text-[10px] py-0 px-1.5 font-bold">
+                      {dueStatus.badgeLabel}
+                    </Badge>
+                    <span className="text-[10px] text-gray-400">
+                      ({dueStatus.subLabel})
                     </span>
-                    {task.priority === 'high' && (
-                      <Badge variant="red" size="sm" className="text-[10px] py-0 px-1">
-                        Dringend
-                      </Badge>
-                    )}
                   </div>
                 </div>
               </div>

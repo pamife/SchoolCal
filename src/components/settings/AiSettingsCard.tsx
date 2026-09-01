@@ -148,9 +148,9 @@ export const AiSettingsCard: React.FC = () => {
           </div>
           <div>
             <h3 className="text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
-              KI-Schulassistent & Gemini API-Key
-              <span className="text-[9px] font-extrabold uppercase px-1.5 py-0.2 rounded-full bg-purple-600 text-white">
-                Pro
+              <span>KI-Schulassistent</span>
+              <span className="text-[9px] font-extrabold uppercase bg-purple-500/20 text-purple-700 dark:text-purple-300 px-1.5 py-0.2 rounded-full border border-purple-500/30">
+                BETA
               </span>
             </h3>
             <p className="text-xs text-gray-500 dark:text-gray-400">

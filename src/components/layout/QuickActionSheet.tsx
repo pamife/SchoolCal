@@ -23,22 +23,22 @@ export const QuickActionSheet: React.FC<QuickActionSheetProps> = ({
   onClose,
   onSelectAction,
 }) => {
-  const actions: { id: QuickActionType; label: string; description: string; icon: React.ComponentType<{ className?: string }>; color: string; isPro?: boolean }[] = [
+  const actions: { id: QuickActionType; label: string; description: string; icon: React.ComponentType<{ className?: string }>; color: string; badge?: string }[] = [
     {
       id: 'ai_chat',
       label: '🤖 KI-Schulassistent',
       description: 'Fragen zu Stundenplan, Aufgaben & Lernzeiten',
       icon: Brain,
-      color: 'bg-gradient-to-tr from-purple-600 to-indigo-600 text-white',
-      isPro: true,
+      color: 'bg-purple-600/15 text-purple-600 dark:text-purple-300 border border-purple-500/20',
+      badge: 'BETA',
     },
     {
       id: 'ai_plan',
       label: '✨ KI-Lernzeitplaner',
       description: 'Lernstoff optimal bis zur nächsten Klausur verteilen',
       icon: Sparkles,
-      color: 'bg-purple-600 text-white',
-      isPro: true,
+      color: 'bg-purple-600/15 text-purple-600 dark:text-purple-300 border border-purple-500/20',
+      badge: 'BETA',
     },
     {
       id: 'homework',
@@ -147,9 +147,9 @@ export const QuickActionSheet: React.FC<QuickActionSheetProps> = ({
                         <span className="text-sm font-semibold text-gray-900 dark:text-white">
                           {act.label}
                         </span>
-                        {act.isPro && (
-                          <span className="text-[9px] font-extrabold uppercase bg-purple-600 text-white px-1.5 py-0.2 rounded-full">
-                            Pro
+                        {act.badge && (
+                          <span className="text-[9px] font-extrabold uppercase bg-purple-500/20 text-purple-700 dark:text-purple-300 px-1.5 py-0.2 rounded-full border border-purple-500/30">
+                            {act.badge}
                           </span>
                         )}
                       </div>

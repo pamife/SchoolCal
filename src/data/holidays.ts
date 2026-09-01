@@ -25,7 +25,10 @@ export const GERMAN_STATES: BundeslandInfo[] = [
 ];
 
 export const HOLIDAYS_DATABASE: Holiday[] = [
-  // Nationwide / general public holidays
+  // Nationwide / general public holidays 2026
+  { id: 'hol-neujahr-2026', name: 'Neujahr', startDate: '2026-01-01', endDate: '2026-01-01', type: 'public_holiday', state: 'ALL' },
+  { id: 'hol-karfreitag-2026', name: 'Karfreitag', startDate: '2026-04-03', endDate: '2026-04-03', type: 'public_holiday', state: 'ALL' },
+  { id: 'hol-ostermontag-2026', name: 'Ostermontag', startDate: '2026-04-06', endDate: '2026-04-06', type: 'public_holiday', state: 'ALL' },
   { id: 'hol-tag-der-arbeit-2026', name: 'Tag der Arbeit', startDate: '2026-05-01', endDate: '2026-05-01', type: 'public_holiday', state: 'ALL' },
   { id: 'hol-himmelfahrt-2026', name: 'Christi Himmelfahrt', startDate: '2026-05-14', endDate: '2026-05-14', type: 'public_holiday', state: 'ALL' },
   { id: 'hol-pfingstmontag-2026', name: 'Pfingstmontag', startDate: '2026-05-25', endDate: '2026-05-25', type: 'public_holiday', state: 'ALL' },
@@ -34,7 +37,16 @@ export const HOLIDAYS_DATABASE: Holiday[] = [
   { id: 'hol-allerheiligen-2026', name: 'Allerheiligen', startDate: '2026-11-01', endDate: '2026-11-01', type: 'public_holiday', state: 'BY' },
   { id: 'hol-weihnachten-1-2026', name: '1. Weihnachtsfeiertag', startDate: '2026-12-25', endDate: '2026-12-25', type: 'public_holiday', state: 'ALL' },
   { id: 'hol-weihnachten-2-2026', name: '2. Weihnachtsfeiertag', startDate: '2026-12-26', endDate: '2026-12-26', type: 'public_holiday', state: 'ALL' },
+
+  // Nationwide / general public holidays 2027
   { id: 'hol-neujahr-2027', name: 'Neujahr', startDate: '2027-01-01', endDate: '2027-01-01', type: 'public_holiday', state: 'ALL' },
+  { id: 'hol-karfreitag-2027', name: 'Karfreitag', startDate: '2027-03-26', endDate: '2027-03-26', type: 'public_holiday', state: 'ALL' },
+  { id: 'hol-ostermontag-2027', name: 'Ostermontag', startDate: '2027-03-29', endDate: '2027-03-29', type: 'public_holiday', state: 'ALL' },
+  { id: 'hol-tag-der-arbeit-2027', name: 'Tag der Arbeit', startDate: '2027-05-01', endDate: '2027-05-01', type: 'public_holiday', state: 'ALL' },
+  { id: 'hol-himmelfahrt-2027', name: 'Christi Himmelfahrt', startDate: '2027-05-06', endDate: '2027-05-06', type: 'public_holiday', state: 'ALL' },
+  { id: 'hol-pfingstmontag-2027', name: 'Pfingstmontag', startDate: '2027-05-17', endDate: '2027-05-17', type: 'public_holiday', state: 'ALL' },
+  { id: 'hol-tag-der-einheit-2027', name: 'Tag der Deutschen Einheit', startDate: '2027-10-03', endDate: '2027-10-03', type: 'public_holiday', state: 'ALL' },
+  { id: 'hol-reformation-2027', name: 'Reformationstag', startDate: '2027-10-31', endDate: '2027-10-31', type: 'public_holiday', state: 'BB' },
 
   // Brandenburg (BB) Schulferien 2026/2027 (Christa-und-Peter-Scherpf-Gymnasium)
   { id: 'bb-sommer-2026', name: 'Sommerferien', startDate: '2026-07-09', endDate: '2026-08-22', type: 'vacation', state: 'BB' },
@@ -80,6 +92,51 @@ export const HOLIDAYS_DATABASE: Holiday[] = [
   { id: 'he-ostern-2027', name: 'Osterferien', startDate: '2027-03-22', endDate: '2027-04-03', type: 'vacation', state: 'HE' },
 ];
 
-export function getHolidaysForState(stateCode: string): Holiday[] {
-  return HOLIDAYS_DATABASE.filter(h => h.state === 'ALL' || h.state === stateCode);
+export function getHolidaysForState(stateCode: string = 'BB', customSchoolHolidays: Holiday[] = []): Holiday[] {
+  const base = HOLIDAYS_DATABASE.filter(h => h.state === 'ALL' || h.state === stateCode);
+  if (!customSchoolHolidays || customSchoolHolidays.length === 0) {
+    return base;
+  }
+  return [...base, ...customSchoolHolidays];
+}
+
+export interface DayHolidayInfo {
+  holiday: Holiday | null;
+  isVacation: boolean;
+  isPublicHoliday: boolean;
+  isSchoolFree: boolean;
+  isStart: boolean;
+  isEnd: boolean;
+  label: string;
+}
+
+export function getDayHolidayInfo(dateIso: string, holidays: Holiday[]): DayHolidayInfo {
+  const matching = holidays.find(h => dateIso >= h.startDate && dateIso <= h.endDate);
+  if (!matching) {
+    return {
+      holiday: null,
+      isVacation: false,
+      isPublicHoliday: false,
+      isSchoolFree: false,
+      isStart: false,
+      isEnd: false,
+      label: '',
+    };
+  }
+
+  const isVacation = matching.type === 'vacation';
+  const isPublicHoliday = matching.type === 'public_holiday';
+  const isSchoolFree = matching.type === 'school_free' || isVacation || isPublicHoliday;
+  const isStart = dateIso === matching.startDate;
+  const isEnd = dateIso === matching.endDate;
+
+  return {
+    holiday: matching,
+    isVacation,
+    isPublicHoliday,
+    isSchoolFree,
+    isStart,
+    isEnd,
+    label: matching.name,
+  };
 }

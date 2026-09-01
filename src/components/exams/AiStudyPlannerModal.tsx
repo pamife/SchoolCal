@@ -100,7 +100,7 @@ export const AiStudyPlannerModal: React.FC<AiStudyPlannerModalProps> = ({
     <BottomSheet
       isOpen={isOpen}
       onClose={onClose}
-      title="KI-Lernzeitplaner"
+      title="KI-Lernzeitplaner [BETA]"
     >
       <FeatureGate
         feature="aiSmartPlanning"
@@ -121,9 +121,14 @@ export const AiStudyPlannerModal: React.FC<AiStudyPlannerModalProps> = ({
               <Brain className="w-5 h-5" />
             </div>
             <div>
-              <h4 className="text-sm font-bold text-gray-900 dark:text-white">
-                Intelligente Klausurvorbereitung
-              </h4>
+              <div className="flex items-center gap-2">
+                <h4 className="text-sm font-bold text-gray-900 dark:text-white">
+                  Intelligente Klausurvorbereitung
+                </h4>
+                <span className="text-[9px] font-extrabold uppercase bg-purple-500/20 text-purple-700 dark:text-purple-300 px-1.5 py-0.2 rounded-full border border-purple-500/30">
+                  BETA
+                </span>
+              </div>
               <p className="text-xs text-gray-500 dark:text-gray-400">
                 Verteilt den Lernstoff optimal auf die verbleibenden Tage bis zur Prüfung.
               </p>

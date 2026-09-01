@@ -143,45 +143,45 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
         </section>
       )}
 
-      {/* 🤖 3. KI-Schulassistent & Lernplaner Hero (Pro Feature) */}
-      <div className="ios-card p-4 sm:p-5 bg-gradient-to-r from-purple-500/10 via-indigo-500/10 to-blue-500/10 border border-purple-500/20">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-start sm:items-center gap-3">
-            <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-purple-600 to-indigo-600 text-white flex items-center justify-center shadow-md shadow-purple-500/20 shrink-0">
-              <Brain className="w-6 h-6" />
+      {/* 🤖 3. KI-Schulassistent [BETA] (Optionaler Assistent) */}
+      <div className="ios-card p-3.5 sm:p-4 bg-gray-50/70 dark:bg-ios-dark-secondary/50 border border-black/5 dark:border-white/5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0">
+              <Brain className="w-5 h-5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-sm sm:text-base font-extrabold text-gray-900 dark:text-white">
-                  SchoolCal KI-Schulassistent
+                <h3 className="text-xs sm:text-sm font-bold text-gray-900 dark:text-white">
+                  KI-Schulassistent
                 </h3>
-                <span className="text-[9px] font-extrabold uppercase bg-purple-600 text-white px-2 py-0.5 rounded-full shadow-xs">
-                  Pro
+                <span className="text-[9px] font-extrabold uppercase bg-purple-500/15 text-purple-700 dark:text-purple-300 px-1.5 py-0.2 rounded-full border border-purple-500/20">
+                  BETA
                 </span>
               </div>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                Stelle Fragen zu deinem Stundenplan, fälligen Aufgaben oder lass dir einen personalisierten Lernplan berechnen.
+              <p className="text-[11px] text-gray-500 dark:text-gray-400">
+                Optionaler digitaler Assistent für Fragen zum Stundenplan und zur Lernplanung.
               </p>
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-2 self-start sm:self-auto shrink-0">
             <button
               type="button"
               onClick={() => onOpenQuickAction('ai_chat')}
-              className="px-3.5 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all active:scale-95"
+              className="px-3 py-1.5 rounded-xl bg-purple-600/10 hover:bg-purple-600/20 text-purple-700 dark:text-purple-300 text-xs font-bold flex items-center gap-1.5 transition-colors"
             >
               <Bot className="w-3.5 h-3.5" />
-              <span>KI-Assistent fragen</span>
+              <span>Assistent</span>
             </button>
 
             <button
               type="button"
               onClick={() => onOpenQuickAction('ai_plan')}
-              className="px-3 py-2 rounded-xl bg-white dark:bg-ios-dark-secondary text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-ios-dark-tertiary text-xs font-semibold flex items-center gap-1.5 border border-black/5 dark:border-white/10 transition-colors"
+              className="px-3 py-1.5 rounded-xl bg-black/5 hover:bg-black/10 dark:bg-white/5 dark:hover:bg-white/10 text-gray-700 dark:text-gray-300 text-xs font-semibold flex items-center gap-1.5 transition-colors"
             >
-              <Sparkles className="w-3.5 h-3.5 text-purple-600" />
-              <span>Lernplan berechnen</span>
+              <Sparkles className="w-3.5 h-3.5 text-purple-500" />
+              <span>Lernplan</span>
             </button>
           </div>
         </div>

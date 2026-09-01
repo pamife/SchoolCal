@@ -29,9 +29,9 @@ export function getRelativeDateLabel(dateStr: string): string {
   const target = new Date(date);
   target.setHours(0, 0, 0, 0);
 
-  if (isToday(target)) return 'Heute';
-  if (isTomorrow(target)) return 'Morgen';
-  if (isYesterday(target)) return 'Gestern';
+  if (isToday(target)) return 'Heute fällig';
+  if (isTomorrow(target)) return 'Für morgen';
+  if (isYesterday(target)) return 'Gestern überfällig';
 
   const diff = differenceInDays(target, today);
   if (diff > 0) {
@@ -40,6 +40,65 @@ export function getRelativeDateLabel(dateStr: string): string {
   } else {
     return `${Math.abs(diff)} Tage überfällig`;
   }
+}
+
+export interface DueDateStatus {
+  category: 'overdue' | 'today' | 'tomorrow' | 'upcoming';
+  badgeLabel: string;
+  badgeVariant: 'red' | 'amber' | 'blue' | 'gray';
+  subLabel: string;
+}
+
+export function getHomeworkDueDateStatus(dueDateIso: string, isDone: boolean = false): DueDateStatus {
+  if (isDone) {
+    return {
+      category: 'upcoming',
+      badgeLabel: 'Erledigt',
+      badgeVariant: 'gray',
+      subLabel: `Fällig war: ${formatGermanDate(dueDateIso, 'dd. MMM')}`,
+    };
+  }
+  const date = parseISO(dueDateIso);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const target = new Date(date);
+  target.setHours(0, 0, 0, 0);
+
+  if (isToday(target)) {
+    return {
+      category: 'today',
+      badgeLabel: '⚠️ Heute fällig',
+      badgeVariant: 'amber',
+      subLabel: 'Heute fällig',
+    };
+  }
+
+  if (isTomorrow(target)) {
+    return {
+      category: 'tomorrow',
+      badgeLabel: '📚 Für morgen',
+      badgeVariant: 'blue',
+      subLabel: `Fällig morgen (${formatGermanDate(target, 'EEE, d. MMM')})`,
+    };
+  }
+
+  const diff = differenceInDays(target, today);
+  if (diff < 0) {
+    const days = Math.abs(diff);
+    return {
+      category: 'overdue',
+      badgeLabel: `🔴 ${days === 1 ? '1 Tag' : `${days} Tage`} überfällig`,
+      badgeVariant: 'red',
+      subLabel: `Überfällig seit ${formatGermanDate(target, 'dd. MMM')}`,
+    };
+  }
+
+  return {
+    category: 'upcoming',
+    badgeLabel: `📅 In ${diff} Tagen`,
+    badgeVariant: 'gray',
+    subLabel: `Fällig: ${formatGermanDate(target, 'EEE, d. MMM')}`,
+  };
 }
 
 export function getExamCountdownText(dateStr: string): { label: string; urgency: 'today' | 'tomorrow' | 'urgent' | 'normal' } {

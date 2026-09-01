@@ -209,7 +209,7 @@ export const AiAssistantModal: React.FC<AiAssistantModalProps> = ({
     <BottomSheet
       isOpen={isOpen}
       onClose={onClose}
-      title="SchoolCal KI-Schulassistent"
+      title="SchoolCal KI-Schulassistent [BETA]"
     >
       <FeatureGate
         feature="aiSchoolAssistant"
@@ -231,8 +231,11 @@ export const AiAssistantModal: React.FC<AiAssistantModalProps> = ({
               <div className="w-6 h-6 rounded-lg bg-gradient-to-tr from-purple-600 to-indigo-600 text-white flex items-center justify-center shadow-xs">
                 <Brain className="w-3.5 h-3.5" />
               </div>
-              <span className="text-xs font-bold text-gray-800 dark:text-gray-200">
-                SchoolCal KI
+              <span className="text-xs font-bold text-gray-800 dark:text-gray-200 flex items-center gap-1.5">
+                <span>SchoolCal KI</span>
+                <span className="text-[9px] font-extrabold uppercase bg-purple-500/20 text-purple-700 dark:text-purple-300 px-1.5 py-0.2 rounded-full border border-purple-500/30">
+                  BETA
+                </span>
               </span>
 
               <button

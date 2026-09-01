@@ -9,11 +9,13 @@ import type {
   Teacher,
   Room,
   Substitution,
+  Holiday,
 } from '../../types';
 import { getSubjectIcon, hexToRgba } from '../../utils/colorUtils';
 import { Badge } from '../common/Badge';
-import { Clock, MapPin, User, Plus, AlertCircle, ChevronRight } from 'lucide-react';
+import { Clock, MapPin, User, Plus, AlertCircle, ChevronRight, Sparkles } from 'lucide-react';
 import { haptics } from '../../utils/haptics';
+import { getDayHolidayInfo } from '../../data/holidays';
 
 interface DayViewProps {
   selectedDate: Date;
@@ -24,6 +26,7 @@ interface DayViewProps {
   teachers: Teacher[];
   rooms: Room[];
   substitutions: Substitution[];
+  holidays?: Holiday[];
   onSelectEvent: (event: CalendarEvent) => void;
   onSelectExam: (exam: Exam) => void;
   onSelectScheduleEntry: (entry: ScheduleEntry) => void;
@@ -50,6 +53,7 @@ export const DayView: React.FC<DayViewProps> = ({
   teachers,
   rooms,
   substitutions,
+  holidays = [],
   onSelectEvent,
   onSelectExam,
   onSelectScheduleEntry,
@@ -58,6 +62,8 @@ export const DayView: React.FC<DayViewProps> = ({
   const jsDay = selectedDate.getDay();
   const dayOfWeek = jsDay === 0 ? 7 : jsDay;
   const dayIso = format(selectedDate, 'yyyy-MM-dd');
+
+  const holidayInfo = getDayHolidayInfo(dayIso, holidays);
 
   const subjectMap = new Map(subjects.map(s => [s.id, s]));
   const teacherMap = new Map(teachers.map(t => [t.id, t]));
@@ -137,6 +143,52 @@ export const DayView: React.FC<DayViewProps> = ({
         </button>
       </div>
 
+      {/* Holiday / Vacation Banner */}
+      {holidayInfo.holiday && (
+        <div
+          className={`p-3.5 rounded-2xl border flex items-center justify-between gap-3 shadow-xs ${
+            holidayInfo.isVacation
+              ? 'bg-emerald-500/10 border-emerald-500/25 text-emerald-950 dark:text-emerald-100'
+              : holidayInfo.isPublicHoliday
+              ? 'bg-amber-500/10 border-amber-500/25 text-amber-950 dark:text-amber-100'
+              : 'bg-purple-500/10 border-purple-500/25 text-purple-950 dark:text-purple-100'
+          }`}
+        >
+          <div className="flex items-center gap-2.5">
+            <span className="text-xl">
+              {holidayInfo.isVacation ? '🏖️' : holidayInfo.isPublicHoliday ? '🇩🇪' : '📅'}
+            </span>
+            <div>
+              <div className="text-sm font-bold flex items-center gap-2">
+                <span>{holidayInfo.label}</span>
+                <span
+                  className={`text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full ${
+                    holidayInfo.isVacation
+                      ? 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-200'
+                      : holidayInfo.isPublicHoliday
+                      ? 'bg-amber-500/20 text-amber-700 dark:text-amber-200'
+                      : 'bg-purple-500/20 text-purple-700 dark:text-purple-200'
+                  }`}
+                >
+                  {holidayInfo.isVacation
+                    ? 'Schulferien'
+                    : holidayInfo.isPublicHoliday
+                    ? 'Gesetzlicher Feiertag'
+                    : 'Schulfrei'}
+                </span>
+              </div>
+              <p className="text-xs text-gray-600 dark:text-gray-300 mt-0.5">
+                {holidayInfo.isVacation
+                  ? 'Keine Schule – Genieße deine Ferienzeit!'
+                  : holidayInfo.isPublicHoliday
+                  ? 'Schulfrei am gesetzlichen Feiertag.'
+                  : 'Schulinterner freier Tag.'}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 1. Exams Section if any */}
       {dayExams.length > 0 && (
         <div className="space-y-2">
@@ -183,7 +235,16 @@ export const DayView: React.FC<DayViewProps> = ({
           Unterrichtsablauf
         </div>
 
-        {groupedLessons.length === 0 ? (
+        {holidayInfo.isSchoolFree ? (
+          <div className="ios-card p-5 text-center text-sm text-gray-500 dark:text-gray-400 space-y-1">
+            <div className="font-semibold text-gray-700 dark:text-gray-300">
+              {holidayInfo.isVacation ? '🏖️ Schulfreier Ferientag' : '🇩🇪 Gesetzlicher Feiertag'}
+            </div>
+            <div className="text-xs text-gray-400">
+              Heute findet kein regulärer Schulunterricht statt.
+            </div>
+          </div>
+        ) : groupedLessons.length === 0 ? (
           <div className="ios-card p-6 text-center text-sm text-gray-400">
             Kein Unterricht für diesen Tag eingetragen.
           </div>

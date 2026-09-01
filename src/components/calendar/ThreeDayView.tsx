@@ -1,10 +1,11 @@
 import React from 'react';
 import { format, isToday, addDays } from 'date-fns';
 import { de } from 'date-fns/locale';
-import { ScheduleEntry, CalendarEvent, Exam, Subject, Teacher, Room, Substitution } from '../../types';
+import { ScheduleEntry, CalendarEvent, Exam, Subject, Teacher, Room, Substitution, Holiday } from '../../types';
 import { getSubjectIcon, hexToRgba } from '../../utils/colorUtils';
 import { Clock } from 'lucide-react';
 import { haptics } from '../../utils/haptics';
+import { getDayHolidayInfo } from '../../data/holidays';
 
 interface ThreeDayViewProps {
   startDate: Date;
@@ -15,6 +16,7 @@ interface ThreeDayViewProps {
   teachers: Teacher[];
   rooms: Room[];
   substitutions: Substitution[];
+  holidays?: Holiday[];
   onSelectEvent: (event: CalendarEvent) => void;
   onSelectExam: (exam: Exam) => void;
   onSelectScheduleEntry: (entry: ScheduleEntry, date: Date) => void;
@@ -30,6 +32,7 @@ export const ThreeDayView: React.FC<ThreeDayViewProps> = ({
   teachers,
   rooms,
   substitutions,
+  holidays = [],
   onSelectEvent,
   onSelectExam,
   onSelectScheduleEntry,
@@ -46,11 +49,14 @@ export const ThreeDayView: React.FC<ThreeDayViewProps> = ({
       <div className="grid grid-cols-3 border-b border-black/5 dark:border-white/10 bg-gray-50/70 dark:bg-ios-dark-secondary/70">
         {threeDays.map((day) => {
           const isCurrent = isToday(day);
+          const dayIso = format(day, 'yyyy-MM-dd');
+          const holidayInfo = getDayHolidayInfo(dayIso, holidays);
+
           return (
             <div
               key={day.toISOString()}
               className={`p-3 text-center border-r last:border-r-0 border-black/5 dark:border-white/5 ${
-                isCurrent ? 'bg-blue-500/10' : ''
+                isCurrent ? 'bg-blue-500/10' : holidayInfo.isVacation ? 'bg-emerald-500/10' : holidayInfo.isPublicHoliday ? 'bg-amber-500/10' : ''
               }`}
             >
               <div
@@ -69,6 +75,16 @@ export const ThreeDayView: React.FC<ThreeDayViewProps> = ({
               >
                 {format(day, 'd')}
               </div>
+              {holidayInfo.isVacation && (
+                <div className="text-[10px] font-bold text-emerald-700 dark:text-emerald-300 truncate mt-0.5">
+                  🏖️ Ferien
+                </div>
+              )}
+              {holidayInfo.isPublicHoliday && (
+                <div className="text-[10px] font-bold text-amber-700 dark:text-amber-300 truncate mt-0.5">
+                  🇩🇪 Feiertag
+                </div>
+              )}
             </div>
           );
         })}
@@ -80,16 +96,40 @@ export const ThreeDayView: React.FC<ThreeDayViewProps> = ({
           const jsDay = day.getDay();
           const dayOfWeek = jsDay === 0 ? 7 : jsDay;
           const dayIso = format(day, 'yyyy-MM-dd');
+          const holidayInfo = getDayHolidayInfo(dayIso, holidays);
 
-          const dayLessons = scheduleEntries
-            .filter(e => e.dayOfWeek === dayOfWeek)
-            .sort((a, b) => a.period - b.period);
+          const dayLessons = holidayInfo.isSchoolFree
+            ? []
+            : scheduleEntries
+                .filter(e => e.dayOfWeek === dayOfWeek)
+                .sort((a, b) => a.period - b.period);
 
           const dayEvents = events.filter(e => e.startDate.startsWith(dayIso));
           const dayExams = exams.filter(e => e.date === dayIso);
 
           return (
-            <div key={day.toISOString()} className="p-1.5 space-y-2 flex flex-col">
+            <div key={day.toISOString()} className={`p-1.5 space-y-2 flex flex-col ${holidayInfo.isVacation ? 'bg-emerald-500/5' : holidayInfo.isPublicHoliday ? 'bg-amber-500/5' : ''}`}>
+              {/* Holiday banner in column */}
+              {holidayInfo.holiday && (
+                <div
+                  className={`p-2 rounded-xl border text-xs font-bold ${
+                    holidayInfo.isVacation
+                      ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-800 dark:text-emerald-200'
+                      : holidayInfo.isPublicHoliday
+                      ? 'bg-amber-500/15 border-amber-500/30 text-amber-800 dark:text-amber-200'
+                      : 'bg-purple-500/15 border-purple-500/30 text-purple-800 dark:text-purple-200'
+                  }`}
+                >
+                  <div className="flex items-center gap-1 text-[11px]">
+                    <span>{holidayInfo.isVacation ? '🏖️' : holidayInfo.isPublicHoliday ? '🇩🇪' : '📅'}</span>
+                    <span className="truncate">{holidayInfo.label}</span>
+                  </div>
+                  <div className="text-[10px] font-medium opacity-80 mt-0.5">
+                    Schulfrei
+                  </div>
+                </div>
+              )}
+
               {/* Exams */}
               {dayExams.map((exam) => (
                 <div

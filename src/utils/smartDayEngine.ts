@@ -67,6 +67,8 @@ export function calculateSmartDayData({
   const roomMap = new Map(rooms.map((r) => [r.id, r]));
 
   const todayIso = format(currentDate, 'yyyy-MM-dd');
+  const tomorrowDate = new Date(currentDate.getTime() + 86400000);
+  const tomorrowIso = format(tomorrowDate, 'yyyy-MM-dd');
   const jsDay = currentDate.getDay();
   const todayDayOfWeek = jsDay === 0 ? 7 : jsDay;
   const isWeekend = jsDay === 0 || jsDay === 6;
@@ -131,8 +133,9 @@ export function calculateSmartDayData({
     });
   });
 
-  // 4. Homework & Tasks for today and overdue
+  // 4. Homework & Tasks: distinct sets (overdue, today, tomorrow, upcoming) – NO DUPLICATES!
   const openHomework = homework.filter((h) => h.status !== 'done');
+  
   const todayHomework = openHomework
     .filter((h) => h.dueDate === todayIso)
     .sort((a, b) => {
@@ -140,8 +143,19 @@ export function calculateSmartDayData({
       return (pMap[a.priority] || 1) - (pMap[b.priority] || 1);
     });
 
+  const tomorrowHomework = openHomework
+    .filter((h) => h.dueDate === tomorrowIso)
+    .sort((a, b) => {
+      const pMap = { high: 0, normal: 1, low: 2 };
+      return (pMap[a.priority] || 1) - (pMap[b.priority] || 1);
+    });
+
   const overdueHomework = openHomework
     .filter((h) => h.dueDate < todayIso)
+    .sort((a, b) => a.dueDate.localeCompare(b.dueDate));
+
+  const upcomingHomework = openHomework
+    .filter((h) => h.dueDate > tomorrowIso)
     .sort((a, b) => a.dueDate.localeCompare(b.dueDate));
 
   // 5. Upcoming exams within next 7 days
@@ -384,7 +398,9 @@ export function calculateSmartDayData({
     todayLessonsCount,
     remainingLessonsCount,
     todayHomework,
+    tomorrowHomework,
     overdueHomework,
+    upcomingHomework,
     upcomingExams,
     activeChanges,
     activeHoliday,

@@ -9,10 +9,12 @@ import type {
   Teacher,
   Room,
   Substitution,
+  Holiday,
 } from '../../types';
 import { getSubjectIcon, hexToRgba } from '../../utils/colorUtils';
 import { Clock, Plus } from 'lucide-react';
 import { haptics } from '../../utils/haptics';
+import { getDayHolidayInfo } from '../../data/holidays';
 
 interface WeekViewProps {
   days: Date[];
@@ -23,6 +25,7 @@ interface WeekViewProps {
   teachers: Teacher[];
   rooms: Room[];
   substitutions: Substitution[];
+  holidays?: Holiday[];
   onSelectEvent: (event: CalendarEvent) => void;
   onSelectExam: (exam: Exam) => void;
   onSelectScheduleEntry: (entry: ScheduleEntry, date: Date) => void;
@@ -38,6 +41,7 @@ export const WeekView: React.FC<WeekViewProps> = ({
   teachers,
   rooms,
   substitutions,
+  holidays = [],
   onSelectEvent,
   onSelectExam,
   onSelectScheduleEntry,
@@ -56,11 +60,14 @@ export const WeekView: React.FC<WeekViewProps> = ({
       <div className="grid grid-cols-5 border-b border-black/5 dark:border-white/10 bg-gray-50/80 dark:bg-ios-dark-secondary/80">
         {schoolWeekDays.map((day) => {
           const isCurrentDay = isToday(day);
+          const dayIso = format(day, 'yyyy-MM-dd');
+          const holidayInfo = getDayHolidayInfo(dayIso, holidays);
+
           return (
             <div
               key={day.toISOString()}
-              className={`p-2.5 sm:p-3 text-center border-r last:border-r-0 border-black/5 dark:border-white/5 transition-colors ${
-                isCurrentDay ? 'bg-blue-500/10' : ''
+              className={`p-2 sm:p-2.5 text-center border-r last:border-r-0 border-black/5 dark:border-white/5 transition-colors ${
+                isCurrentDay ? 'bg-blue-500/10' : holidayInfo.isVacation ? 'bg-emerald-500/10' : holidayInfo.isPublicHoliday ? 'bg-amber-500/10' : ''
               }`}
             >
               <div className="text-[11px] sm:text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
@@ -75,6 +82,16 @@ export const WeekView: React.FC<WeekViewProps> = ({
               >
                 {format(day, 'd')}
               </div>
+              {holidayInfo.isVacation && (
+                <div className="text-[9px] font-bold text-emerald-700 dark:text-emerald-300 truncate mt-0.5">
+                  🏖️ Ferien
+                </div>
+              )}
+              {holidayInfo.isPublicHoliday && (
+                <div className="text-[9px] font-bold text-amber-700 dark:text-amber-300 truncate mt-0.5">
+                  🇩🇪 Feiertag
+                </div>
+              )}
             </div>
           );
         })}
@@ -86,11 +103,14 @@ export const WeekView: React.FC<WeekViewProps> = ({
           const jsDay = day.getDay();
           const dayOfWeek = jsDay === 0 ? 7 : jsDay;
           const dayIso = format(day, 'yyyy-MM-dd');
+          const holidayInfo = getDayHolidayInfo(dayIso, holidays);
 
-          // School lessons sorted by period
-          const dayLessons = scheduleEntries
-            .filter(e => e.dayOfWeek === dayOfWeek)
-            .sort((a, b) => a.period - b.period);
+          // School lessons sorted by period (only if not school free)
+          const dayLessons = holidayInfo.isSchoolFree
+            ? []
+            : scheduleEntries
+                .filter(e => e.dayOfWeek === dayOfWeek)
+                .sort((a, b) => a.period - b.period);
 
           // Events on this day
           const dayEvents = events.filter(e => e.startDate.startsWith(dayIso));
@@ -101,8 +121,31 @@ export const WeekView: React.FC<WeekViewProps> = ({
           return (
             <div
               key={day.toISOString()}
-              className="p-1.5 sm:p-2 space-y-1.5 flex flex-col justify-start relative group/col min-h-full"
+              className={`p-1.5 sm:p-2 space-y-1.5 flex flex-col justify-start relative group/col min-h-full ${
+                holidayInfo.isVacation ? 'bg-emerald-500/5' : holidayInfo.isPublicHoliday ? 'bg-amber-500/5' : ''
+              }`}
             >
+              {/* Holiday Banner in Column */}
+              {holidayInfo.holiday && (
+                <div
+                  className={`p-1.5 rounded-lg border text-xs font-bold ${
+                    holidayInfo.isVacation
+                      ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-800 dark:text-emerald-200'
+                      : holidayInfo.isPublicHoliday
+                      ? 'bg-amber-500/15 border-amber-500/30 text-amber-800 dark:text-amber-200'
+                      : 'bg-purple-500/15 border-purple-500/30 text-purple-800 dark:text-purple-200'
+                  }`}
+                >
+                  <div className="flex items-center gap-1 text-[10px]">
+                    <span>{holidayInfo.isVacation ? '🏖️' : holidayInfo.isPublicHoliday ? '🇩🇪' : '📅'}</span>
+                    <span className="truncate">{holidayInfo.label}</span>
+                  </div>
+                  <div className="text-[9px] font-medium opacity-80 mt-0.5">
+                    Schulfrei
+                  </div>
+                </div>
+              )}
+
               {/* Exams banner */}
               {dayExams.map((exam) => (
                 <div

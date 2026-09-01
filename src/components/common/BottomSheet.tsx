@@ -40,19 +40,11 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
     }
   };
 
-  // When keyboard is open, restrict max height to visible viewport and lift bottom
-  const calculatedMaxHeight = isKeyboardOpen
-    ? `${Math.max(280, Math.floor(viewportHeight * 0.9))}px`
-    : undefined;
-
   return (
     <AnimatePresence>
       {isOpen && (
         <div
-          style={{
-            bottom: isKeyboardOpen && keyboardHeight > 0 ? `${keyboardHeight}px` : 0,
-          }}
-          className="fixed inset-0 z-50 flex items-end sm:items-center sm:justify-center transition-[bottom] duration-200 ease-out"
+          className="fixed inset-0 z-50 flex items-end sm:items-center sm:justify-center overflow-hidden"
         >
           {/* Backdrop */}
           <motion.div
@@ -67,7 +59,7 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
             className="fixed inset-0 bg-black/60 backdrop-blur-sm"
           />
 
-          {/* Sheet / Modal Container with Drag-to-Dismiss and Keyboard Lift */}
+          {/* Sheet / Modal Container with Drag-to-Dismiss */}
           <motion.div
             initial={{ y: '100%' }}
             animate={{ y: 0 }}
@@ -78,13 +70,10 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
             dragConstraints={{ top: 0, bottom: 0 }}
             dragElastic={{ top: 0.05, bottom: 0.7 }}
             onDragEnd={handleDragEnd}
-            style={{
-              maxHeight: calculatedMaxHeight || undefined,
-            }}
-            className={`relative w-full sm:max-w-lg ${maxHeight} flex flex-col bg-white dark:bg-ios-dark-card rounded-t-[28px] sm:rounded-[24px] shadow-2xl overflow-hidden z-10 border border-black/5 dark:border-white/10`}
+            className={`relative w-full sm:max-w-lg ${maxHeight} max-h-[88dvh] sm:max-h-[85vh] flex flex-col bg-white dark:bg-ios-dark-card rounded-t-[28px] sm:rounded-[24px] shadow-2xl overflow-hidden z-10 border border-black/5 dark:border-white/10`}
           >
             {/* iOS Drag Handle on Mobile (Grab zone) */}
-            <div className="pt-3 pb-1 flex justify-center cursor-grab active:cursor-grabbing touch-none select-none">
+            <div className="pt-3 pb-1 flex justify-center cursor-grab active:cursor-grabbing touch-none select-none shrink-0">
               <div className="w-12 h-1.5 bg-gray-300 dark:bg-gray-600 rounded-full hover:bg-gray-400 transition-colors" />
             </div>
 
@@ -107,9 +96,9 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
               </div>
             )}
 
-            {/* Content Body */}
+            {/* Content Body with generous bottom safe area clearance */}
             <div
-              className="flex-1 overflow-y-auto overscroll-contain p-4 sm:p-5 pb-[max(1.25rem,env(safe-area-inset-bottom,0px))] pl-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))]"
+              className="flex-1 overflow-y-auto overscroll-contain p-4 sm:p-5 pb-[max(2.5rem,calc(env(safe-area-inset-bottom,0px)+1.5rem))] pl-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))]"
               style={{ WebkitOverflowScrolling: 'touch' }}
             >
               {children}

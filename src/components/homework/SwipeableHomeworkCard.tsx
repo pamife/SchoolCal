@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { motion, useMotionValue, useTransform, PanInfo } from 'framer-motion';
 import { CheckCircle2, Circle, Clock, Edit2, Trash2, Check, Sparkles } from 'lucide-react';
 import type { Homework, Subject } from '../../types';
-import { getRelativeDateLabel } from '../../utils/dateUtils';
+import { getHomeworkDueDateStatus } from '../../utils/dateUtils';
 import { Badge } from '../common/Badge';
 import { haptics } from '../../utils/haptics';
 import { useLongPress } from '../../hooks/useLongPress';
@@ -25,8 +25,8 @@ export const SwipeableHomeworkCard: React.FC<SwipeableHomeworkCardProps> = ({
   onLongPressOpen,
 }) => {
   const isDone = homework.status === 'done';
-  const relativeDate = getRelativeDateLabel(homework.dueDate);
-  const isOverdue = relativeDate.includes('überfällig') && !isDone;
+  const dueStatus = getHomeworkDueDateStatus(homework.dueDate, isDone);
+  const isOverdue = dueStatus.category === 'overdue' && !isDone;
 
   const [dragOffset, setDragOffset] = useState(0);
   const x = useMotionValue(0);
@@ -180,16 +180,19 @@ export const SwipeableHomeworkCard: React.FC<SwipeableHomeworkCardProps> = ({
 
           {/* Badges footer */}
           <div className="flex flex-wrap items-center gap-1.5 mt-2">
-            {/* Due date badge */}
-            <span
-              className={`text-xs font-semibold flex items-center gap-1 ${
-                isOverdue
-                  ? 'text-red-600 dark:text-red-400 font-bold'
-                  : 'text-gray-500 dark:text-gray-400'
-              }`}
+            {/* Urgency status badge */}
+            <Badge
+              variant={dueStatus.badgeVariant}
+              size="sm"
+              className="font-bold flex items-center gap-1"
             >
               <Clock className="w-3 h-3" />
-              {relativeDate}
+              <span>{dueStatus.badgeLabel}</span>
+            </Badge>
+
+            {/* Exact deadline subLabel */}
+            <span className="text-[11px] text-gray-500 dark:text-gray-400 font-medium">
+              ({dueStatus.subLabel})
             </span>
 
             {/* Priority */}

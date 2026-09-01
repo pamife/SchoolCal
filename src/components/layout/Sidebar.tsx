@@ -139,10 +139,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <button
           type="button"
           onClick={onOpenAiAssistant}
-          className="w-full p-3 rounded-2xl bg-gradient-to-r from-purple-500/15 via-indigo-500/10 to-blue-500/10 border border-purple-500/20 hover:border-purple-500/40 text-left transition-all group mb-4"
+          className="w-full p-2.5 rounded-2xl bg-gray-100/80 dark:bg-ios-dark-secondary/60 hover:bg-gray-200/80 dark:hover:bg-ios-dark-tertiary border border-black/5 dark:border-white/5 text-left transition-all group mb-4"
         >
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-purple-600 to-indigo-600 text-white flex items-center justify-center shadow-xs shrink-0 group-hover:scale-105 transition-transform">
+            <div className="w-7 h-7 rounded-lg bg-purple-500/15 text-purple-600 dark:text-purple-400 flex items-center justify-center shadow-xs shrink-0 group-hover:scale-105 transition-transform">
               <Bot className="w-4 h-4" />
             </div>
             <div className="min-w-0 flex-1">
@@ -150,8 +150,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <span className="text-xs font-bold text-gray-900 dark:text-white">
                   KI-Assistent
                 </span>
-                <span className="text-[8px] font-extrabold uppercase px-1.5 py-0.2 rounded-full bg-purple-600 text-white">
-                  Pro
+                <span className="text-[8px] font-extrabold uppercase px-1.5 py-0.2 rounded-full bg-purple-500/20 text-purple-700 dark:text-purple-300 border border-purple-500/30">
+                  BETA
                 </span>
               </div>
               <p className="text-[10px] text-gray-500 dark:text-gray-400 truncate">

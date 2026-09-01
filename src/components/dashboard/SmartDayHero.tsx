@@ -66,6 +66,17 @@ export const SmartDayHero: React.FC<SmartDayHeroProps> = ({
             </div>
           )}
 
+          {smartDay.overdueHomework.length > 0 && (
+            <button
+              type="button"
+              onClick={onOpenTasks}
+              className="px-3 py-1.5 rounded-full bg-red-500/15 border border-red-500/20 text-xs font-bold text-red-700 dark:text-red-300 flex items-center gap-1.5 hover:bg-red-500/25 transition-colors"
+            >
+              <CheckCircle2 className="w-3.5 h-3.5 text-red-500" />
+              <span>{smartDay.overdueHomework.length} überfällig</span>
+            </button>
+          )}
+
           {smartDay.todayHomework.length > 0 && (
             <button
               type="button"
@@ -74,6 +85,17 @@ export const SmartDayHero: React.FC<SmartDayHeroProps> = ({
             >
               <CheckCircle2 className="w-3.5 h-3.5 text-amber-500" />
               <span>{smartDay.todayHomework.length} heute fällig</span>
+            </button>
+          )}
+
+          {smartDay.tomorrowHomework.length > 0 && (
+            <button
+              type="button"
+              onClick={onOpenTasks}
+              className="px-3 py-1.5 rounded-full bg-blue-500/15 border border-blue-500/20 text-xs font-bold text-blue-700 dark:text-blue-300 flex items-center gap-1.5 hover:bg-blue-500/25 transition-colors"
+            >
+              <BookOpen className="w-3.5 h-3.5 text-ios-blue" />
+              <span>{smartDay.tomorrowHomework.length} für morgen</span>
             </button>
           )}
         </div>

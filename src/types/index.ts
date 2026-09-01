@@ -288,7 +288,9 @@ export interface SmartDayData {
   todayLessonsCount: number;
   remainingLessonsCount: number;
   todayHomework: Homework[];
+  tomorrowHomework: Homework[];
   overdueHomework: Homework[];
+  upcomingHomework: Homework[];
   upcomingExams: Array<{
     exam: Exam;
     subject?: Subject;
