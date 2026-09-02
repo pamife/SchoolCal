@@ -4,30 +4,53 @@ import {
   MapPin,
   User as UserIcon,
   ChevronRight,
-  BookOpen,
   CheckCircle2,
+  Circle,
+  Plus,
+  Sparkles,
+  BookOpen,
 } from 'lucide-react';
-import type { SmartDayData } from '../../types';
-import { formatGermanDate, formatGermanWeekday } from '../../utils/dateUtils';
+import type { SmartDayData, Subject } from '../../types';
+import { formatGermanDate, formatGermanWeekday, getHomeworkDueDateStatus } from '../../utils/dateUtils';
+import { Badge } from '../common/Badge';
+import { haptics } from '../../utils/haptics';
 
 interface SmartDayHeroProps {
   smartDay: SmartDayData;
+  subjects?: Subject[];
   onOpenSchedule: () => void;
   onOpenTasks?: () => void;
   onOpenAiAssistant?: () => void;
+  onToggleComplete?: (id: string) => void;
+  onAddHomework?: () => void;
 }
 
 export const SmartDayHero: React.FC<SmartDayHeroProps> = ({
   smartDay,
+  subjects = [],
   onOpenSchedule,
   onOpenTasks,
   onOpenAiAssistant,
+  onToggleComplete,
+  onAddHomework,
 }) => {
   const today = new Date();
   const activeLesson = smartDay.currentLesson || smartDay.nextLesson;
   const isCurrent = Boolean(smartDay.currentLesson);
   const substitution = activeLesson?.substitution;
   const isCancelled = substitution?.type === 'cancelled';
+
+  const subjectMap = new Map(subjects.map((s) => [s.id, s]));
+
+  // Prioritize pending tasks: overdue -> today -> tomorrow -> upcoming
+  const pendingTasks = [
+    ...smartDay.overdueHomework,
+    ...smartDay.todayHomework,
+    ...smartDay.tomorrowHomework,
+    ...smartDay.upcomingHomework,
+  ].filter(
+    (task, index, self) => task.status !== 'done' && self.findIndex((t) => t.id === task.id) === index
+  );
 
   return (
     <div className="space-y-4">
@@ -207,26 +230,149 @@ export const SmartDayHero: React.FC<SmartDayHeroProps> = ({
             </div>
           </div>
         </div>
-      ) : (
-        /* Empty State if no lesson right now */
-        <div className="ios-card p-5 text-center space-y-2 bg-gradient-to-r from-gray-500/5 to-transparent border border-black/5 dark:border-white/10">
-          <div className="w-10 h-10 rounded-2xl bg-ios-blue/10 text-ios-blue flex items-center justify-center mx-auto">
-            <BookOpen className="w-5 h-5" />
+      ) : pendingTasks.length > 0 ? (
+        /* 📚 After School / Free Time Hero Card with Pending Homework */
+        <div className="ios-card p-4 sm:p-5 relative overflow-hidden transition-all bg-gradient-to-br from-blue-500/10 via-indigo-500/5 to-transparent border border-blue-500/20">
+          <div className="flex items-center justify-between gap-3 mb-3 pb-2.5 border-b border-black/5 dark:border-white/10">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-8 h-8 rounded-xl bg-ios-blue text-white flex items-center justify-center shadow-sm shrink-0">
+                <CheckCircle2 className="w-4 h-4" />
+              </div>
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h4 className="text-sm sm:text-base font-bold text-gray-900 dark:text-white leading-tight">
+                    Anstehende Aufgaben
+                  </h4>
+                  <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-ios-blue text-white shadow-xs">
+                    {pendingTasks.length} offen
+                  </span>
+                </div>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate">
+                  {smartDay.timeContext === 'after_school'
+                    ? 'Schulschluss für heute! Deine nächsten Aufgaben:'
+                    : smartDay.timeContext === 'weekend'
+                    ? 'Wochenende! Bereite dich entspannt vor:'
+                    : 'Deine anstehenden Aufgaben:'}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-1.5 shrink-0">
+              {onAddHomework && (
+                <button
+                  type="button"
+                  onClick={onAddHomework}
+                  className="p-1.5 rounded-xl bg-white dark:bg-ios-dark-secondary text-gray-700 dark:text-gray-300 hover:text-ios-blue border border-black/5 dark:border-white/10 transition-all active:scale-95"
+                  title="Aufgabe hinzufügen"
+                >
+                  <Plus className="w-4 h-4" />
+                </button>
+              )}
+              {onOpenTasks && (
+                <button
+                  type="button"
+                  onClick={onOpenTasks}
+                  className="px-2.5 py-1.5 rounded-xl bg-white dark:bg-ios-dark-secondary hover:bg-gray-100 dark:hover:bg-ios-dark-tertiary text-gray-700 dark:text-gray-300 text-xs font-bold flex items-center gap-1 border border-black/5 dark:border-white/10 transition-colors"
+                >
+                  <span>Alle</span>
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
           </div>
-          <h4 className="text-sm font-bold text-gray-800 dark:text-gray-200">
-            {smartDay.timeContext === 'after_school'
-              ? 'Alle Unterrichtsstunden für heute abgeschlossen'
-              : smartDay.timeContext === 'weekend'
-              ? 'Schönes Wochenende!'
-              : smartDay.timeContext === 'holiday'
-              ? 'Schöne Ferienzeit!'
-              : 'Kein Unterricht für den aktuellen Zeitpunkt eingetragen'}
-          </h4>
-          <p className="text-xs text-gray-500 dark:text-gray-400 max-w-md mx-auto">
-            {smartDay.todayHomework.length > 0
-              ? `Du hast noch ${smartDay.todayHomework.length} Aufgabe(n) für heute offen.`
-              : 'Nutze den Kalender oder trage neue Stunden und Aufgaben ein.'}
-          </p>
+
+          {/* List of pending tasks */}
+          <div className="space-y-2">
+            {pendingTasks.slice(0, 3).map((task) => {
+              const subject = subjectMap.get(task.subjectId);
+              const dueStatus = getHomeworkDueDateStatus(task.dueDate, task.status === 'done');
+
+              return (
+                <div
+                  key={task.id}
+                  className="flex items-center justify-between gap-3 p-2.5 rounded-xl bg-white/80 dark:bg-ios-dark-card/80 border border-black/5 dark:border-white/5 hover:border-ios-blue/30 transition-all"
+                >
+                  <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        haptics.success();
+                        if (onToggleComplete) onToggleComplete(task.id);
+                      }}
+                      className="text-gray-400 hover:text-ios-blue dark:hover:text-ios-blue transition-colors shrink-0 p-1 -m-1 active:scale-90"
+                      title="Als erledigt markieren"
+                    >
+                      <Circle className="w-4 h-4" />
+                    </button>
+
+                    <span className="text-xs sm:text-sm font-semibold text-gray-900 dark:text-white truncate">
+                      {task.title}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {subject && (
+                      <span
+                        className="text-[10px] font-bold px-1.5 py-0.5 rounded leading-none text-white shadow-xs"
+                        style={{ backgroundColor: subject.color }}
+                      >
+                        {subject.shortName}
+                      </span>
+                    )}
+                    <Badge variant={dueStatus.badgeVariant} size="sm" className="text-[10px] py-0 px-1.5 font-bold">
+                      {dueStatus.badgeLabel}
+                    </Badge>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {pendingTasks.length > 3 && onOpenTasks && (
+            <div className="mt-2.5 text-center">
+              <button
+                type="button"
+                onClick={onOpenTasks}
+                className="text-xs font-semibold text-ios-blue hover:underline inline-flex items-center gap-1"
+              >
+                <span>+ Noch {pendingTasks.length - 3} weitere Aufgabe(n) anzeigen</span>
+                <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
+        </div>
+      ) : (
+        /* 🎉 Celebratory Card if no lessons and no pending homework */
+        <div className="ios-card p-5 text-center space-y-2.5 bg-gradient-to-br from-emerald-500/10 via-teal-500/5 to-transparent border border-emerald-500/20">
+          <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-emerald-400 to-green-600 text-white flex items-center justify-center mx-auto shadow-md shadow-emerald-500/20">
+            <Sparkles className="w-5 h-5" />
+          </div>
+          <div>
+            <h4 className="text-base font-bold text-gray-900 dark:text-white">
+              {smartDay.timeContext === 'after_school'
+                ? 'Schulschluss – Alles erledigt! 🎉'
+                : smartDay.timeContext === 'weekend'
+                ? 'Schönes Wochenende – Keine offenen Aufgaben! ☀️'
+                : smartDay.timeContext === 'holiday'
+                ? 'Schöne Ferienzeit – Keine Aufgaben! 🏖️'
+                : 'Alles erledigt! Keine offenen Aufgaben.'}
+            </h4>
+            <p className="text-xs text-gray-500 dark:text-gray-400 max-w-md mx-auto mt-0.5">
+              Du hast alle anstehenden Hausaufgaben abgeschlossen. Ruh dich aus und genieß deine freie Zeit!
+            </p>
+          </div>
+          {onAddHomework && (
+            <div className="pt-1">
+              <button
+                type="button"
+                onClick={onAddHomework}
+                className="px-3.5 py-1.5 rounded-xl bg-white dark:bg-ios-dark-secondary hover:bg-gray-100 dark:hover:bg-ios-dark-tertiary text-xs font-semibold text-gray-700 dark:text-gray-300 border border-black/5 dark:border-white/10 inline-flex items-center gap-1.5 transition-colors"
+              >
+                <Plus className="w-3.5 h-3.5 text-emerald-500" />
+                <span>Neue Aufgabe eintragen</span>
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>

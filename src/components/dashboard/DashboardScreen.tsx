@@ -127,9 +127,12 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
       <section aria-label="Smart Day Übersicht">
         <SmartDayHero
           smartDay={smartDay}
+          subjects={subjects}
           onOpenSchedule={() => onNavigateTab('school')}
           onOpenTasks={() => onNavigateTab('tasks')}
           onOpenAiAssistant={() => onOpenQuickAction('ai_chat')}
+          onToggleComplete={(id) => toggleComplete(user?.uid || '', id)}
+          onAddHomework={() => onOpenQuickAction('homework')}
         />
       </section>
 
