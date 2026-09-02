@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { motion, AnimatePresence, PanInfo } from 'framer-motion';
+import { motion, AnimatePresence, PanInfo, useDragControls } from 'framer-motion';
 import { X } from 'lucide-react';
 import { useKeyboardViewport } from '../../hooks/useKeyboardViewport';
 import { haptics } from '../../utils/haptics';
@@ -20,6 +20,7 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
   maxHeight = 'max-h-[90dvh]',
 }) => {
   const { isKeyboardOpen, keyboardHeight, viewportHeight } = useKeyboardViewport();
+  const dragControls = useDragControls();
 
   useEffect(() => {
     if (isOpen) {
@@ -33,8 +34,8 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
   }, [isOpen]);
 
   const handleDragEnd = (_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
-    // If dragged down past 80px or with downward velocity > 250, dismiss modal
-    if (info.offset.y > 80 || info.velocity.y > 250) {
+    // Only dismiss if deliberately dragged down past 90px or with strong downward flick
+    if (info.offset.y > 90 || info.velocity.y > 300) {
       haptics.heavy();
       onClose();
     }
@@ -62,13 +63,15 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
             className="fixed inset-0 bg-black/60 backdrop-blur-sm"
           />
 
-          {/* Sheet / Modal Container with Drag-to-Dismiss */}
+          {/* Sheet / Modal Container with Drag-to-Dismiss restricted strictly to top handle */}
           <motion.div
             initial={{ y: '100%' }}
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
             transition={{ type: 'spring', damping: 28, stiffness: 300 }}
             drag="y"
+            dragControls={dragControls}
+            dragListener={false}
             dragDirectionLock
             dragConstraints={{ top: 0, bottom: 0 }}
             dragElastic={{ top: 0.05, bottom: 0.7 }}
@@ -80,8 +83,11 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
             }}
             className={`relative w-full sm:max-w-lg ${maxHeight} flex flex-col bg-white dark:bg-ios-dark-card rounded-t-[28px] sm:rounded-[24px] shadow-2xl overflow-hidden overflow-x-hidden z-10 border border-black/5 dark:border-white/10`}
           >
-            {/* iOS Drag Handle on Mobile (Grab zone) */}
-            <div className="pt-3 pb-1 flex justify-center cursor-grab active:cursor-grabbing touch-none select-none shrink-0">
+            {/* iOS Drag Handle on Mobile (Exclusive Grab zone) */}
+            <div
+              onPointerDown={(e) => dragControls.start(e)}
+              className="pt-3 pb-2 flex justify-center cursor-grab active:cursor-grabbing touch-none select-none shrink-0"
+            >
               <div className="w-12 h-1.5 bg-gray-300 dark:bg-gray-600 rounded-full hover:bg-gray-400 transition-colors" />
             </div>
 
