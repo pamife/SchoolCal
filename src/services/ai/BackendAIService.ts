@@ -97,15 +97,30 @@ export class BackendAIService implements IAIService {
 
       // Handle specific structured server error codes
       if (data.errorType === 'INVALID_API_KEY') {
+        const directGemini = await callDirectGeminiAPI(prompt, context, conversationHistory);
+        if (directGemini && directGemini.text) {
+          return directGemini;
+        }
+        const local = this.generateContextualLocalResponse(prompt, context);
         return {
-          text: '⚠️ **KI-Authentifizierung fehlgeschlagen:** Der in Netlify hinterlegte Gemini API-Key ist ungültig oder abgelaufen. Bitte prüfe die Netlify Environment Variables.',
+          ...local,
+          text: `${local.text}\n\n*(Hinweis: Cloud-Key ungültig – Antwort wurde direkt aus deinen Stunden- und Aufgabendaten generiert)*`,
           errorType: 'INVALID_API_KEY',
         };
       }
 
       if (data.errorType === 'RATE_LIMITED') {
+        // 1. Try direct Gemini API if local key is stored in browser
+        const directGemini = await callDirectGeminiAPI(prompt, context, conversationHistory);
+        if (directGemini && directGemini.text) {
+          return directGemini;
+        }
+
+        // 2. Seamless local intelligent engine fallback - never leave the student with an error wall!
+        const local = this.generateContextualLocalResponse(prompt, context);
         return {
-          text: '⏳ **KI-Dienst ausgelastet:** Das Gemini API-Limit wurde erreicht. Bitte versuche es in wenigen Augenblicken erneut.',
+          ...local,
+          text: `${local.text}\n\n*(Hinweis: Cloud-KI temporär ausgelastet – Antwort wurde direkt aus deinen Stunden- und Aufgabendaten generiert)*`,
           errorType: 'RATE_LIMITED',
         };
       }

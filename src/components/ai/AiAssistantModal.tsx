@@ -96,7 +96,7 @@ export const AiAssistantModal: React.FC<AiAssistantModalProps> = ({
       } else if (health.status === 'rate_limited') {
         setAiStatus({
           status: 'rate_limited',
-          label: 'Ausgelastet',
+          label: 'Lokal aktiv',
         });
       } else {
         setAiStatus({
@@ -244,15 +244,17 @@ export const AiAssistantModal: React.FC<AiAssistantModalProps> = ({
                 className={`text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 transition-all ${
                   aiStatus.status === 'active'
                     ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/25'
+                    : aiStatus.status === 'rate_limited'
+                    ? 'bg-blue-500/15 text-blue-600 dark:text-blue-400 hover:bg-blue-500/25'
                     : aiStatus.status === 'missing_key'
                     ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 hover:bg-amber-500/25'
-                    : aiStatus.status === 'rate_limited'
-                    ? 'bg-orange-500/15 text-orange-600 dark:text-orange-400 hover:bg-orange-500/25'
                     : 'bg-red-500/15 text-red-600 dark:text-red-400 hover:bg-red-500/25'
                 }`}
                 title={
                   aiStatus.status === 'active'
-                    ? `KI ist aktiv (${aiStatus.model || 'Gemini 2.5 Flash'})`
+                    ? `KI ist aktiv (${aiStatus.model || 'Gemini 2.0 Flash'})`
+                    : aiStatus.status === 'rate_limited'
+                    ? 'Cloud-KI ausgelastet – Schul-Assistent antwortet über deine lokalen Daten'
                     : 'KI-Status prüfen oder optionalen Key konfigurieren'
                 }
               >
@@ -260,10 +262,10 @@ export const AiAssistantModal: React.FC<AiAssistantModalProps> = ({
                   className={`w-1.5 h-1.5 rounded-full ${
                     aiStatus.status === 'active'
                       ? 'bg-emerald-500 animate-pulse'
+                      : aiStatus.status === 'rate_limited'
+                      ? 'bg-blue-500'
                       : aiStatus.status === 'missing_key'
                       ? 'bg-amber-500'
-                      : aiStatus.status === 'rate_limited'
-                      ? 'bg-orange-500'
                       : 'bg-red-500'
                   }`}
                 />

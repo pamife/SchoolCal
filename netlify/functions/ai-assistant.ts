@@ -22,14 +22,15 @@ function checkRateLimit(clientIp: string): boolean {
   return true;
 }
 
-// Fallback model list if dynamic discovery is unavailable
+// Fallback model list prioritizing fast, high-throughput models
 const FALLBACK_MODELS = [
-  'gemini-1.5-flash',
   'gemini-2.0-flash',
+  'gemini-2.0-flash-lite',
+  'gemini-1.5-flash-8b',
+  'gemini-1.5-flash',
+  'gemini-2.5-flash',
   'gemini-1.5-flash-latest',
   'gemini-1.5-pro',
-  'gemini-2.5-flash',
-  'gemini-3.6-flash',
   'gemini-2.0-flash-exp',
 ];
 
@@ -45,12 +46,19 @@ async function getOrderedGeminiModels(apiKey: string): Promise<string[]> {
           .map((m: any) => m.name.replace(/^models\//, ''));
 
         if (supported.length > 0) {
-          // Sort: flash models first, then pro, then others
+          // Sort prioritizing 2.0-flash, flash-lite, 1.5-flash-8b, then other flash models
           return supported.sort((a: string, b: string) => {
-            const aFlash = a.includes('flash') ? 1 : 0;
-            const bFlash = b.includes('flash') ? 1 : 0;
-            if (aFlash !== bFlash) return bFlash - aFlash;
-            return a.localeCompare(b);
+            const getScore = (m: string) => {
+              if (m.includes('2.0-flash-lite')) return 6;
+              if (m.includes('2.0-flash')) return 5;
+              if (m.includes('1.5-flash-8b')) return 4;
+              if (m.includes('1.5-flash')) return 3;
+              if (m.includes('2.5-flash')) return 2;
+              if (m.includes('flash')) return 1.5;
+              if (m.includes('pro')) return 1;
+              return 0;
+            };
+            return getScore(b) - getScore(a);
           });
         }
       }
@@ -113,6 +121,56 @@ export const handler: Handler = async (event: HandlerEvent, _context: HandlerCon
       };
     }
 
+    try {
+      // Lightweight models query validates API key without burning generateContent quota
+      const listRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
+      if (listRes.ok) {
+        return {
+          statusCode: 200,
+          headers: CORS_HEADERS,
+          body: JSON.stringify({
+            ok: true,
+            status: 'active',
+            configured: true,
+            provider: 'Google Gemini',
+            model: 'gemini-2.0-flash',
+            message: 'Gemini KI ist betriebsbereit und verbunden.',
+          }),
+        };
+      }
+
+      const errText = await listRes.text().catch(() => '');
+      if (listRes.status === 400 || listRes.status === 403 || errText.includes('API_KEY_INVALID') || errText.includes('API key not valid')) {
+        return {
+          statusCode: 200,
+          headers: CORS_HEADERS,
+          body: JSON.stringify({
+            ok: false,
+            status: 'invalid_key',
+            configured: true,
+            provider: 'Google Gemini',
+            message: 'Der hinterlegte Gemini API-Key ist ungültig oder abgelaufen.',
+          }),
+        };
+      }
+
+      if (listRes.status === 429) {
+        return {
+          statusCode: 200,
+          headers: CORS_HEADERS,
+          body: JSON.stringify({
+            ok: false,
+            status: 'rate_limited',
+            configured: true,
+            provider: 'Google Gemini',
+            message: 'Gemini API Rate-Limit erreicht. Bitte später erneut versuchen.',
+          }),
+        };
+      }
+    } catch {
+      // Network failure
+    }
+
     const candidateModels = await getOrderedGeminiModels(apiKey);
     let lastHealthStatus = 'unreachable';
     let lastHealthMsg = 'Verbindung zur Gemini API fehlgeschlagen.';
@@ -160,17 +218,9 @@ export const handler: Handler = async (event: HandlerEvent, _context: HandlerCon
         }
 
         if (res.status === 429) {
-          return {
-            statusCode: 200,
-            headers: CORS_HEADERS,
-            body: JSON.stringify({
-              ok: false,
-              status: 'rate_limited',
-              configured: true,
-              provider: 'Google Gemini',
-              message: 'Gemini API Rate-Limit erreicht. Bitte später erneut versuchen.',
-            }),
-          };
+          lastHealthStatus = 'rate_limited';
+          lastHealthMsg = 'Gemini API Rate-Limit erreicht. Bitte später erneut versuchen.';
+          continue; // Try other models instead of immediately returning!
         }
 
         lastHealthMsg = `Modell ${model} antwortete mit Status ${res.status}.`;
@@ -396,7 +446,7 @@ WICHTIGE REGELN:
           if (geminiRes.status === 429) {
             lastErrorType = 'RATE_LIMITED';
             lastErrorMessage = 'Gemini API Rate-Limit erreicht. Bitte versuche es gleich erneut.';
-            break;
+            continue; // Continue to try the next model!
           }
 
           if (geminiRes.status === 404) {
