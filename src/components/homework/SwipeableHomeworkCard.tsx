@@ -47,8 +47,8 @@ export const SwipeableHomeworkCard: React.FC<SwipeableHomeworkCardProps> = ({
       }
     },
     onClick: () => {
-      // Normal click opens edit if not dragging
-      if (Math.abs(x.get()) < 5) {
+      // Normal click opens edit ONLY if completely stationary (no drag or swipe)
+      if (Math.abs(x.get()) < 3 && Math.abs(dragOffset) < 3) {
         onEdit(homework);
       }
     },

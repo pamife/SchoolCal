@@ -23,7 +23,7 @@ export interface LongPressHandlers {
 
 export function useLongPress({
   delay = 450,
-  moveTolerance = 10,
+  moveTolerance = 8,
   triggerHaptic = true,
   onLongPress,
   onClick,
@@ -31,12 +31,14 @@ export function useLongPress({
 }: UseLongPressOptions): LongPressHandlers {
   const timerRef = useRef<number | null>(null);
   const isLongPressTriggered = useRef(false);
+  const hasMoved = useRef(false);
   const startPos = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
 
   const start = useCallback(
     (e: React.TouchEvent | React.MouseEvent, clientX: number, clientY: number) => {
       if (disabled) return;
       isLongPressTriggered.current = false;
+      hasMoved.current = false;
       startPos.current = { x: clientX, y: clientY };
 
       if (timerRef.current) {
@@ -44,6 +46,7 @@ export function useLongPress({
       }
 
       timerRef.current = window.setTimeout(() => {
+        if (hasMoved.current) return;
         isLongPressTriggered.current = true;
         if (triggerHaptic) {
           haptics.medium();
@@ -56,33 +59,45 @@ export function useLongPress({
 
   const move = useCallback(
     (clientX: number, clientY: number) => {
-      if (!timerRef.current) return;
       const dx = Math.abs(clientX - startPos.current.x);
       const dy = Math.abs(clientY - startPos.current.y);
 
       if (dx > moveTolerance || dy > moveTolerance) {
-        clearTimeout(timerRef.current);
-        timerRef.current = null;
+        hasMoved.current = true;
+        if (timerRef.current) {
+          clearTimeout(timerRef.current);
+          timerRef.current = null;
+        }
       }
     },
     [moveTolerance]
   );
 
   const end = useCallback(
-    (e: React.TouchEvent | React.MouseEvent) => {
+    (e: React.TouchEvent | React.MouseEvent, clientX?: number, clientY?: number) => {
       if (timerRef.current) {
         clearTimeout(timerRef.current);
         timerRef.current = null;
       }
 
-      if (!isLongPressTriggered.current && onClick && !disabled) {
+      if (clientX !== undefined && clientY !== undefined) {
+        const dx = Math.abs(clientX - startPos.current.x);
+        const dy = Math.abs(clientY - startPos.current.y);
+        if (dx > moveTolerance || dy > moveTolerance) {
+          hasMoved.current = true;
+        }
+      }
+
+      // Only trigger onClick if the user did NOT scroll/move and did NOT trigger long press
+      if (!isLongPressTriggered.current && !hasMoved.current && onClick && !disabled) {
         onClick(e);
       }
     },
-    [disabled, onClick]
+    [disabled, onClick, moveTolerance]
   );
 
   const cancel = useCallback(() => {
+    hasMoved.current = true;
     if (timerRef.current) {
       clearTimeout(timerRef.current);
       timerRef.current = null;
@@ -100,12 +115,15 @@ export function useLongPress({
         move(e.touches[0].clientX, e.touches[0].clientY);
       }
     },
-    onTouchEnd: (e) => end(e),
+    onTouchEnd: (e) => {
+      const touch = e.changedTouches?.[0];
+      end(e, touch?.clientX, touch?.clientY);
+    },
     onTouchCancel: cancel,
 
     onMouseDown: (e) => start(e, e.clientX, e.clientY),
     onMouseMove: (e) => move(e.clientX, e.clientY),
-    onMouseUp: (e) => end(e),
+    onMouseUp: (e) => end(e, e.clientX, e.clientY),
     onMouseLeave: cancel,
   };
 }
