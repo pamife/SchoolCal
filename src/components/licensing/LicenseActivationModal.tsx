@@ -129,7 +129,7 @@ export const LicenseActivationModal: React.FC<LicenseActivationModalProps> = ({
           />
         </div>
 
-        <div className="pt-2 flex gap-2">
+        <div className="pt-3 pb-8 sm:pb-4 flex gap-2">
           <Button
             type="button"
             variant="secondary"

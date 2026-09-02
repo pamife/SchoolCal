@@ -74,6 +74,10 @@
     box-sizing: border-box;
   }
 
+  input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):not([type="hidden"]), select, textarea {
+    min-height: 44px;
+  }
+
   input, textarea, [contenteditable="true"] {
     -webkit-user-select: text;
     user-select: text;
@@ -127,7 +131,12 @@
     min-height: 100dvh;
   }
 
-  .overflow-y-auto,
+  .overflow-y-auto {
+    overflow-x: hidden !important;
+    touch-action: pan-y;
+    -webkit-overflow-scrolling: touch;
+  }
+
   .overflow-x-auto,
   .overflow-auto {
     -webkit-overflow-scrolling: touch;

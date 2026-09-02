@@ -290,7 +290,7 @@ export const PeriodTimesModal: React.FC<PeriodTimesModalProps> = ({
         </div>
 
         {/* Save button */}
-        <div className="pt-2 flex justify-end gap-2">
+        <div className="pt-3 pb-8 sm:pb-4 flex justify-end gap-2">
           <Button type="button" variant="secondary" size="md" onClick={onClose}>
             Abbrechen
           </Button>

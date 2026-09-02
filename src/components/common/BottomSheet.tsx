@@ -74,9 +74,11 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
             dragElastic={{ top: 0.05, bottom: 0.7 }}
             onDragEnd={handleDragEnd}
             style={{
-              maxHeight: isKeyboardOpen ? `${Math.max(260, Math.floor(viewportHeight * 0.9))}px` : undefined,
+              maxHeight: isKeyboardOpen
+                ? `${Math.max(320, Math.floor(viewportHeight * 0.94))}px`
+                : '94dvh',
             }}
-            className={`relative w-full sm:max-w-lg ${maxHeight} max-h-[88dvh] sm:max-h-[85vh] flex flex-col bg-white dark:bg-ios-dark-card rounded-t-[28px] sm:rounded-[24px] shadow-2xl overflow-hidden z-10 border border-black/5 dark:border-white/10`}
+            className={`relative w-full sm:max-w-lg ${maxHeight} flex flex-col bg-white dark:bg-ios-dark-card rounded-t-[28px] sm:rounded-[24px] shadow-2xl overflow-hidden overflow-x-hidden z-10 border border-black/5 dark:border-white/10`}
           >
             {/* iOS Drag Handle on Mobile (Grab zone) */}
             <div className="pt-3 pb-1 flex justify-center cursor-grab active:cursor-grabbing touch-none select-none shrink-0">
@@ -102,10 +104,13 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
               </div>
             )}
 
-            {/* Content Body with generous bottom safe area clearance so action buttons are always 100% reachable */}
+            {/* Content Body with generous bottom clearance so action buttons are always 100% visible and accessible */}
             <div
-              className="flex-1 overflow-y-auto overscroll-contain p-4 sm:p-5 pb-[max(3rem,calc(env(safe-area-inset-bottom,0px)+2.5rem))] pl-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))]"
-              style={{ WebkitOverflowScrolling: 'touch' }}
+              className="flex-1 w-full max-w-full overflow-y-auto overflow-x-hidden overscroll-contain p-4 sm:p-5 pb-[max(5.5rem,calc(env(safe-area-inset-bottom,0px)+4.5rem))] pl-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))]"
+              style={{
+                WebkitOverflowScrolling: 'touch',
+                touchAction: 'pan-y',
+              }}
             >
               {children}
             </div>

@@ -326,7 +326,7 @@ export const EventModal: React.FC<EventModalProps> = ({
         </div>
 
         {/* Buttons */}
-        <div className="flex items-center gap-2 pt-2">
+        <div className="flex items-center gap-2 pt-3 pb-8 sm:pb-4">
           {initialEvent && onDelete && (
             <Button
               type="button"

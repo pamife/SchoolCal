@@ -238,7 +238,7 @@ export const SubstitutionModal: React.FC<SubstitutionModalProps> = ({
         </div>
 
         {/* Action Buttons */}
-        <div className="flex items-center gap-2 pt-2">
+        <div className="flex items-center gap-2 pt-3 pb-8 sm:pb-4">
           {initialSubstitution && onDelete && (
             <Button
               type="button"

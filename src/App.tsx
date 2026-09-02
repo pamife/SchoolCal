@@ -210,7 +210,7 @@ export function App() {
       />
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden relative">
+      <div className="flex-1 flex flex-col min-w-0 w-full max-w-full h-full overflow-hidden overflow-x-hidden relative">
         {/* Top Header */}
         <TopHeader
           onOpenQuickAction={() => setIsQuickActionOpen(true)}
@@ -218,8 +218,11 @@ export function App() {
         />
 
         {/* Tab View Scroll Container with reliable bottom and landscape safe area clearance */}
-        <div className="flex-1 min-w-0 overflow-y-auto overscroll-contain">
-          <main className="min-h-full p-3.5 sm:p-5 sm:px-6 pb-[calc(4.5rem+env(safe-area-inset-bottom,0px))] ipad:pb-8 pl-[max(0.875rem,env(safe-area-inset-left,0px))] pr-[max(0.875rem,env(safe-area-inset-right,0px))]">
+        <div
+          className="flex-1 min-w-0 w-full max-w-full overflow-y-auto overflow-x-hidden overscroll-contain"
+          style={{ touchAction: 'pan-y' }}
+        >
+          <main className="min-h-full w-full max-w-full overflow-x-hidden p-3.5 sm:p-5 sm:px-6 pb-[calc(5.5rem+env(safe-area-inset-bottom,0px))] ipad:pb-8 pl-[max(0.875rem,env(safe-area-inset-left,0px))] pr-[max(0.875rem,env(safe-area-inset-right,0px))]">
             {activeTab === 'today' && (
               <DashboardScreen
                 onNavigateTab={setActiveTab}
