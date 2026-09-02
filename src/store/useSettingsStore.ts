@@ -11,6 +11,7 @@ interface SettingsState {
   loadSettings: (uid?: string) => Promise<void>;
   updateSettings: (updates: Partial<UserSettings>, uid?: string) => Promise<void>;
   setTheme: (theme: 'light' | 'dark' | 'system', uid?: string) => void;
+  toggleTheme: (uid?: string) => void;
   setAccentColor: (color: string, uid?: string) => void;
   setState: (state: string, uid?: string) => void;
   setActiveTab: (tab: string) => void;
@@ -18,7 +19,8 @@ interface SettingsState {
 
 const STORAGE_KEY = 'schoolcal_user_settings';
 
-function applyThemeAndAccent(settings: UserSettings) {
+export function applyThemeAndAccent(settings: UserSettings) {
+  if (typeof document === 'undefined') return;
   const root = document.documentElement;
   
   let isDark = false;
@@ -27,13 +29,20 @@ function applyThemeAndAccent(settings: UserSettings) {
   } else if (settings.theme === 'light') {
     isDark = false;
   } else {
-    isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    isDark = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
   }
 
   if (isDark) {
     root.classList.add('dark');
   } else {
     root.classList.remove('dark');
+  }
+
+  // Synchronize mobile meta theme-color tag
+  const metaTheme = document.querySelector('meta[name="theme-color"]:not([media])') ||
+                    document.querySelector('meta[name="theme-color"]');
+  if (metaTheme) {
+    metaTheme.setAttribute('content', isDark ? '#000000' : '#F2F2F7');
   }
 
   root.style.setProperty('--accent-color', settings.accentColor);
@@ -101,6 +110,19 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
 
   setTheme: (theme, uid?: string) => {
     get().updateSettings({ theme }, uid);
+  },
+
+  toggleTheme: (uid?: string) => {
+    const current = get().settings.theme;
+    const isCurrentlyDark =
+      current === 'dark' ||
+      (current === 'system' &&
+        typeof window !== 'undefined' &&
+        window.matchMedia &&
+        window.matchMedia('(prefers-color-scheme: dark)').matches);
+
+    const nextTheme: 'light' | 'dark' = isCurrentlyDark ? 'light' : 'dark';
+    get().updateSettings({ theme: nextTheme }, uid);
   },
 
   setAccentColor: (accentColor, uid?: string) => {

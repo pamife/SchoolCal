@@ -531,8 +531,8 @@ export const SettingsScreen: React.FC = () => {
           </label>
           <div className="grid grid-cols-3 gap-2">
             {[
-              { id: 'light', label: 'Hell', icon: Sun },
-              { id: 'dark', label: 'Dunkel', icon: Moon },
+              { id: 'light', label: 'Whitemode', icon: Sun },
+              { id: 'dark', label: 'Darkmode', icon: Moon },
               { id: 'system', label: 'Automatisch', icon: Smartphone },
             ].map((th) => {
               const Icon = th.icon;
