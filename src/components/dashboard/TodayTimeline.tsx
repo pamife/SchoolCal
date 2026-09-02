@@ -3,6 +3,7 @@ import { Clock, MapPin, User, ChevronRight, Coffee } from 'lucide-react';
 import type { ScheduleEntry, Subject, Teacher, Room, Substitution, ScheduleBreak } from '../../types';
 import { Badge } from '../common/Badge';
 import { useSchoolConfigStore } from '../../store/useSchoolConfigStore';
+import { groupScheduleEntries } from '../../utils/lessonGroupingEngine';
 
 interface TodayTimelineProps {
   entries: ScheduleEntry[];
@@ -41,11 +42,6 @@ export const TodayTimeline: React.FC<TodayTimelineProps> = ({
   const storeBreaks = useSchoolConfigStore((state) => state.breaks);
   const breaks = propBreaks || storeBreaks;
 
-  const subjectMap = new Map(subjects.map((s) => [s.id, s]));
-  const teacherMap = new Map(teachers.map((t) => [t.id, t]));
-  const roomMap = new Map(rooms.map((r) => [r.id, r]));
-  const substMap = new Map(substitutions.map((s) => [s.scheduleEntryId, s]));
-
   if (entries.length === 0) {
     return (
       <div className="ios-card p-6 text-center text-gray-500 dark:text-gray-400">
@@ -55,71 +51,34 @@ export const TodayTimeline: React.FC<TodayTimelineProps> = ({
     );
   }
 
-  // Group consecutive lessons of the same subject into Doppelstunden
-  const groups: TimelineGroup[] = [];
-  let i = 0;
-
-  while (i < entries.length) {
-    const current = entries[i];
-    const next = entries[i + 1];
-    const subject = subjectMap.get(current.subjectId);
-
-    // Check if next lesson is directly following period and same subject
-    const isDouble = Boolean(
-      next &&
-      next.period === current.period + 1 &&
-      next.subjectId === current.subjectId
-    );
-
-    const groupEntries = isDouble ? [current, next] : [current];
-    const substitution = substMap.get(current.id) || (next && substMap.get(next.id));
-    const effectiveTeacherId = substitution?.newTeacherId || current.teacherId;
-    const effectiveRoomId = substitution?.newRoomId || current.roomId;
-
-    const teacher = effectiveTeacherId ? teacherMap.get(effectiveTeacherId) : undefined;
-    const room = effectiveRoomId ? roomMap.get(effectiveRoomId) : undefined;
-    const isCurrent = groupEntries.some((e) => e.period === currentPeriodNumber);
-    const isCancelled = substitution?.type === 'cancelled';
-
-    const periodLabel = isDouble ? `${current.period}. & ${next.period}. Std` : `${current.period}. Std`;
-    const timeRange = isDouble ? `${current.startTime} – ${next.endTime}` : `${current.startTime} – ${current.endTime}`;
-    const lastPeriod = isDouble ? next.period : current.period;
-
-    groups.push({
-      entries: groupEntries,
-      subject,
-      teacher,
-      room,
-      isCurrent,
-      isCancelled,
-      hasSubstitution: Boolean(substitution && !isCancelled),
-      timeRange,
-      periodLabel,
-      lastPeriod,
-    });
-
-    i += isDouble ? 2 : 1;
-  }
+  const groupedLessons = groupScheduleEntries({
+    entries,
+    subjects,
+    substitutions,
+    teachers,
+    rooms,
+  });
 
   return (
     <div className="space-y-2">
-      {groups.map((group, idx) => {
+      {groupedLessons.map((group, idx) => {
         const {
           subject,
           teacher,
           room,
-          isCurrent,
+          isDouble,
           isCancelled,
           hasSubstitution,
           timeRange,
           periodLabel,
           entries: grpEntries,
-          lastPeriod,
+          endPeriod,
         } = group;
-        const isDouble = grpEntries.length > 1;
+
+        const isCurrent = grpEntries.some((e) => e.period === currentPeriodNumber);
 
         // Check if there is a break right after this group
-        const matchingBreak = breaks.find((b) => b.afterPeriod === lastPeriod);
+        const matchingBreak = breaks.find((b) => b.afterPeriod === endPeriod);
 
         return (
           <React.Fragment key={grpEntries[0].id || idx}>
@@ -213,7 +172,7 @@ export const TodayTimeline: React.FC<TodayTimelineProps> = ({
             </div>
 
             {/* Break Banner between lessons if configured */}
-            {matchingBreak && idx < groups.length - 1 && (
+            {matchingBreak && idx < groupedLessons.length - 1 && (
               <div className="px-3.5 py-2 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-between text-xs text-amber-700 dark:text-amber-300 font-medium">
                 <div className="flex items-center gap-2 font-bold">
                   <Coffee className="w-3.5 h-3.5 text-amber-500" />
@@ -222,7 +181,7 @@ export const TodayTimeline: React.FC<TodayTimelineProps> = ({
                   </span>
                 </div>
                 <span className="text-[10px] text-amber-600/80 font-semibold uppercase tracking-wider">
-                  nach {lastPeriod}. Std
+                  nach {endPeriod}. Std
                 </span>
               </div>
             )}

@@ -17,6 +17,8 @@ import { Clock, MapPin, User, Plus, AlertCircle, ChevronRight, Sparkles } from '
 import { haptics } from '../../utils/haptics';
 import { getDayHolidayInfo } from '../../data/holidays';
 
+import { groupScheduleEntries } from '../../utils/lessonGroupingEngine';
+
 interface DayViewProps {
   selectedDate: Date;
   scheduleEntries: ScheduleEntry[];
@@ -31,17 +33,6 @@ interface DayViewProps {
   onSelectExam: (exam: Exam) => void;
   onSelectScheduleEntry: (entry: ScheduleEntry) => void;
   onAddEventForDate: (date: Date) => void;
-}
-
-interface GroupedDayLesson {
-  entries: ScheduleEntry[];
-  subject?: Subject;
-  teacher?: Teacher;
-  room?: Room;
-  isCancelled: boolean;
-  hasSubstitution: boolean;
-  timeRange: string;
-  periodLabel: string;
 }
 
 export const DayView: React.FC<DayViewProps> = ({
@@ -64,11 +55,7 @@ export const DayView: React.FC<DayViewProps> = ({
   const dayIso = format(selectedDate, 'yyyy-MM-dd');
 
   const holidayInfo = getDayHolidayInfo(dayIso, holidays);
-
   const subjectMap = new Map(subjects.map(s => [s.id, s]));
-  const teacherMap = new Map(teachers.map(t => [t.id, t]));
-  const roomMap = new Map(rooms.map(r => [r.id, r]));
-  const substMap = new Map(substitutions.map(s => [s.scheduleEntryId, s]));
 
   // Day specific items
   const dayLessons = scheduleEntries
@@ -79,44 +66,14 @@ export const DayView: React.FC<DayViewProps> = ({
   const dayExams = exams.filter(e => e.date === dayIso);
 
   // Group consecutive lessons into Doppelstunden
-  const groupedLessons: GroupedDayLesson[] = [];
-  let i = 0;
-  while (i < dayLessons.length) {
-    const current = dayLessons[i];
-    const next = dayLessons[i + 1];
-    const subject = subjectMap.get(current.subjectId);
-
-    const isDouble = Boolean(
-      next &&
-      next.period === current.period + 1 &&
-      next.subjectId === current.subjectId
-    );
-
-    const groupEntries = isDouble ? [current, next] : [current];
-    const substitution = substMap.get(current.id) || (next && substMap.get(next.id));
-    const effectiveTeacherId = substitution?.newTeacherId || current.teacherId;
-    const effectiveRoomId = substitution?.newRoomId || current.roomId;
-
-    const teacher = effectiveTeacherId ? teacherMap.get(effectiveTeacherId) : undefined;
-    const room = effectiveRoomId ? roomMap.get(effectiveRoomId) : undefined;
-    const isCancelled = substitution?.type === 'cancelled';
-
-    const periodLabel = isDouble ? `${current.period}. & ${next.period}. Std` : `${current.period}. Std`;
-    const timeRange = isDouble ? `${current.startTime} – ${next.endTime}` : `${current.startTime} – ${current.endTime}`;
-
-    groupedLessons.push({
-      entries: groupEntries,
-      subject,
-      teacher,
-      room,
-      isCancelled,
-      hasSubstitution: Boolean(substitution && !isCancelled),
-      timeRange,
-      periodLabel,
-    });
-
-    i += isDouble ? 2 : 1;
-  }
+  const groupedLessons = groupScheduleEntries({
+    entries: dayLessons,
+    subjects,
+    substitutions,
+    teachers,
+    rooms,
+    dayIso,
+  });
 
   return (
     <div className="space-y-4">

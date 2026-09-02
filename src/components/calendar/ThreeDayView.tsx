@@ -7,6 +7,8 @@ import { Clock } from 'lucide-react';
 import { haptics } from '../../utils/haptics';
 import { getDayHolidayInfo } from '../../data/holidays';
 
+import { groupScheduleEntries } from '../../utils/lessonGroupingEngine';
+
 interface ThreeDayViewProps {
   startDate: Date;
   scheduleEntries: ScheduleEntry[];
@@ -40,8 +42,6 @@ export const ThreeDayView: React.FC<ThreeDayViewProps> = ({
 }) => {
   const threeDays = [startDate, addDays(startDate, 1), addDays(startDate, 2)];
   const subjectMap = new Map(subjects.map(s => [s.id, s]));
-  const teacherMap = new Map(teachers.map(t => [t.id, t]));
-  const roomMap = new Map(rooms.map(r => [r.id, r]));
 
   return (
     <div className="ios-card overflow-hidden flex flex-col">
@@ -98,11 +98,20 @@ export const ThreeDayView: React.FC<ThreeDayViewProps> = ({
           const dayIso = format(day, 'yyyy-MM-dd');
           const holidayInfo = getDayHolidayInfo(dayIso, holidays);
 
-          const dayLessons = holidayInfo.isSchoolFree
+          const rawDayLessons = holidayInfo.isSchoolFree
             ? []
             : scheduleEntries
                 .filter(e => e.dayOfWeek === dayOfWeek)
                 .sort((a, b) => a.period - b.period);
+
+          const groupedLessons = groupScheduleEntries({
+            entries: rawDayLessons,
+            subjects,
+            substitutions,
+            teachers,
+            rooms,
+            dayIso,
+          });
 
           const dayEvents = events.filter(e => e.startDate.startsWith(dayIso));
           const dayExams = exams.filter(e => e.date === dayIso);
@@ -147,24 +156,16 @@ export const ThreeDayView: React.FC<ThreeDayViewProps> = ({
                 </div>
               ))}
 
-              {/* School lessons */}
-              {dayLessons.map((entry) => {
-                const subject = subjectMap.get(entry.subjectId);
-                const subEntry = substitutions.find(
-                  s => s.scheduleEntryId === entry.id && s.date === dayIso
-                );
-                const effectiveTeacherId = subEntry?.newTeacherId || entry.teacherId;
-                const effectiveRoomId = subEntry?.newRoomId || entry.roomId;
-                const teacher = effectiveTeacherId ? teacherMap.get(effectiveTeacherId) : undefined;
-                const room = effectiveRoomId ? roomMap.get(effectiveRoomId) : undefined;
-                const isCancelled = subEntry?.type === 'cancelled';
+              {/* School lessons with Doppelstunden */}
+              {groupedLessons.map((grp) => {
+                const { entries: grpEntries, subject, teacher, room, isDouble, isCancelled, hasSubstitution, timeRange, periodLabel } = grp;
 
                 return (
                   <div
-                    key={entry.id}
+                    key={grp.id}
                     onClick={() => {
                       haptics.selection();
-                      onSelectScheduleEntry(entry, day);
+                      onSelectScheduleEntry(grpEntries[0], day);
                     }}
                     style={{
                       borderLeftColor: subject?.color || '#007AFF',
@@ -176,11 +177,16 @@ export const ThreeDayView: React.FC<ThreeDayViewProps> = ({
                     }`}
                   >
                     <div className="flex items-center justify-between text-[11px] text-gray-500 dark:text-gray-400">
-                      <span className="font-bold">{entry.period}. Stunde</span>
-                      <span>{entry.startTime}</span>
+                      <span className="font-bold">{periodLabel}</span>
+                      <span>{timeRange}</span>
                     </div>
-                    <div className="font-bold text-xs text-gray-900 dark:text-white mt-0.5 truncate">
-                      {subject?.name || 'Unterricht'}
+                    <div className="font-bold text-xs text-gray-900 dark:text-white mt-0.5 truncate flex items-center justify-between gap-1">
+                      <span>{subject?.name || 'Unterricht'}</span>
+                      {isDouble && (
+                        <span className="text-[8px] font-extrabold px-1 rounded bg-black/10 dark:bg-white/10 uppercase">
+                          2 Std
+                        </span>
+                      )}
                     </div>
                     <div className="flex items-center justify-between text-[10px] text-gray-500 dark:text-gray-400 mt-1">
                       <span>{room?.name || ''}</span>

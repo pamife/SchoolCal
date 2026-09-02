@@ -15,6 +15,7 @@ import { getSubjectIcon, hexToRgba } from '../../utils/colorUtils';
 import { Clock, Plus } from 'lucide-react';
 import { haptics } from '../../utils/haptics';
 import { getDayHolidayInfo } from '../../data/holidays';
+import { isDoubleLessonAdjacent } from '../../utils/lessonGroupingEngine';
 
 interface WeekViewProps {
   days: Date[];
@@ -175,15 +176,11 @@ export const WeekView: React.FC<WeekViewProps> = ({
                 const nextEntry = dayLessons[idx + 1];
 
                 const isConnectedWithPrev = Boolean(
-                  prevEntry &&
-                  prevEntry.period === entry.period - 1 &&
-                  prevEntry.subjectId === entry.subjectId
+                  prevEntry && isDoubleLessonAdjacent(prevEntry, entry, subjectMap)
                 );
 
                 const isConnectedWithNext = Boolean(
-                  nextEntry &&
-                  nextEntry.period === entry.period + 1 &&
-                  nextEntry.subjectId === entry.subjectId
+                  nextEntry && isDoubleLessonAdjacent(entry, nextEntry, subjectMap)
                 );
 
                 const effectiveTeacherId = subEntry?.newTeacherId || entry.teacherId;

@@ -1,7 +1,8 @@
-import React from 'react';
-import { Search, Plus, MapPin, Bot } from 'lucide-react';
+import { Search, Plus, MapPin, Bot, RefreshCw, CloudOff, Check } from 'lucide-react';
 import { useSearchStore } from '../../store/useSearchStore';
 import { useSettingsStore } from '../../store/useSettingsStore';
+import { useSyncStore } from '../../store/useSyncStore';
+import { performAppSync } from '../../services/sync/syncManager';
 import { formatGermanDate, formatGermanWeekday } from '../../utils/dateUtils';
 import { GERMAN_STATES } from '../../data/holidays';
 import { Badge } from '../common/Badge';
@@ -19,16 +20,21 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
 }) => {
   const { openSearch } = useSearchStore();
   const { settings } = useSettingsStore();
+  const { syncStatus, isOnline, getFormattedRelativeTime } = useSyncStore();
 
   const today = new Date();
   const dateFormatted = formatGermanDate(today, 'd. MMMM yyyy');
   const weekday = formatGermanWeekday(today, 'long');
   const stateInfo = GERMAN_STATES.find(s => s.code === settings.state);
 
+  const handleManualSync = () => {
+    performAppSync({ force: true });
+  };
+
   return (
     <header className="sticky top-0 z-30 ios-glass-bar border-b border-black/5 dark:border-white/10 px-4 py-2.5 pt-[max(0.625rem,env(safe-area-inset-top,0px))] pl-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] select-none shrink-0">
       <div className="flex items-center justify-between max-w-7xl mx-auto">
-        {/* Left: Date / Title */}
+        {/* Left: Date / Title / Sync State */}
         <div>
           <div className="flex items-center gap-2">
             <span className="text-xs font-semibold uppercase tracking-wider text-ios-blue">
@@ -38,6 +44,31 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
               <MapPin className="w-2.5 h-2.5 text-ios-blue" />
               {stateInfo?.name || settings.state}
             </Badge>
+
+            {/* Subtle Sync Indicator */}
+            <button
+              type="button"
+              onClick={handleManualSync}
+              className="inline-flex items-center gap-1 text-[11px] font-medium text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+              title={`Klicken zum Aktualisieren • Zuletzt synchronisiert: ${getFormattedRelativeTime()}`}
+            >
+              {syncStatus === 'syncing' ? (
+                <>
+                  <RefreshCw className="w-2.5 h-2.5 text-ios-blue animate-spin" />
+                  <span className="text-[10px] text-ios-blue font-semibold">Aktualisiere...</span>
+                </>
+              ) : !isOnline ? (
+                <>
+                  <CloudOff className="w-2.5 h-2.5 text-amber-500" />
+                  <span className="text-[10px] text-amber-500 font-semibold">Offline</span>
+                </>
+              ) : syncStatus === 'error' ? (
+                <>
+                  <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
+                  <span className="text-[10px] text-red-500 font-semibold">Sync-Fehler</span>
+                </>
+              ) : null}
+            </button>
           </div>
           <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white tracking-tight leading-tight">
             {title || dateFormatted}

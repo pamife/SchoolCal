@@ -224,7 +224,7 @@ export const AiAssistantModal: React.FC<AiAssistantModalProps> = ({
           if (onOpenActivation) onOpenActivation();
         }}
       >
-        <div className="flex flex-col h-[55dvh] sm:h-[620px] max-h-[75dvh] -mx-4 -mb-4">
+        <div className="flex flex-col h-[55dvh] sm:h-[620px] max-h-[75dvh] -mx-4 sm:-mx-5 -mb-4 sm:-mb-5 overflow-hidden">
           {/* Header Banner */}
           <div className="px-4 py-2.5 bg-gradient-to-r from-purple-500/10 via-indigo-500/10 to-blue-500/10 border-b border-black/5 dark:border-white/5 flex items-center justify-between">
             <div className="flex items-center gap-2">

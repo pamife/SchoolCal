@@ -12,6 +12,7 @@
     "test:ai": "npx tsx scripts/test-ai-assistant.ts",
     "test:onboarding": "npx tsx scripts/test-onboarding-pwa.ts",
     "test:privacy": "npx tsx scripts/test-privacy-security.ts",
+    "test:mobile": "npx tsx scripts/test-mobile-ux-sync.ts",
     "preview": "vite preview"
   },
   "dependencies": {

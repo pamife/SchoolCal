@@ -240,7 +240,7 @@ export const CalendarScreen: React.FC<CalendarScreenProps> = ({
       </div>
 
       {/* View Render with Smooth Horizontal Swipe Gestures */}
-      <div {...swipeHandlers} className="w-full min-w-0 touch-pan-y">
+      <div {...swipeHandlers} className="w-full min-w-0 touch-pan-y overflow-hidden">
         <AnimatePresence initial={false} custom={direction} mode="wait">
           <motion.div
             key={currentViewKey}

@@ -44,7 +44,10 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
     <AnimatePresence>
       {isOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-end sm:items-center sm:justify-center overflow-hidden"
+          style={{
+            bottom: isKeyboardOpen && keyboardHeight > 0 ? `${keyboardHeight}px` : 0,
+          }}
+          className="fixed inset-0 z-50 flex items-end sm:items-center sm:justify-center overflow-hidden transition-[bottom] duration-150"
         >
           {/* Backdrop */}
           <motion.div
@@ -70,6 +73,9 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
             dragConstraints={{ top: 0, bottom: 0 }}
             dragElastic={{ top: 0.05, bottom: 0.7 }}
             onDragEnd={handleDragEnd}
+            style={{
+              maxHeight: isKeyboardOpen ? `${Math.max(260, Math.floor(viewportHeight * 0.9))}px` : undefined,
+            }}
             className={`relative w-full sm:max-w-lg ${maxHeight} max-h-[88dvh] sm:max-h-[85vh] flex flex-col bg-white dark:bg-ios-dark-card rounded-t-[28px] sm:rounded-[24px] shadow-2xl overflow-hidden z-10 border border-black/5 dark:border-white/10`}
           >
             {/* iOS Drag Handle on Mobile (Grab zone) */}
@@ -96,9 +102,9 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
               </div>
             )}
 
-            {/* Content Body with generous bottom safe area clearance */}
+            {/* Content Body with generous bottom safe area clearance so action buttons are always 100% reachable */}
             <div
-              className="flex-1 overflow-y-auto overscroll-contain p-4 sm:p-5 pb-[max(2.5rem,calc(env(safe-area-inset-bottom,0px)+1.5rem))] pl-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))]"
+              className="flex-1 overflow-y-auto overscroll-contain p-4 sm:p-5 pb-[max(3rem,calc(env(safe-area-inset-bottom,0px)+2.5rem))] pl-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))]"
               style={{ WebkitOverflowScrolling: 'touch' }}
             >
               {children}

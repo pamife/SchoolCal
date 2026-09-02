@@ -37,11 +37,13 @@ import { updateAppBadge } from './services/pwa/badgeService';
 import { evaluatePendingNotifications } from './services/notifications/notificationScheduler';
 import { sendLocalNotification } from './services/notifications/notificationService';
 import { useInputAutoScroll } from './hooks/useInputAutoScroll';
+import { useAppSync } from './hooks/useAppSync';
 import type { NavigationTab, QuickActionType, ScheduleEntry, Exam } from './types';
 import { BookOpen } from 'lucide-react';
 
 export function App() {
   useInputAutoScroll();
+  useAppSync();
 
   const [activeTab, setActiveTab] = useState<NavigationTab>('today');
   const [isQuickActionOpen, setIsQuickActionOpen] = useState(false);
