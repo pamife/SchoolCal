@@ -276,6 +276,81 @@ export const SettingsScreen: React.FC = () => {
         </div>
       )}
 
+      {/* 2. ERSCHEINUNGSBILD & FARBSCHEMA (WHITEMODE / DARKMODE) */}
+      <div className="ios-card p-5 space-y-4">
+        <div className="flex items-center gap-2.5 pb-2 border-b border-black/5 dark:border-white/10">
+          <Palette className="w-5 h-5 text-purple-500" />
+          <div>
+            <h3 className="text-base font-bold text-gray-900 dark:text-white">
+              Darstellung & Farbschema
+            </h3>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              Wähle zwischen Whitemode (Hell), Darkmode (Dunkel) und Akzentfarben
+            </p>
+          </div>
+        </div>
+
+        {/* Theme Mode Selector */}
+        <div>
+          <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
+            Erscheinungsbild
+          </label>
+          <div className="grid grid-cols-3 gap-2 sm:gap-3">
+            {[
+              { id: 'light', label: 'Whitemode', sub: 'Hell', icon: Sun },
+              { id: 'dark', label: 'Darkmode', sub: 'Dunkel', icon: Moon },
+              { id: 'system', label: 'Automatisch', sub: 'System', icon: Smartphone },
+            ].map((th) => {
+              const Icon = th.icon;
+              const isSelected = settings.theme === th.id;
+              return (
+                <button
+                  key={th.id}
+                  type="button"
+                  onClick={() => setTheme(th.id as any, uid)}
+                  className={`p-3 sm:p-4 rounded-xl flex flex-col items-center justify-center gap-1 font-semibold text-xs transition-all active:scale-95 ${
+                    isSelected
+                      ? 'bg-ios-blue text-white shadow-md shadow-blue-500/20 ring-2 ring-ios-blue'
+                      : 'bg-gray-100 dark:bg-ios-dark-secondary text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-ios-dark-tertiary'
+                  }`}
+                >
+                  <Icon className={`w-5 h-5 ${isSelected ? 'text-white' : th.id === 'light' ? 'text-amber-500' : th.id === 'dark' ? 'text-indigo-400' : 'text-gray-500'}`} />
+                  <span className="font-bold">{th.label}</span>
+                  <span className={`text-[10px] ${isSelected ? 'text-white/80' : 'text-gray-400 dark:text-gray-500'}`}>
+                    {th.sub}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Accent Color Palette */}
+        <div>
+          <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
+            Apple Akzentfarbe
+          </label>
+          <div className="flex flex-wrap gap-2.5">
+            {ACCENT_PALETTES.map((palette) => (
+              <button
+                key={palette.color}
+                type="button"
+                onClick={() => setAccentColor(palette.color, uid)}
+                style={{ backgroundColor: palette.color }}
+                className={`w-9 h-9 rounded-full transition-transform flex items-center justify-center text-white ${
+                  settings.accentColor === palette.color
+                    ? 'scale-115 ring-3 ring-offset-2 ring-ios-blue shadow-md'
+                    : 'opacity-85 hover:opacity-100 hover:scale-105'
+                }`}
+                title={palette.name}
+              >
+                {settings.accentColor === palette.color && <Check className="w-4 h-4" />}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
       {/* 3. BENUTZERPROFIL & SCHULE */}
       <div className="ios-card p-5 space-y-4">
         <div className="flex items-center justify-between pb-2 border-b border-black/5 dark:border-white/10">
@@ -514,73 +589,6 @@ export const SettingsScreen: React.FC = () => {
         onOpenPricing={() => setIsPricingOpen(true)}
         onOpenActivation={() => setIsActivationOpen(true)}
       />
-
-      {/* 7. DARSTELLUNG & DESIGN */}
-      <div className="ios-card p-5 space-y-4">
-        <div className="flex items-center gap-2.5 pb-2 border-b border-black/5 dark:border-white/10">
-          <Palette className="w-5 h-5 text-purple-500" />
-          <h3 className="text-base font-bold text-gray-900 dark:text-white">
-            Darstellung & Farbschema
-          </h3>
-        </div>
-
-        {/* Theme Mode Selector */}
-        <div>
-          <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
-            Erscheinungsbild
-          </label>
-          <div className="grid grid-cols-3 gap-2">
-            {[
-              { id: 'light', label: 'Whitemode', icon: Sun },
-              { id: 'dark', label: 'Darkmode', icon: Moon },
-              { id: 'system', label: 'Automatisch', icon: Smartphone },
-            ].map((th) => {
-              const Icon = th.icon;
-              const isSelected = settings.theme === th.id;
-              return (
-                <button
-                  key={th.id}
-                  type="button"
-                  onClick={() => setTheme(th.id as any, uid)}
-                  className={`p-3 rounded-xl flex flex-col items-center justify-center gap-1.5 font-semibold text-xs transition-all ${
-                    isSelected
-                      ? 'bg-ios-blue text-white shadow-sm'
-                      : 'bg-gray-100 dark:bg-ios-dark-secondary text-gray-700 dark:text-gray-300 hover:bg-gray-200'
-                  }`}
-                >
-                  <Icon className="w-5 h-5" />
-                  <span>{th.label}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Accent Color Palette */}
-        <div>
-          <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
-            Apple Akzentfarbe
-          </label>
-          <div className="flex flex-wrap gap-2.5">
-            {ACCENT_PALETTES.map((palette) => (
-              <button
-                key={palette.color}
-                type="button"
-                onClick={() => setAccentColor(palette.color, uid)}
-                style={{ backgroundColor: palette.color }}
-                className={`w-9 h-9 rounded-full transition-transform flex items-center justify-center text-white ${
-                  settings.accentColor === palette.color
-                    ? 'scale-115 ring-3 ring-offset-2 ring-ios-blue shadow-md'
-                    : 'opacity-85 hover:opacity-100 hover:scale-105'
-                }`}
-                title={palette.name}
-              >
-                {settings.accentColor === palette.color && <Check className="w-4 h-4" />}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
 
       {/* 6. BUNDESLAND & FERIEN */}
       <div className="ios-card p-5 space-y-4">

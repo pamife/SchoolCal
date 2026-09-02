@@ -36,17 +36,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   const { homework } = useHomeworkStore();
   const { exams } = useExamStore();
-  const { settings, toggleTheme } = useSettingsStore();
+  const { settings } = useSettingsStore();
   const { user } = useAuthStore();
   const { openSearch } = useSearchStore();
   const { plan } = useSubscription();
-
-  const isDarkMode =
-    settings.theme === 'dark' ||
-    (settings.theme === 'system' &&
-      typeof window !== 'undefined' &&
-      window.matchMedia &&
-      window.matchMedia('(prefers-color-scheme: dark)').matches);
 
   const openTasksCount = homework.filter(h => h.status !== 'done').length;
   const stateName = GERMAN_STATES.find(s => s.code === settings.state)?.name || settings.state;
@@ -187,33 +180,22 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </p>
         </div>
 
-        {/* User profile snippet & Theme Quick Toggle */}
-        <div className="flex items-center justify-between gap-2 p-1.5 rounded-ios hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
-          <div
-            className="flex items-center gap-2.5 min-w-0 flex-1 cursor-pointer"
-            onClick={() => onTabChange('settings')}
-          >
-            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-purple-500 to-ios-blue text-white flex items-center justify-center font-bold text-xs shadow-sm shrink-0">
-              {user?.displayName ? user.displayName.slice(0, 2).toUpperCase() : 'PS'}
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-xs font-semibold text-gray-900 dark:text-white truncate">
-                {user?.displayName || 'Schüler'}
-              </p>
-              <p className="text-[10px] text-gray-500 dark:text-gray-400 truncate">
-                {settings.gradeLevel || 'Schüler'}
-              </p>
-            </div>
+        {/* User profile snippet */}
+        <div
+          className="flex items-center gap-2.5 p-2 rounded-ios hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer"
+          onClick={() => onTabChange('settings')}
+        >
+          <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-purple-500 to-ios-blue text-white flex items-center justify-center font-bold text-xs shadow-sm">
+            {user?.displayName ? user.displayName.slice(0, 2).toUpperCase() : 'PS'}
           </div>
-
-          <button
-            type="button"
-            onClick={() => toggleTheme(user?.uid)}
-            className="w-7 h-7 rounded-lg bg-gray-200/80 dark:bg-ios-dark-secondary flex items-center justify-center text-gray-600 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-ios-dark-tertiary transition-colors shrink-0 active:scale-95"
-            title={isDarkMode ? 'Whitemode (Hell) aktivieren' : 'Darkmode (Dunkel) aktivieren'}
-          >
-            {isDarkMode ? <Sun className="w-3.5 h-3.5 text-amber-500" /> : <Moon className="w-3.5 h-3.5 text-indigo-500" />}
-          </button>
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-semibold text-gray-900 dark:text-white truncate">
+              {user?.displayName || 'Schüler'}
+            </p>
+            <p className="text-[10px] text-gray-500 dark:text-gray-400 truncate">
+              {settings.gradeLevel || 'Schüler'}
+            </p>
+          </div>
         </div>
       </div>
     </aside>

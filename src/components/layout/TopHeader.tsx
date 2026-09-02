@@ -1,13 +1,11 @@
-import { Search, Plus, MapPin, Bot, RefreshCw, CloudOff, Sun, Moon } from 'lucide-react';
+import { Search, Plus, MapPin, Bot, RefreshCw, CloudOff } from 'lucide-react';
 import { useSearchStore } from '../../store/useSearchStore';
 import { useSettingsStore } from '../../store/useSettingsStore';
 import { useSyncStore } from '../../store/useSyncStore';
-import { useAuthStore } from '../../store/useAuthStore';
 import { performAppSync } from '../../services/sync/syncManager';
 import { formatGermanDate, formatGermanWeekday } from '../../utils/dateUtils';
 import { GERMAN_STATES } from '../../data/holidays';
 import { Badge } from '../common/Badge';
-import { haptics } from '../../utils/haptics';
 
 interface TopHeaderProps {
   onOpenQuickAction: () => void;
@@ -21,8 +19,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
   title,
 }) => {
   const { openSearch } = useSearchStore();
-  const { settings, toggleTheme } = useSettingsStore();
-  const { user } = useAuthStore();
+  const { settings } = useSettingsStore();
   const { syncStatus, isOnline, getFormattedRelativeTime } = useSyncStore();
 
   const today = new Date();
@@ -32,18 +29,6 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
 
   const handleManualSync = () => {
     performAppSync({ force: true });
-  };
-
-  const isDarkMode =
-    settings.theme === 'dark' ||
-    (settings.theme === 'system' &&
-      typeof window !== 'undefined' &&
-      window.matchMedia &&
-      window.matchMedia('(prefers-color-scheme: dark)').matches);
-
-  const handleToggleTheme = () => {
-    haptics.selection();
-    toggleTheme(user?.uid);
   };
 
   return (
@@ -92,21 +77,6 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
 
         {/* Right: Actions */}
         <div className="flex items-center gap-2">
-          {/* Whitemode / Darkmode Quick Toggle */}
-          <button
-            type="button"
-            onClick={handleToggleTheme}
-            className="w-9 h-9 rounded-full bg-gray-200/70 dark:bg-ios-dark-secondary flex items-center justify-center text-gray-700 dark:text-gray-300 hover:bg-gray-300/80 dark:hover:bg-ios-dark-tertiary transition-colors active:scale-95 shadow-xs"
-            title={isDarkMode ? 'Whitemode (Hell) aktivieren' : 'Darkmode (Dunkel) aktivieren'}
-            aria-label={isDarkMode ? 'Whitemode (Hell) aktivieren' : 'Darkmode (Dunkel) aktivieren'}
-          >
-            {isDarkMode ? (
-              <Sun className="w-4 h-4 text-amber-500 hover:rotate-45 transition-transform" />
-            ) : (
-              <Moon className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-            )}
-          </button>
-
           {/* AI Assistant Quick Button */}
           {onOpenAiAssistant && (
             <button
