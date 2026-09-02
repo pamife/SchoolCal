@@ -137,11 +137,9 @@ export const CalendarScreen: React.FC<CalendarScreenProps> = ({
   };
 
   const swipeHandlers = useSwipeGesture({
+    disabled: true,
     onSwipeLeft: handleNext,
     onSwipeRight: handlePrevious,
-    minDistance: 40,
-    velocityThreshold: 0.25,
-    edgeThreshold: 20,
   });
 
   const slideVariants = {
@@ -166,7 +164,7 @@ export const CalendarScreen: React.FC<CalendarScreenProps> = ({
       {/* Calendar Controls Top Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-1">
         {/* Left: View selector */}
-        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1 sm:pb-0">
+        <div className="flex flex-wrap items-center gap-2 pb-1 sm:pb-0">
           <SegmentedControl
             options={viewOptions}
             value={viewType}

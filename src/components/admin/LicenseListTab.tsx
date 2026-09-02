@@ -83,7 +83,7 @@ export const LicenseListTab: React.FC<LicenseListTabProps> = ({
         </div>
 
         {/* Status Filters */}
-        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar w-full sm:w-auto">
+        <div className="flex flex-wrap items-center gap-1.5 w-full sm:w-auto">
           {[
             { id: 'ALL', label: 'Alle' },
             { id: 'AVAILABLE', label: 'Verfügbar' },

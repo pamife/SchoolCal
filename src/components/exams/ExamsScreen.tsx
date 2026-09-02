@@ -84,7 +84,7 @@ export const ExamsScreen: React.FC = () => {
 
       {/* Subject Filter Pills */}
       {subjects.length > 0 && (
-        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1 px-1">
+        <div className="flex flex-wrap items-center gap-1.5 pb-1 px-1">
           <button
             type="button"
             onClick={() => setSelectedSubjectFilter('all')}

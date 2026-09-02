@@ -118,7 +118,7 @@ export const HelpAndInstallModal: React.FC<HelpAndInstallModalProps> = ({
         </div>
 
         {/* Tab Navigation */}
-        <div className="flex items-center gap-1.5 p-2 px-4 sm:px-6 bg-gray-50 dark:bg-ios-dark-secondary/60 border-b border-black/5 dark:border-white/5 overflow-x-auto no-scrollbar">
+        <div className="flex flex-wrap items-center gap-1.5 p-2 px-4 sm:px-6 bg-gray-50 dark:bg-ios-dark-secondary/60 border-b border-black/5 dark:border-white/5">
           {helpTabs.map((tab) => {
             const Icon = tab.icon;
             const isSelected = activeTab === tab.id;

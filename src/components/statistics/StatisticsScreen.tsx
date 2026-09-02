@@ -82,7 +82,7 @@ export const StatisticsScreen: React.FC = () => {
       </div>
 
       {/* Period Selector Tabs */}
-      <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1">
+      <div className="flex flex-wrap items-center gap-1.5 pb-1">
         {periodOptions.map((p) => {
           const isSelected = period === p.id;
           return (

@@ -181,7 +181,7 @@ export const HomeworkScreen: React.FC = () => {
       </div>
 
       {/* Due Filter Bar */}
-      <div className="overflow-x-auto no-scrollbar pb-1 px-1">
+      <div className="flex flex-wrap items-center gap-2 pb-1 px-1">
         <SegmentedControl
           options={filterOptions}
           value={filterDue}
@@ -192,7 +192,7 @@ export const HomeworkScreen: React.FC = () => {
 
       {/* Subject Pills Filter */}
       {subjects.length > 0 && (
-        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1 px-1">
+        <div className="flex flex-wrap items-center gap-1.5 pb-1 px-1">
           <button
             type="button"
             onClick={() => setFilterSubject('all')}

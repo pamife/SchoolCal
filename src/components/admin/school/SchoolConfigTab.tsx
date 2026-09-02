@@ -54,7 +54,7 @@ export const SchoolConfigTab: React.FC<SchoolConfigTabProps> = ({
   return (
     <div className="space-y-4">
       {/* Sub navigation bar */}
-      <div className="overflow-x-auto no-scrollbar pb-1">
+      <div className="flex flex-wrap pb-1">
         <SegmentedControl
           options={subTabs}
           value={activeSubTab}

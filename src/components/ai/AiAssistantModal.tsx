@@ -421,7 +421,7 @@ export const AiAssistantModal: React.FC<AiAssistantModalProps> = ({
           </div>
 
           {/* Suggestion Chips */}
-          <div className="px-4 py-2 bg-gray-50/50 dark:bg-ios-dark-card/50 border-t border-black/5 dark:border-white/5 flex gap-1.5 overflow-x-auto no-scrollbar">
+          <div className="px-4 py-2 bg-gray-50/50 dark:bg-ios-dark-card/50 border-t border-black/5 dark:border-white/5 flex flex-wrap gap-1.5">
             {suggestionChips.map((chip, idx) => (
               <button
                 key={idx}

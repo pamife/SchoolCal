@@ -121,7 +121,7 @@ export const InstallGuideCard: React.FC<InstallGuideCardProps> = ({
 
       {/* Device Switcher Tabs */}
       {!compact && (
-        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1">
+        <div className="flex flex-wrap items-center gap-1.5 pb-1">
           {deviceTabs.map((tab) => {
             const Icon = tab.icon;
             const isSelected = selectedDeviceTab === tab.id;

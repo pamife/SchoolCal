@@ -81,7 +81,7 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
     >
       <div className="space-y-4 pb-2">
         {/* Navigation & Refresh Header */}
-        <div className="flex items-center justify-between gap-2 overflow-x-auto no-scrollbar">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <SegmentedControl
             options={tabs}
             value={activeTab}

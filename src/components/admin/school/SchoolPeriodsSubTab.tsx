@@ -182,7 +182,7 @@ export const SchoolPeriodsSubTab: React.FC<SchoolPeriodsSubTabProps> = ({
         <label className="block text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
           Gültigkeit / Wochentags-Anpassung
         </label>
-        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1">
+        <div className="flex flex-wrap items-center gap-1.5 py-1">
           {weekdaysList.map((wd) => {
             const hasOverride = wd.id !== 'all' && Boolean(dayOverrides[wd.id as keyof DayScheduleOverride]);
             const isSelected = activeDay === wd.id;
