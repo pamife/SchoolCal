@@ -16,6 +16,7 @@ import { LicenseListTab } from './LicenseListTab';
 import { UserManagementTab } from './UserManagementTab';
 import { AuditLogTab } from './AuditLogTab';
 import { SchoolConfigTab } from './school/SchoolConfigTab';
+import { ClassTimetableAdminTab } from './classes/ClassTimetableAdminTab';
 import { Shield, RefreshCw } from 'lucide-react';
 
 interface AdminModalProps {
@@ -23,11 +24,11 @@ interface AdminModalProps {
   onClose: () => void;
 }
 
-type AdminTab = 'dashboard' | 'school' | 'generator' | 'licenses' | 'users' | 'audit';
+type AdminTab = 'classes' | 'school' | 'dashboard' | 'generator' | 'licenses' | 'users' | 'audit';
 
 export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
   const { user } = useAuthStore();
-  const [activeTab, setActiveTab] = useState<AdminTab>('school');
+  const [activeTab, setActiveTab] = useState<AdminTab>('classes');
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [licenses, setLicenses] = useState<License[]>([]);
   const [users, setUsers] = useState<UserProfile[]>([]);
@@ -65,6 +66,7 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
   }, [isOpen]);
 
   const tabs: SegmentOption<AdminTab>[] = [
+    { id: 'classes', label: 'Klassen & Pläne' },
     { id: 'school', label: 'Schule' },
     { id: 'dashboard', label: 'Dashboard' },
     { id: 'generator', label: 'Generator' },
@@ -101,6 +103,13 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
         </div>
 
         {/* Tab Content */}
+        {activeTab === 'classes' && (
+          <ClassTimetableAdminTab
+            adminUid={adminUid}
+            adminEmail={adminEmail}
+          />
+        )}
+
         {activeTab === 'school' && (
           <SchoolConfigTab
             adminUid={adminUid}

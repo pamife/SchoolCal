@@ -7,6 +7,7 @@ import { useSettingsStore } from './store/useSettingsStore';
 import { useAuthStore } from './store/useAuthStore';
 import { useGradeStore } from './store/useGradeStore';
 import { useSchoolConfigStore } from './store/useSchoolConfigStore';
+import { useClassTimetableStore } from './store/useClassTimetableStore';
 
 import { MobileNavBar } from './components/layout/MobileNavBar';
 import { Sidebar } from './components/layout/Sidebar';
@@ -105,6 +106,9 @@ export function App() {
       loadExams(user.uid);
       loadEvents(user.uid);
       loadGrades(user.uid);
+      useClassTimetableStore.getState().loadSchoolEntities();
+      useClassTimetableStore.getState().loadClasses();
+      useClassTimetableStore.getState().loadStudentSelection(user.uid);
     } else {
       clearSchoolData();
       clearHomework();

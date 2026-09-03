@@ -25,6 +25,19 @@ export const ACCENT_PALETTES = [
   { name: 'Graphit', color: '#8E8E93' },
 ];
 
+export const SUBJECT_COLORS = [
+  '#007AFF',
+  '#5856D6',
+  '#AF52DE',
+  '#FF2D55',
+  '#FF9500',
+  '#34C759',
+  '#00C7BE',
+  '#8E8E93',
+  '#FF3B30',
+  '#30B0C7',
+];
+
 export function getSubjectIcon(iconName: string): React.ComponentType<{ className?: string }> {
   switch (iconName?.toLowerCase()) {
     case 'calculator':

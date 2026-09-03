@@ -19,6 +19,7 @@ import { useSubscription } from '../../hooks/useSubscription';
 import { calculateSmartDayData } from '../../utils/smartDayEngine';
 import { SmartDayHero } from './SmartDayHero';
 import { SmartDayChangesBanner } from './SmartDayChangesBanner';
+import { ClassTimetableUpdateBanner } from './ClassTimetableUpdateBanner';
 import { TodayTimeline } from './TodayTimeline';
 import { TodayHomeworkWidget } from './TodayHomeworkWidget';
 import { ExamCountdownWidget } from './ExamCountdownWidget';
@@ -122,6 +123,9 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
           </div>
         </section>
       )}
+
+      {/* 🔔 Class Timetable Update Banner */}
+      <ClassTimetableUpdateBanner />
 
       {/* 🧠 1. Smart Day Hero & Next Lesson */}
       <section aria-label="Smart Day Übersicht">

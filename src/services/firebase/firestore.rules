@@ -61,8 +61,16 @@ service cloud.firestore {
       // ONLY Admins can create or update school configuration
       allow write: if isAdmin();
 
-      // Subcollections: scheduleConfig, scheduleSettings, holidays
+      // Subcollections: scheduleConfig, scheduleSettings, holidays, classes, subjects, teachers, rooms
       match /{subcollection}/{docId} {
+        allow read: if isAuthenticated() && (
+          schoolId == 'christa-peter-scherpf-gymnasium-prenzlau'
+        );
+        allow write: if isAdmin();
+      }
+
+      // Nested subcollections: classes/{classId}/timetables/{docId} etc.
+      match /classes/{classId}/{subcollection}/{docId} {
         allow read: if isAuthenticated() && (
           schoolId == 'christa-peter-scherpf-gymnasium-prenzlau'
         );

@@ -13,6 +13,7 @@
     "test:onboarding": "npx tsx scripts/test-onboarding-pwa.ts",
     "test:privacy": "npx tsx scripts/test-privacy-security.ts",
     "test:mobile": "npx tsx scripts/test-mobile-ux-sync.ts",
+    "test:timetables": "npx tsx scripts/test-class-timetables.ts",
     "preview": "vite preview"
   },
   "dependencies": {

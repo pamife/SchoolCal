@@ -34,6 +34,7 @@ export interface Subject {
   icon: string; // Lucide icon identifier
   teacherId?: string;
   defaultRoomId?: string;
+  subjectType?: string;
 }
 
 export interface Teacher {
@@ -522,11 +523,135 @@ export interface SchoolAuditLogEntry {
     | 'BREAKS_UPDATED'
     | 'HOLIDAY_ADDED'
     | 'HOLIDAY_DELETED'
-    | 'WEBUNTIS_CONFIG_UPDATED';
+    | 'WEBUNTIS_CONFIG_UPDATED'
+    | 'CLASS_CREATED'
+    | 'CLASS_UPDATED'
+    | 'CLASS_ARCHIVED'
+    | 'TIMETABLE_PUBLISHED';
   actorUid: string;
   actorEmail?: string;
   details?: Record<string, any>;
   timestamp: string;
 }
+
+// ----------------------------------------------------
+// 🏛️ Admin-Managed Class Timetables & Student Variants
+// ----------------------------------------------------
+
+export type TimetableSource = 'admin' | 'webuntis' | 'manual';
+
+export interface SchoolClass {
+  id: string; // e.g. "class-10a"
+  name: string; // e.g. "10A"
+  gradeLevel: string; // e.g. "10"
+  schoolYear: string; // e.g. "2026/2027"
+  archived: boolean;
+  studentCount?: number;
+  activeTimetableVersion: number;
+  publishedAt?: string | null;
+  updatedAt: string;
+  createdAt: string;
+  updatedByUid?: string;
+}
+
+export interface TimetableEntry {
+  id: string;
+  dayOfWeek: number; // 1 = Mo, 2 = Di, 3 = Mi, 4 = Do, 5 = Fr
+  period: number; // 1 to 10
+  startTime: string; // HH:mm
+  endTime: string; // HH:mm
+  subjectId: string;
+  teacherId?: string;
+  roomId?: string;
+  courseGroup?: string; // z.B. "G1", "WP1", "GK"
+  note?: string;
+  lessonType?: 'regular' | 'elective' | 'remedial' | 'other';
+  variantId?: string; // Wenn an eine bestimmte Variante gekoppelt (optional)
+}
+
+export interface TimetableVariant {
+  id: string; // z.B. "var-kunst", "var-franz-mueller", "var-info"
+  name: string; // z.B. "Wahlpflicht Kunst", "Französisch (Frau Müller)"
+  description?: string;
+  category?: string; // z.B. "Wahlpflichtfach", "Lehrkraft", "Sprache"
+  entries: TimetableEntry[]; // Spezifische Stunden für diese Variante
+  replacesPeriods: Array<{ dayOfWeek: number; period: number }>; // Welche Stunden dadurch belegt/ersetzt werden
+}
+
+export interface QuestionCondition {
+  dependsOnQuestionId: string; // ID der Vorgängerfrage
+  expectedOptionId: string; // ID der Option, bei der diese Frage aktiv wird
+  operator?: 'equals' | 'not_equals';
+}
+
+export interface OnboardingQuestionOption {
+  id: string; // z.B. "opt-kunst"
+  label: string; // "Kunst"
+  subLabel?: string; // "Frau Müller • Raum A101"
+  variantIds: string[]; // Welche Variante(n) bei dieser Antwort aktiv werden
+  nextQuestionId?: string | null;
+}
+
+export interface OnboardingQuestion {
+  id: string; // z.B. "q-wpf"
+  order: number;
+  title: string; // "Welches Wahlpflichtfach hast du?"
+  description?: string;
+  required: boolean;
+  condition?: QuestionCondition | null;
+  options: OnboardingQuestionOption[];
+}
+
+export interface ClassTimetable {
+  id: 'published' | 'draft' | string;
+  classId: string;
+  version: number;
+  status: 'draft' | 'published';
+  baseEntries: TimetableEntry[];
+  variants: TimetableVariant[];
+  questions: OnboardingQuestion[];
+  publishedAt?: string | null;
+  publishedByUid?: string;
+  updatedAt: string;
+  changeSummary?: string[];
+}
+
+export interface StudentTimetableSelection {
+  userId: string;
+  classId: string;
+  className: string;
+  selectedOptionIds: Record<string, string>; // questionId -> optionId
+  activeVariantIds: string[];
+  appliedVersion: number;
+  lastNotifiedVersion?: number;
+  timetableSource: TimetableSource;
+  personalOverrides?: Record<string, Partial<ScheduleEntry>>; // cellKey ("day-period") -> override
+  customEntries?: ScheduleEntry[];
+  updatedAt: string;
+}
+
+export interface TimetableDiffItem {
+  dayOfWeek: number;
+  period: number;
+  type: 'added' | 'removed' | 'modified';
+  before?: {
+    subjectName?: string;
+    teacherName?: string;
+    roomName?: string;
+  };
+  after?: {
+    subjectName?: string;
+    teacherName?: string;
+    roomName?: string;
+  };
+  description: string;
+}
+
+export interface TimetableDiff {
+  hasChanges: boolean;
+  items: TimetableDiffItem[];
+  summary: string[];
+}
+
 
 

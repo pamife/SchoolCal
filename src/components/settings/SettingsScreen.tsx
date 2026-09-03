@@ -20,10 +20,13 @@ import {
   Shield,
   Crown,
   HelpCircle,
+  GraduationCap,
+  AlertTriangle,
 } from 'lucide-react';
 import { useSettingsStore } from '../../store/useSettingsStore';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useSchoolStore } from '../../store/useSchoolStore';
+import { useClassTimetableStore } from '../../store/useClassTimetableStore';
 import { useHomeworkStore } from '../../store/useHomeworkStore';
 import { useExamStore } from '../../store/useExamStore';
 import { useCalendarStore } from '../../store/useCalendarStore';
@@ -32,6 +35,7 @@ import { GERMAN_STATES, getHolidaysForState } from '../../data/holidays';
 import { ACCENT_PALETTES } from '../../utils/colorUtils';
 import { Button } from '../common/Button';
 import { Badge } from '../common/Badge';
+import { BottomSheet } from '../common/BottomSheet';
 import { PeriodTimesModal } from '../school/PeriodTimesModal';
 import { PricingModal } from '../licensing/PricingModal';
 import { LicenseActivationModal } from '../licensing/LicenseActivationModal';
@@ -43,6 +47,9 @@ import { NotificationSettingsTab } from './NotificationSettingsTab';
 import { AiSettingsCard } from './AiSettingsCard';
 import { PrivacyDashboardCard } from './PrivacyDashboardCard';
 import { PrivacyPolicyModal } from '../legal/PrivacyPolicyModal';
+import { ClassSelectionQuestionStep } from '../onboarding/ClassSelectionQuestionStep';
+import { fetchClassTimetable } from '../../services/school/classTimetableService';
+import type { ClassTimetable } from '../../types';
 import { ImprintModal } from '../legal/ImprintModal';
 import { TermsModal } from '../legal/TermsModal';
 import { exportFullJsonBackup, parseJsonBackup, exportScheduleCsv } from '../../services/export/dataExportService';
@@ -87,6 +94,83 @@ export const SettingsScreen: React.FC = () => {
       : DEFAULT_PERIOD_TIMES;
 
   const breaks: ScheduleBreak[] = settings.breaks || [];
+
+  const {
+    classes,
+    studentSelection,
+    publishedTimetable,
+    setStudentClassAndVariants,
+    disconnectStudentClass,
+  } = useClassTimetableStore();
+
+  const [selectedClassToEnroll, setSelectedClassToEnroll] = useState<string>('');
+  const [isConfirmReplaceModalOpen, setIsConfirmReplaceModalOpen] = useState(false);
+  const [isQuestionModalOpen, setIsQuestionModalOpen] = useState(false);
+  const [enrollingTimetable, setEnrollingTimetable] = useState<ClassTimetable | null>(null);
+
+  const handleInitiateEnroll = async (classId?: string) => {
+    const targetClassId = classId || selectedClassToEnroll;
+    if (!targetClassId) return;
+
+    const timetable = await fetchClassTimetable(targetClassId, 'published');
+    setEnrollingTimetable(timetable);
+    setSelectedClassToEnroll(targetClassId);
+
+    // If student already has schedule entries and is currently on manual, show confirmation
+    if (scheduleEntries.length > 0 && studentSelection?.timetableSource !== 'admin') {
+      setIsConfirmReplaceModalOpen(true);
+    } else {
+      await proceedEnrollment(targetClassId, timetable);
+    }
+  };
+
+  const proceedEnrollment = async (classId: string, timetable: ClassTimetable | null) => {
+    setIsConfirmReplaceModalOpen(false);
+    const classObj = classes.find((c) => c.id === classId);
+    const clsName = classObj?.name || 'Klasse';
+
+    if (timetable && timetable.questions && timetable.questions.length > 0) {
+      setIsQuestionModalOpen(true);
+    } else {
+      await setStudentClassAndVariants(
+        uid,
+        classId,
+        clsName,
+        {},
+        [],
+        timetable?.version || 1
+      );
+      setShowSavedToast(true);
+      setTimeout(() => setShowSavedToast(false), 2500);
+    }
+  };
+
+  const handleQuestionsCompleteFromSettings = async (
+    answers: Record<string, string>,
+    activeVariantIds: string[]
+  ) => {
+    const classObj = classes.find((c) => c.id === selectedClassToEnroll);
+    const clsName = classObj?.name || 'Klasse';
+    const version = enrollingTimetable?.version || 1;
+
+    await setStudentClassAndVariants(
+      uid,
+      selectedClassToEnroll,
+      clsName,
+      answers,
+      activeVariantIds,
+      version
+    );
+    setIsQuestionModalOpen(false);
+    setShowSavedToast(true);
+    setTimeout(() => setShowSavedToast(false), 2500);
+  };
+
+  const handleSwitchToManual = async () => {
+    await disconnectStudentClass(uid);
+    setShowSavedToast(true);
+    setTimeout(() => setShowSavedToast(false), 2500);
+  };
 
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -424,6 +508,128 @@ export const SettingsScreen: React.FC = () => {
             </Button>
           </div>
         </form>
+      </div>
+
+      {/* 3.1 KLASSEN-STUNDENPLAN (ADMIN-GEPFLEGT ODER MANUELL) */}
+      <div className="ios-card p-5 space-y-4">
+        <div className="flex items-center justify-between pb-2 border-b border-black/5 dark:border-white/10">
+          <div className="flex items-center gap-2.5">
+            <GraduationCap className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+            <div>
+              <h3 className="text-base font-bold text-gray-900 dark:text-white">
+                Klassen-Stundenplan
+              </h3>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Automatische Übernahme des zentralen Klassenstundenplans mit individuellen Varianten
+              </p>
+            </div>
+          </div>
+
+          {studentSelection?.classId && studentSelection.timetableSource === 'admin' ? (
+            <Badge variant="blue" size="sm">
+              Admin-verwaltet (v{studentSelection.appliedVersion})
+            </Badge>
+          ) : (
+            <Badge variant="gray" size="sm">
+              Manueller Stundenplan
+            </Badge>
+          )}
+        </div>
+
+        {studentSelection?.classId && studentSelection.timetableSource === 'admin' ? (
+          <div className="space-y-3">
+            <div className="p-4 rounded-2xl bg-indigo-50/60 dark:bg-ios-dark-secondary border border-indigo-100 dark:border-white/5 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-black text-indigo-900 dark:text-indigo-200">
+                  Zugewiesene Klasse: {studentSelection.className}
+                </span>
+                <span className="text-[11px] text-gray-500">
+                  Version {publishedTimetable?.version || studentSelection.appliedVersion}
+                </span>
+              </div>
+              <p className="text-xs text-gray-600 dark:text-gray-400">
+                Dein Stundenplan wird automatisch synchronisiert, sobald die Schulleitung oder der Admin Änderungen veröffentlicht.
+              </p>
+
+              {studentSelection.activeVariantIds && studentSelection.activeVariantIds.length > 0 && (
+                <div className="pt-1 flex flex-wrap items-center gap-1.5">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">
+                    Aktive Varianten:
+                  </span>
+                  {studentSelection.activeVariantIds.map((varId) => {
+                    const variant = publishedTimetable?.variants?.find((v) => v.id === varId);
+                    return (
+                      <Badge key={varId} variant="green" size="sm">
+                        {variant?.name || varId}
+                      </Badge>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
+              {publishedTimetable?.questions && publishedTimetable.questions.length > 0 && (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => {
+                    setSelectedClassToEnroll(studentSelection.classId);
+                    setEnrollingTimetable(publishedTimetable);
+                    setIsQuestionModalOpen(true);
+                  }}
+                  icon={<Sparkles className="w-3.5 h-3.5" />}
+                >
+                  Varianten anpassen
+                </Button>
+              )}
+
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={handleSwitchToManual}
+                className="text-gray-500 hover:text-red-500"
+              >
+                Zu manuellem Stundenplan wechseln
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            <p className="text-xs text-gray-600 dark:text-gray-300">
+              Du verwaltest deinen Stundenplan aktuell manuell. Wenn deine Klasse vorab vom Admin
+              hinterlegt wurde, kannst du ihn jetzt mit einem Klick automatisch einrichten lassen.
+            </p>
+
+            <div className="flex flex-wrap items-center gap-2.5">
+              <select
+                value={selectedClassToEnroll}
+                onChange={(e) => setSelectedClassToEnroll(e.target.value)}
+                className="px-3.5 py-2 bg-gray-100 dark:bg-ios-dark-secondary rounded-xl text-xs font-bold border border-black/5 dark:border-white/10"
+              >
+                <option value="">– Klasse auswählen (z.B. 10A) –</option>
+                {classes.map((cls) => (
+                  <option key={cls.id} value={cls.id}>
+                    Klasse {cls.name} (Stufe {cls.gradeLevel})
+                  </option>
+                ))}
+              </select>
+
+              <Button
+                type="button"
+                variant="primary"
+                size="sm"
+                disabled={!selectedClassToEnroll}
+                onClick={() => handleInitiateEnroll(selectedClassToEnroll)}
+                icon={<GraduationCap className="w-3.5 h-3.5" />}
+              >
+                Automatisch einrichten
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* 4. ZEITPLAN & GLOCKENZEITEN */}
@@ -862,6 +1068,64 @@ export const SettingsScreen: React.FC = () => {
         isOpen={isAdminModalOpen}
         onClose={() => setIsAdminModalOpen(false)}
       />
+
+      {/* Modal: Bestätigung Stundenplan ersetzen */}
+      <BottomSheet
+        isOpen={isConfirmReplaceModalOpen}
+        onClose={() => setIsConfirmReplaceModalOpen(false)}
+        title="Stundenplan ersetzen?"
+      >
+        <div className="space-y-4 pb-2">
+          <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-start gap-3">
+            <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+            <div className="space-y-1">
+              <h4 className="text-sm font-bold text-gray-900 dark:text-white">
+                Dein bisheriger Stundenplan wird ersetzt.
+              </h4>
+              <p className="text-xs text-gray-600 dark:text-gray-400">
+                Du hast bereits {scheduleEntries.length} manuelle Unterrichtsstunden angelegt. Bei der automatischen
+                Einrichtung wird dein Stundenplan durch den Klassenplan ersetzt. Möchtest du fortfahren?
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-end gap-2 pt-2 border-t border-black/5 dark:border-white/10">
+            <Button
+              variant="secondary"
+              size="md"
+              onClick={() => setIsConfirmReplaceModalOpen(false)}
+            >
+              Abbrechen
+            </Button>
+            <Button
+              variant="primary"
+              size="md"
+              onClick={() => proceedEnrollment(selectedClassToEnroll, enrollingTimetable)}
+            >
+              Übernehmen
+            </Button>
+          </div>
+        </div>
+      </BottomSheet>
+
+      {/* Modal: Zuordnungsfragen bei Klassenauswahl */}
+      {isQuestionModalOpen && enrollingTimetable && (
+        <BottomSheet
+          isOpen={isQuestionModalOpen}
+          onClose={() => setIsQuestionModalOpen(false)}
+          title={`Fragen für Klasse ${classes.find(c => c.id === selectedClassToEnroll)?.name || ''}`}
+        >
+          <div className="pb-2">
+            <ClassSelectionQuestionStep
+              className={classes.find((c) => c.id === selectedClassToEnroll)?.name || ''}
+              questions={enrollingTimetable.questions || []}
+              initialAnswers={studentSelection?.selectedOptionIds}
+              onComplete={handleQuestionsCompleteFromSettings}
+              onBack={() => setIsQuestionModalOpen(false)}
+            />
+          </div>
+        </BottomSheet>
+      )}
     </div>
   );
 };

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   User,
@@ -7,7 +7,6 @@ import {
   BellRing,
   Smartphone,
   CheckCircle2,
-  Calendar,
   Sparkles,
   ArrowRight,
   ChevronLeft,
@@ -20,11 +19,13 @@ import {
 } from 'lucide-react';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useSettingsStore } from '../../store/useSettingsStore';
-import { GERMAN_STATES } from '../../data/holidays';
+import { useClassTimetableStore } from '../../store/useClassTimetableStore';
+import { fetchClassTimetable } from '../../services/school/classTimetableService';
+import { ClassSelectionQuestionStep } from './ClassSelectionQuestionStep';
 import { Button } from '../common/Button';
 import { InstallGuideCard } from '../pwa/InstallGuideCard';
 import { requestNotificationPermission } from '../../services/notifications/notificationService';
-import type { CalendarViewType, NavigationTab } from '../../types';
+import type { CalendarViewType, NavigationTab, ClassTimetable } from '../../types';
 
 interface SetupWizardProps {
   onComplete: () => void;
@@ -32,7 +33,14 @@ interface SetupWizardProps {
   onOpenWebUntis?: () => void;
 }
 
-type WizardStep = 'profile' | 'school' | 'schedule' | 'notifications' | 'install' | 'completed';
+type WizardStep =
+  | 'profile'
+  | 'school'
+  | 'class_questions'
+  | 'schedule'
+  | 'notifications'
+  | 'install'
+  | 'completed';
 
 export const SetupWizard: React.FC<SetupWizardProps> = ({
   onComplete,
@@ -41,6 +49,7 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({
 }) => {
   const { user, updateProfile } = useAuthStore();
   const { settings, updateSettings, setState } = useSettingsStore();
+  const { classes, loadClasses, setStudentClassAndVariants } = useClassTimetableStore();
 
   const [currentStep, setCurrentStep] = useState<WizardStep>('profile');
 
@@ -49,10 +58,13 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({
   const [defaultCalendarView, setDefaultCalendarView] = useState<CalendarViewType>(
     settings.defaultCalendarView || 'week'
   );
-  const [schoolName, setSchoolName] = useState(settings.schoolName || 'Christa-und-Peter-Scherpf-Gymnasium');
   const [gradeLevel, setGradeLevel] = useState(settings.gradeLevel || '');
-  const [selectedState, setSelectedState] = useState(settings.state || 'BB');
-  const [scheduleChoice, setScheduleChoice] = useState<'manual' | 'import' | 'webuntis' | 'later' | null>(null);
+  const [selectedClassId, setSelectedClassId] = useState<string>('');
+  const schoolName = settings.schoolName || 'Christa-und-Peter-Scherpf-Gymnasium';
+  const selectedState = settings.state || 'BB';
+  const [scheduleChoice, setScheduleChoice] = useState<'admin' | 'manual' | 'import' | 'webuntis' | 'later' | null>(null);
+  const [loadedClassTimetable, setLoadedClassTimetable] = useState<ClassTimetable | null>(null);
+  const [isCheckingTimetable, setIsCheckingTimetable] = useState(false);
 
   // Notification status
   const [notificationStatus, setNotificationStatus] = useState<'idle' | 'granted' | 'denied'>(() => {
@@ -79,7 +91,10 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({
       ? 100
       : Math.round(((currentStepIndex >= 0 ? currentStepIndex : 0) / stepsList.length) * 100);
 
-  // Handlers for step navigation
+  useEffect(() => {
+    loadClasses();
+  }, [loadClasses]);
+
   const handleSaveProfile = async () => {
     if (displayName.trim()) {
       updateProfile({ displayName: displayName.trim() });
@@ -90,8 +105,69 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({
 
   const handleSaveSchool = async () => {
     setState(selectedState, uid);
-    await updateSettings({ schoolName: schoolName.trim(), gradeLevel: gradeLevel.trim(), state: selectedState }, uid);
+    const effectiveGrade = selectedClassId
+      ? classes.find((c) => c.id === selectedClassId)?.name || gradeLevel
+      : gradeLevel;
+
+    await updateSettings(
+      { schoolName: schoolName.trim(), gradeLevel: effectiveGrade.trim(), state: selectedState },
+      uid
+    );
+
+    if (selectedClassId) {
+      setIsCheckingTimetable(true);
+      try {
+        const timetable = await fetchClassTimetable(selectedClassId, 'published');
+        const classObj = classes.find((c) => c.id === selectedClassId);
+        const className = classObj?.name || effectiveGrade;
+
+        if (timetable && timetable.questions && timetable.questions.length > 0) {
+          setLoadedClassTimetable(timetable);
+          setScheduleChoice('admin');
+          setCurrentStep('class_questions');
+          return;
+        } else if (timetable) {
+          // Class has timetable without questions -> auto enroll immediately!
+          setScheduleChoice('admin');
+          await setStudentClassAndVariants(
+            uid,
+            selectedClassId,
+            className,
+            {},
+            [],
+            timetable.version || 1
+          );
+          setCurrentStep('notifications');
+          return;
+        }
+      } catch (err) {
+        console.warn('Error checking class timetable:', err);
+      } finally {
+        setIsCheckingTimetable(false);
+      }
+    }
+
     setCurrentStep('schedule');
+  };
+
+  const handleQuestionsComplete = async (
+    answers: Record<string, string>,
+    activeVariantIds: string[]
+  ) => {
+    const classObj = classes.find((c) => c.id === selectedClassId);
+    const className = classObj?.name || gradeLevel;
+    const version = loadedClassTimetable?.version || 1;
+
+    await setStudentClassAndVariants(
+      uid,
+      selectedClassId,
+      className,
+      answers,
+      activeVariantIds,
+      version
+    );
+
+    setCurrentStep('notifications');
   };
 
   const handleSelectScheduleOption = async (choice: 'manual' | 'import' | 'webuntis' | 'later') => {
@@ -291,21 +367,84 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({
                 {/* Grade / Class input */}
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">
-                    Deine Klasse oder Kursstufe
+                    Deine Klasse
                   </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="z.B. 10a, 9b, 11-1 oder Q12"
-                    value={gradeLevel}
-                    onChange={(e) => setGradeLevel(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-gray-100 dark:bg-ios-dark-secondary rounded-xl text-sm font-semibold text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-ios-blue"
-                  />
-                  <p className="text-[11px] text-gray-400 mt-1">
-                    Wird für deinen Stundenplan und WebUntis-Abgleich verwendet.
-                  </p>
+
+                  {classes.length > 0 ? (
+                    <div className="space-y-2">
+                      <select
+                        value={selectedClassId}
+                        onChange={(e) => {
+                          const cId = e.target.value;
+                          setSelectedClassId(cId);
+                          const cls = classes.find((c) => c.id === cId);
+                          if (cls) {
+                            setGradeLevel(cls.name);
+                          }
+                        }}
+                        className="w-full px-3.5 py-2.5 bg-gray-100 dark:bg-ios-dark-secondary rounded-xl text-sm font-semibold text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-ios-blue"
+                      >
+                        <option value="">– Klasse auswählen (z.B. 10A) –</option>
+                        {classes.map((cls) => (
+                          <option key={cls.id} value={cls.id}>
+                            Klasse {cls.name} (Stufe {cls.gradeLevel})
+                          </option>
+                        ))}
+                      </select>
+
+                      {selectedClassId ? (
+                        <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-300 text-xs font-semibold flex items-center gap-2">
+                          <Check className="w-4 h-4 text-emerald-500 shrink-0" />
+                          <span>
+                            Stundenplan für Klasse{' '}
+                            <strong className="underline font-bold">
+                              {classes.find((c) => c.id === selectedClassId)?.name}
+                            </strong>{' '}
+                            gefunden! Wird automatisch eingerichtet.
+                          </span>
+                        </div>
+                      ) : (
+                        <p className="text-[11px] text-gray-400">
+                          Wähle deine Klasse aus, damit dein Stundenplan direkt automatisch bereitsteht.
+                        </p>
+                      )}
+                    </div>
+                  ) : (
+                    <div>
+                      <input
+                        type="text"
+                        required
+                        placeholder="z.B. 10a, 9b, 11-1 oder Q12"
+                        value={gradeLevel}
+                        onChange={(e) => setGradeLevel(e.target.value)}
+                        className="w-full px-3.5 py-2.5 bg-gray-100 dark:bg-ios-dark-secondary rounded-xl text-sm font-semibold text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-ios-blue"
+                      />
+                      <p className="text-[11px] text-gray-400 mt-1">
+                        Wird für deinen Stundenplan und WebUntis-Abgleich verwendet.
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
+            </motion.div>
+          )}
+
+          {/* ========================================================================= */}
+          {/* STEP 2.1: BEDINGTE KLASSEN-FRAGEN (WENN VORHANDEN) */}
+          {/* ========================================================================= */}
+          {currentStep === 'class_questions' && loadedClassTimetable && (
+            <motion.div
+              key="step-class-questions"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+            >
+              <ClassSelectionQuestionStep
+                className={classes.find((c) => c.id === selectedClassId)?.name || gradeLevel}
+                questions={loadedClassTimetable.questions}
+                onComplete={handleQuestionsComplete}
+                onBack={() => setCurrentStep('school')}
+              />
             </motion.div>
           )}
 
@@ -549,7 +688,7 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({
       </div>
 
       {/* Navigation Controls in Footer */}
-      {currentStep !== 'completed' && (
+      {currentStep !== 'completed' && currentStep !== 'class_questions' && (
         <div className="pt-6 flex items-center justify-between gap-3 border-t border-black/5 dark:border-white/10 mt-6">
           {currentStepIndex > 0 ? (
             <Button
@@ -583,10 +722,11 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({
                 type="button"
                 variant="primary"
                 size="md"
+                disabled={isCheckingTimetable}
                 onClick={handleSaveSchool}
                 icon={<ChevronRight className="w-4 h-4" />}
               >
-                Weiter
+                {isCheckingTimetable ? 'Prüft Plan...' : 'Weiter'}
               </Button>
             )}
 

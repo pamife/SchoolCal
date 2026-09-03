@@ -13,6 +13,7 @@ import {
   BarChart3,
 } from 'lucide-react';
 import { useSchoolStore } from '../../store/useSchoolStore';
+import { useClassTimetableStore } from '../../store/useClassTimetableStore';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useSettingsStore } from '../../store/useSettingsStore';
 import { SegmentedControl, type SegmentOption } from '../common/SegmentedControl';
@@ -57,6 +58,8 @@ export const SchoolScreen: React.FC = () => {
     updateSubstitution,
     deleteSubstitution,
   } = useSchoolStore();
+
+  const { studentSelection, updateStudentOverrides } = useClassTimetableStore();
 
   const [activeTab, setActiveTab] = useState<SchoolSubTab>('schedule');
 
@@ -118,10 +121,12 @@ export const SchoolScreen: React.FC = () => {
   };
 
   const handleSaveScheduleEntry = async (entry: ScheduleEntry, isDoubleLesson?: boolean) => {
-    if (selectedEntry) {
-      await updateScheduleEntry(uid, entry.id, entry);
-    } else {
-      await addScheduleEntry(uid, entry);
+    if (studentSelection?.timetableSource === 'admin') {
+      const cellKey = `${entry.dayOfWeek}-${entry.period}`;
+      const updatedOverrides = {
+        ...(studentSelection.personalOverrides || {}),
+        [cellKey]: entry,
+      };
       if (isDoubleLesson) {
         const nextPeriodNum = entry.period + 1;
         const nextPeriodInfo = periodTimes.find(p => p.period === nextPeriodNum);
@@ -132,7 +137,26 @@ export const SchoolScreen: React.FC = () => {
           startTime: nextPeriodInfo?.startTime || '08:50',
           endTime: nextPeriodInfo?.endTime || '09:35',
         };
-        await addScheduleEntry(uid, secondEntry);
+        updatedOverrides[`${entry.dayOfWeek}-${nextPeriodNum}`] = secondEntry;
+      }
+      await updateStudentOverrides(uid, updatedOverrides);
+    } else {
+      if (selectedEntry) {
+        await updateScheduleEntry(uid, entry.id, entry);
+      } else {
+        await addScheduleEntry(uid, entry);
+        if (isDoubleLesson) {
+          const nextPeriodNum = entry.period + 1;
+          const nextPeriodInfo = periodTimes.find(p => p.period === nextPeriodNum);
+          const secondEntry: ScheduleEntry = {
+            ...entry,
+            id: `sch-${entry.dayOfWeek}-${nextPeriodNum}-${Date.now()}`,
+            period: nextPeriodNum,
+            startTime: nextPeriodInfo?.startTime || '08:50',
+            endTime: nextPeriodInfo?.endTime || '09:35',
+          };
+          await addScheduleEntry(uid, secondEntry);
+        }
       }
     }
   };
@@ -162,6 +186,12 @@ export const SchoolScreen: React.FC = () => {
         {/* Tab specific primary action button */}
         {activeTab === 'schedule' && (
           <div className="flex items-center gap-2 shrink-0">
+            {studentSelection?.classId && studentSelection.timetableSource === 'admin' && (
+              <Badge variant="blue" size="sm">
+                Klasse {studentSelection.className} (Zentral)
+              </Badge>
+            )}
+
             <button
               type="button"
               onClick={() => setIsPeriodTimesModalOpen(true)}
