@@ -1,7 +1,7 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import './index.css';
-import App from './App.tsx';
+import Root from './Root.tsx';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 
 // Register Service Worker for PWA Offline Support with auto-update
@@ -33,7 +33,7 @@ if ('serviceWorker' in navigator && import.meta.env.PROD) {
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ErrorBoundary>
-      <App />
+      <Root />
     </ErrorBoundary>
   </StrictMode>,
 );

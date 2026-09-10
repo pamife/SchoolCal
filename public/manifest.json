@@ -9,7 +9,7 @@
       "purpose": "any maskable"
     }
   ],
-  "start_url": "/",
+  "start_url": "/app",
   "background_color": "#F2F2F7",
   "theme_color": "#12304A",
   "display": "standalone",
@@ -20,28 +20,28 @@
       "name": "Heute",
       "short_name": "Heute",
       "description": "Öffne deine heutige Übersicht",
-      "url": "/?tab=today",
+      "url": "/app?tab=today",
       "icons": [{ "src": "/icon.svg", "sizes": "192x192" }]
     },
     {
       "name": "Aufgabe hinzufügen",
       "short_name": "Aufgabe +",
       "description": "Neue Hausaufgabe schnell erfassen",
-      "url": "/?action=add_homework",
+      "url": "/app?action=add_homework",
       "icons": [{ "src": "/icon.svg", "sizes": "192x192" }]
     },
     {
       "name": "Stundenplan",
       "short_name": "Stundenplan",
       "description": "Heutigen und wöchentlichen Stundenplan ansehen",
-      "url": "/?tab=school",
+      "url": "/app?tab=school",
       "icons": [{ "src": "/icon.svg", "sizes": "192x192" }]
     },
     {
       "name": "Kalender",
       "short_name": "Kalender",
       "description": "Schulkalender & Termine öffnen",
-      "url": "/?tab=calendar",
+      "url": "/app?tab=calendar",
       "icons": [{ "src": "/icon.svg", "sizes": "192x192" }]
     }
   ]

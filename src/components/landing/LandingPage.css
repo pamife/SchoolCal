@@ -1,0 +1,9 @@
+.schoolcal-landing {
+  --landing-depth-face: #0f172a;
+  color-scheme: light;
+}
+
+.dark .schoolcal-landing {
+  --landing-depth-face: #f8fafc;
+  color-scheme: dark;
+}
