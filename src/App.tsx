@@ -39,6 +39,7 @@ import { evaluatePendingNotifications } from './services/notifications/notificat
 import { sendLocalNotification } from './services/notifications/notificationService';
 import { useInputAutoScroll } from './hooks/useInputAutoScroll';
 import { useAppSync } from './hooks/useAppSync';
+import { LoaderOne } from './components/ui/loader';
 import type { NavigationTab, QuickActionType, ScheduleEntry, Exam } from './types';
 
 export function App() {
@@ -191,7 +192,7 @@ export function App() {
     return (
       <div className="h-dvh w-full flex flex-col items-center justify-center bg-ios-light-bg dark:bg-ios-dark-bg text-slate-900 dark:text-white">
         <img src="/icon.svg" alt="SchoolCal" className="w-16 h-16 rounded-[14px] mb-4" />
-        <div className="w-6 h-6 border-2 border-ios-blue border-t-transparent rounded-full animate-spin" />
+        <LoaderOne />
       </div>
     );
   }
