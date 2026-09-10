@@ -239,16 +239,17 @@ export const PrivacyDashboardCard: React.FC<PrivacyDashboardCardProps> = ({
             </p>
           </div>
 
-          <Button
+          <StatefulButton
             type="button"
             variant="destructive"
             size="sm"
             disabled={isDeleting}
             onClick={() => setDeleteStep(1)}
             icon={<Trash2 className="w-4 h-4" />}
+            successText="Bestätigung geöffnet"
           >
             Account löschen
-          </Button>
+          </StatefulButton>
         </div>
 
         {/* Step 1 Confirmation Modal / Box */}
