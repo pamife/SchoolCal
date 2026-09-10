@@ -328,6 +328,8 @@ export const ClassTimetableAdminTab: React.FC<ClassTimetableAdminTabProps> = ({
             {/* 1. TIMETABLE EDITOR TAB */}
             {activeSubTab === 'timetable' && (
               <ClassTimetableEditor
+                key={selectedClass.id}
+                selectedClassName={selectedClass.name}
                 baseEntries={draftTimetable?.baseEntries || []}
                 variants={draftTimetable?.variants || []}
                 subjects={schoolSubjects}

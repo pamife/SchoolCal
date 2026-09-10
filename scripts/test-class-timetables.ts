@@ -6,6 +6,7 @@ import type {
   Teacher,
   Room,
   ScheduleEntry,
+  SchedulePeriodTime,
 } from '../src/types';
 import {
   resolveStudentSchedule,
@@ -15,6 +16,7 @@ import {
   isQuestionActive,
 } from '../src/services/school/classTimetableService';
 import { isDoubleLessonAdjacent } from '../src/utils/lessonGroupingEngine';
+import { parseTimetableImportJson } from '../src/utils/timetableJsonImport';
 
 function runTestSuite() {
   console.log('🧪 Starting SchoolCal - Admin Class Timetables & Student Variants Test Suite...\n');
@@ -452,9 +454,102 @@ function runTestSuite() {
   );
 
   // ==========================================================================
-  // Test 7: Security & Permission Rules Verification
+  // Test 7: AI-friendly JSON timetable import
   // ==========================================================================
-  console.log('\n🔒 Test Group 7: Security & Permission Simulation');
+  console.log('\n📄 Test Group 7: JSON timetable import');
+
+  const importPeriods: SchedulePeriodTime[] = [
+    { period: 1, startTime: '07:30', endTime: '08:15' },
+    { period: 2, startTime: '08:20', endTime: '09:05' },
+  ];
+  const importContext = {
+    selectedClassName: '10A',
+    subjects: mockSubjects,
+    teachers: mockTeachers,
+    rooms: mockRooms,
+    periods: importPeriods,
+  };
+
+  const validImport = parseTimetableImportJson(
+    JSON.stringify({
+      formatVersion: 1,
+      className: '10 A',
+      lessons: [
+        {
+          day: 'Montag',
+          period: 1,
+          subject: mockSubjects[0].name,
+          teacher: mockTeachers[0].shortName,
+          room: mockRooms[0].name,
+        },
+        {
+          tag: 'Dienstag',
+          stunde: '2',
+          fach: mockSubjects[1].shortName,
+          lehrer: mockTeachers[1].name,
+          raum: mockRooms[1].name,
+        },
+      ],
+    }),
+    importContext
+  );
+  assert(validImport.errors.length === 0, 'Valid human-readable JSON imports without errors');
+  assert(validImport.entries.length === 2, 'Both JSON lessons are converted to timetable entries');
+  assert(
+    validImport.entries[0].startTime === '07:30' && validImport.entries[0].endTime === '08:15',
+    'Configured school period times are applied automatically'
+  );
+  assert(
+    validImport.entries[1].subjectId === mockSubjects[1].id,
+    'German aliases and subject short names resolve to central IDs'
+  );
+
+  const unknownSubjectImport = parseTimetableImportJson(
+    JSON.stringify({
+      formatVersion: 1,
+      className: '10A',
+      lessons: [{ day: 'Montag', period: 1, subject: 'Unbekanntes Fach' }],
+    }),
+    importContext
+  );
+  assert(
+    unknownSubjectImport.errors.some((error) => error.includes('Stammdaten unbekannt')),
+    'Unknown central entities are rejected before saving'
+  );
+
+  const duplicateImport = parseTimetableImportJson(
+    JSON.stringify({
+      formatVersion: 1,
+      className: '10A',
+      lessons: [
+        { day: 'Montag', period: 1, subject: mockSubjects[0].name },
+        { day: 'Mo', period: 1, subject: mockSubjects[1].name },
+      ],
+    }),
+    importContext
+  );
+  assert(
+    duplicateImport.errors.some((error) => error.includes('bereits ein Eintrag')),
+    'Duplicate day and period slots are rejected'
+  );
+
+  const wrongClassImport = parseTimetableImportJson(
+    JSON.stringify({
+      formatVersion: 1,
+      className: '9B',
+      lessons: [{ day: 1, period: 1, subject: mockSubjects[0].id }],
+    }),
+    importContext
+  );
+  assert(
+    wrongClassImport.errors.some((error) => error.includes('ausgewählt ist aber Klasse')),
+    'A timetable for another class cannot be imported accidentally'
+  );
+
+  // ==========================================================================
+  // Test 8: Security & Permission Rules Verification
+  // ==========================================================================
+  console.log('\n🔒 Test Group 8: Security & Permission Simulation');
   function simulateFirestorePermission({
     userRole,
     path,

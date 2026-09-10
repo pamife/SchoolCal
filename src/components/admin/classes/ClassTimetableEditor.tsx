@@ -1,20 +1,22 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
-  Clock,
-  Plus,
   Trash2,
-  Edit2,
   Upload,
   Save,
-  Layers,
-  Sparkles,
-  ChevronDown,
-  Check,
+  FileJson,
+  Download,
+  AlertCircle,
+  CheckCircle2,
 } from 'lucide-react';
 import { Button } from '../../common/Button';
 import { Badge } from '../../common/Badge';
 import { BottomSheet } from '../../common/BottomSheet';
-import { hexToRgba, SUBJECT_COLORS } from '../../../utils/colorUtils';
+import { hexToRgba } from '../../../utils/colorUtils';
+import {
+  createTimetableImportTemplate,
+  parseTimetableImportJson,
+  type TimetableImportResult,
+} from '../../../utils/timetableJsonImport';
 import type {
   TimetableEntry,
   TimetableVariant,
@@ -25,6 +27,7 @@ import type {
 } from '../../../types';
 
 interface ClassTimetableEditorProps {
+  selectedClassName: string;
   baseEntries: TimetableEntry[];
   variants: TimetableVariant[];
   subjects: Subject[];
@@ -45,6 +48,7 @@ const DAYS = [
 ];
 
 export const ClassTimetableEditor: React.FC<ClassTimetableEditorProps> = ({
+  selectedClassName,
   baseEntries,
   variants,
   subjects,
@@ -58,6 +62,14 @@ export const ClassTimetableEditor: React.FC<ClassTimetableEditorProps> = ({
   const [entries, setEntries] = useState<TimetableEntry[]>(baseEntries);
   const [isDirty, setIsDirty] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+
+  // AI-friendly JSON import into the current draft
+  const importFileInputRef = useRef<HTMLInputElement>(null);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [importFileName, setImportFileName] = useState('');
+  const [importResult, setImportResult] = useState<TimetableImportResult | null>(null);
+  const [importError, setImportError] = useState('');
+  const [isImporting, setIsImporting] = useState(false);
 
   // Selected cell for editing
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
@@ -187,6 +199,77 @@ export const ClassTimetableEditor: React.FC<ClassTimetableEditorProps> = ({
     }
   };
 
+  const importContext = {
+    selectedClassName,
+    subjects,
+    teachers,
+    rooms,
+    periods,
+  };
+
+  const openImportModal = () => {
+    setImportFileName('');
+    setImportResult(null);
+    setImportError('');
+    setIsImportModalOpen(true);
+  };
+
+  const handleImportFile = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+
+    setImportFileName(file.name);
+    setImportResult(null);
+    setImportError('');
+
+    if (file.size > 1024 * 1024) {
+      setImportError('Die JSON-Datei darf höchstens 1 MB groß sein.');
+      return;
+    }
+
+    try {
+      const json = await file.text();
+      setImportResult(parseTimetableImportJson(json, importContext));
+    } catch {
+      setImportError('Die Datei konnte nicht gelesen werden.');
+    }
+  };
+
+  const handleDownloadTemplate = () => {
+    const json = createTimetableImportTemplate(importContext);
+    const blob = new Blob([json], { type: 'application/json;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    const safeClassName = selectedClassName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    link.href = url;
+    link.download = `schoolcal-${safeClassName || 'klasse'}-vorlage.json`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
+
+  const handleApplyImport = async () => {
+    if (!importResult || importResult.errors.length > 0 || importResult.entries.length === 0) {
+      return;
+    }
+
+    setIsImporting(true);
+    setImportError('');
+    try {
+      await onSaveDraft(importResult.entries);
+      setEntries(importResult.entries);
+      setPreviewVariantId('base');
+      setIsDirty(false);
+      setIsImportModalOpen(false);
+    } catch {
+      setImportError('Der importierte Entwurf konnte nicht gespeichert werden.');
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
   // If previewVariantId is not 'base', merge that variant's entries for preview
   const displayEntries = React.useMemo(() => {
     if (previewVariantId === 'base') return entries;
@@ -204,7 +287,7 @@ export const ClassTimetableEditor: React.FC<ClassTimetableEditorProps> = ({
     <div className="space-y-4">
       {/* Action Bar */}
       <div className="flex flex-wrap items-center justify-between gap-3 bg-gray-50 dark:bg-ios-dark-secondary p-3 rounded-2xl border border-black/5 dark:border-white/5">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <span className="text-xs font-bold text-gray-500">Ansicht:</span>
           <select
             value={previewVariantId}
@@ -226,7 +309,16 @@ export const ClassTimetableEditor: React.FC<ClassTimetableEditorProps> = ({
           )}
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={openImportModal}
+            icon={<FileJson className="w-3.5 h-3.5" />}
+          >
+            JSON importieren
+          </Button>
+
           <Button
             variant="secondary"
             size="sm"
@@ -369,6 +461,129 @@ export const ClassTimetableEditor: React.FC<ClassTimetableEditorProps> = ({
           </div>
         </div>
       </div>
+
+      {/* AI-friendly JSON timetable import */}
+      <BottomSheet
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        title={`JSON-Stundenplan für Klasse ${selectedClassName}`}
+      >
+        <div className="space-y-4 pb-2">
+          <div className="rounded-xl bg-blue-50 dark:bg-ios-blue/10 border border-blue-100 dark:border-ios-blue/20 p-3">
+            <p className="text-xs font-semibold text-gray-800 dark:text-gray-100">
+              Die Datei verwendet lesbare Namen statt interner IDs. Zeiten übernimmt SchoolCal automatisch aus den konfigurierten Schulstunden.
+            </p>
+            <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-1">
+              Der Import ersetzt nur den aktuellen Entwurf. Der veröffentlichte Stundenplan bleibt unverändert, bis du ihn wie gewohnt freigibst.
+            </p>
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between gap-2 mb-1.5">
+              <span className="text-xs font-bold text-gray-700 dark:text-gray-200">Einfaches JSON-Format</span>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={handleDownloadTemplate}
+                icon={<Download className="w-3.5 h-3.5" />}
+              >
+                AI-Vorlage laden
+              </Button>
+            </div>
+            <pre className="overflow-x-auto rounded-xl bg-gray-950 p-3 text-[10px] leading-relaxed text-gray-200">
+{`{
+  "formatVersion": 1,
+  "className": "${selectedClassName}",
+  "lessons": [
+    { "day": "Montag", "period": 1,
+      "subject": "Mathematik",
+      "teacher": "Müller", "room": "A101" }
+  ]
+}`}
+            </pre>
+          </div>
+
+          <input
+            ref={importFileInputRef}
+            type="file"
+            accept="application/json,.json"
+            onChange={handleImportFile}
+            className="hidden"
+          />
+          <Button
+            type="button"
+            variant="secondary"
+            size="md"
+            fullWidth
+            onClick={() => importFileInputRef.current?.click()}
+            icon={<FileJson className="w-4 h-4" />}
+          >
+            JSON-Datei auswählen
+          </Button>
+
+          {importFileName && (
+            <p className="text-[11px] text-gray-500 dark:text-gray-400 truncate">
+              Datei: <span className="font-semibold text-gray-700 dark:text-gray-200">{importFileName}</span>
+            </p>
+          )}
+
+          {importError && (
+            <div className="flex items-start gap-2 rounded-xl bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 p-3 text-xs text-red-700 dark:text-red-300">
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+              <span>{importError}</span>
+            </div>
+          )}
+
+          {importResult && importResult.errors.length > 0 && (
+            <div className="rounded-xl bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 p-3">
+              <div className="flex items-center gap-2 text-xs font-bold text-red-700 dark:text-red-300 mb-2">
+                <AlertCircle className="w-4 h-4" />
+                {importResult.errors.length} Problem{importResult.errors.length === 1 ? '' : 'e'} gefunden
+              </div>
+              <ul className="max-h-40 overflow-y-auto space-y-1 pl-5 list-disc text-[11px] text-red-700 dark:text-red-300">
+                {importResult.errors.map((error, index) => (
+                  <li key={`${index}-${error}`}>{error}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {importResult && importResult.errors.length === 0 && (
+            <div className="flex items-center gap-2 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 p-3 text-xs text-emerald-700 dark:text-emerald-300">
+              <CheckCircle2 className="w-4 h-4 shrink-0" />
+              <span>
+                {importResult.entries.length} Unterrichtsstunden geprüft und bereit zum Import.
+              </span>
+            </div>
+          )}
+
+          <div className="flex justify-end gap-2 pt-2 border-t border-black/5 dark:border-white/10">
+            <Button
+              type="button"
+              variant="secondary"
+              size="md"
+              onClick={() => setIsImportModalOpen(false)}
+            >
+              Abbrechen
+            </Button>
+            <Button
+              type="button"
+              variant="primary"
+              size="md"
+              disabled={
+                isImporting ||
+                !importResult ||
+                importResult.errors.length > 0 ||
+                importResult.entries.length === 0
+              }
+              onClick={handleApplyImport}
+            >
+              {isImporting ? 'Importiert...' : 'In Entwurf importieren'}
+            </Button>
+          </div>
+        </div>
+      </BottomSheet>
 
       {/* Cell Edit BottomSheet Modal */}
       <BottomSheet
