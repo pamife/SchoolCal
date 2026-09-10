@@ -219,7 +219,7 @@ export const AuthScreen: React.FC = () => {
           {/* Divider */}
           <div className="relative flex items-center justify-center my-4">
             <div className="border-t border-gray-200 dark:border-white/10 w-full" />
-            <span className="bg-white dark:bg-ios-dark-card px-3 text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
+            <span className="shrink-0 whitespace-nowrap bg-white dark:bg-ios-dark-card px-3 text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
               oder mit E-Mail
             </span>
             <div className="border-t border-gray-200 dark:border-white/10 w-full" />
