@@ -1,16 +1,13 @@
 import React, { useState } from 'react';
-import { Plus, CheckCircle2, Brain, Sparkles } from 'lucide-react';
+import { Plus, CheckCircle2, Info } from 'lucide-react';
 import { useHomeworkStore } from '../../store/useHomeworkStore';
 import { useSchoolStore } from '../../store/useSchoolStore';
-import { useExamStore } from '../../store/useExamStore';
 import { useAuthStore } from '../../store/useAuthStore';
 import { SwipeableHomeworkCard } from './SwipeableHomeworkCard';
 import { HomeworkModal } from './HomeworkModal';
+import { HomeworkDetailModal } from './HomeworkDetailModal';
 import { TaskActionSheet } from '../common/TaskActionSheet';
 import { ToastUndo } from '../common/ToastUndo';
-import { AiStudyPlannerModal } from '../exams/AiStudyPlannerModal';
-import { PricingModal } from '../licensing/PricingModal';
-import { LicenseActivationModal } from '../licensing/LicenseActivationModal';
 import { Button } from '../common/Button';
 import { SegmentedControl, type SegmentOption } from '../common/SegmentedControl';
 import { EmptyState } from '../common/EmptyState';
@@ -23,16 +20,13 @@ type DueFilterOption = 'all' | 'today' | 'tomorrow' | 'this_week' | 'overdue' | 
 export const HomeworkScreen: React.FC = () => {
   const { user } = useAuthStore();
   const { homework, addHomework, updateHomework, deleteHomework, toggleComplete } = useHomeworkStore();
-  const { exams } = useExamStore();
   const { subjects } = useSchoolStore();
 
   const [filterDue, setFilterDue] = useState<DueFilterOption>('all');
   const [filterSubject, setFilterSubject] = useState<string>('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isAiPlannerOpen, setIsAiPlannerOpen] = useState(false);
-  const [isPricingOpen, setIsPricingOpen] = useState(false);
-  const [isActivationOpen, setIsActivationOpen] = useState(false);
   const [editingHomework, setEditingHomework] = useState<Homework | null>(null);
+  const [viewingHomework, setViewingHomework] = useState<Homework | null>(null);
 
   // Long press / Action Sheet state
   const [actionSheetTask, setActionSheetTask] = useState<Homework | null>(null);
@@ -139,7 +133,7 @@ export const HomeworkScreen: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-1">
         <div>
           <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white tracking-tight flex items-center gap-2">
-            <span>Aufgaben & Hausaufgaben</span>
+            <span>Aufgaben</span>
             {openCount > 0 && (
               <span className="text-xs px-2.5 py-0.5 rounded-full bg-ios-blue text-white font-bold">
                 {openCount} offen
@@ -147,25 +141,11 @@ export const HomeworkScreen: React.FC = () => {
             )}
           </h2>
           <p className="text-xs text-gray-500 dark:text-gray-400">
-            Wische nach rechts zum Erledigen oder halte gedrückt für Schnellaktionen
+            Tippe zum Ansehen, hake links ab oder halte für Schnellaktionen gedrückt.
           </p>
         </div>
 
         <div className="flex items-center gap-2">
-          {/* KI-Planer Button */}
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => setIsAiPlannerOpen(true)}
-            icon={<Brain className="w-4 h-4 text-purple-600 dark:text-purple-400" />}
-            className="border-purple-500/30 text-purple-700 dark:text-purple-300 hover:bg-purple-500/10"
-          >
-            <span>KI-Lernplaner</span>
-            <span className="text-[9px] font-extrabold uppercase bg-purple-600/20 text-purple-700 dark:text-purple-300 px-1.5 py-0.2 rounded-full ml-1 border border-purple-500/30">
-              BETA
-            </span>
-          </Button>
-
           <Button
             variant="primary"
             size="sm"
@@ -242,11 +222,11 @@ export const HomeworkScreen: React.FC = () => {
         );
         if (shiftedTasks.length === 0) return null;
         return (
-          <div className="p-3.5 bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-amber-500/5 border border-amber-500/25 rounded-2xl flex items-start gap-3 text-xs">
-            <Sparkles className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+          <div className="p-3.5 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/60 rounded-xl flex items-start gap-3 text-xs">
+            <Info className="w-4 h-4 text-amber-700 dark:text-amber-400 shrink-0 mt-0.5" />
             <div>
               <div className="font-bold text-amber-900 dark:text-amber-200">
-                ℹ️ Frist automatisch angepasst ({shiftedTasks.length} {shiftedTasks.length === 1 ? 'Aufgabe' : 'Aufgaben'})
+                Frist automatisch angepasst ({shiftedTasks.length} {shiftedTasks.length === 1 ? 'Aufgabe' : 'Aufgaben'})
               </div>
               <p className="text-amber-800/90 dark:text-amber-300/90 mt-0.5">
                 Wegen Unterrichtsausfall wurde die Frist für betroffene Aufgaben automatisch auf den nächsten stattfindenden Unterricht verschoben.
@@ -291,7 +271,7 @@ export const HomeworkScreen: React.FC = () => {
                 {overdue.length > 0 && (
                   <div className="space-y-2">
                     <h3 className="text-xs font-bold uppercase tracking-wider text-red-500 flex items-center gap-1.5 px-1">
-                      <span>🔴 Überfällig ({overdue.length})</span>
+                      <span>Überfällig ({overdue.length})</span>
                     </h3>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       {overdue.map(task => (
@@ -300,6 +280,7 @@ export const HomeworkScreen: React.FC = () => {
                           homework={task}
                           subject={subjectMap.get(task.subjectId)}
                           onToggleComplete={handleToggleComplete}
+                          onView={setViewingHomework}
                           onEdit={(hw) => {
                             setEditingHomework(hw);
                             setIsModalOpen(true);
@@ -316,7 +297,7 @@ export const HomeworkScreen: React.FC = () => {
                 {today.length > 0 && (
                   <div className="space-y-2">
                     <h3 className="text-xs font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400 flex items-center gap-1.5 px-1">
-                      <span>⚠️ Heute fällig ({today.length})</span>
+                      <span>Heute fällig ({today.length})</span>
                     </h3>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       {today.map(task => (
@@ -325,6 +306,7 @@ export const HomeworkScreen: React.FC = () => {
                           homework={task}
                           subject={subjectMap.get(task.subjectId)}
                           onToggleComplete={handleToggleComplete}
+                          onView={setViewingHomework}
                           onEdit={(hw) => {
                             setEditingHomework(hw);
                             setIsModalOpen(true);
@@ -341,7 +323,7 @@ export const HomeworkScreen: React.FC = () => {
                 {tomorrow.length > 0 && (
                   <div className="space-y-2">
                     <h3 className="text-xs font-bold uppercase tracking-wider text-ios-blue flex items-center gap-1.5 px-1">
-                      <span>📚 Für morgen ({tomorrow.length})</span>
+                      <span>Für morgen ({tomorrow.length})</span>
                     </h3>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       {tomorrow.map(task => (
@@ -350,6 +332,7 @@ export const HomeworkScreen: React.FC = () => {
                           homework={task}
                           subject={subjectMap.get(task.subjectId)}
                           onToggleComplete={handleToggleComplete}
+                          onView={setViewingHomework}
                           onEdit={(hw) => {
                             setEditingHomework(hw);
                             setIsModalOpen(true);
@@ -366,7 +349,7 @@ export const HomeworkScreen: React.FC = () => {
                 {upcoming.length > 0 && (
                   <div className="space-y-2">
                     <h3 className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 flex items-center gap-1.5 px-1">
-                      <span>📅 Demnächst / Zukünftig ({upcoming.length})</span>
+                      <span>Demnächst ({upcoming.length})</span>
                     </h3>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       {upcoming.map(task => (
@@ -375,6 +358,7 @@ export const HomeworkScreen: React.FC = () => {
                           homework={task}
                           subject={subjectMap.get(task.subjectId)}
                           onToggleComplete={handleToggleComplete}
+                          onView={setViewingHomework}
                           onEdit={(hw) => {
                             setEditingHomework(hw);
                             setIsModalOpen(true);
@@ -391,7 +375,7 @@ export const HomeworkScreen: React.FC = () => {
                 {done.length > 0 && (
                   <div className="space-y-2 pt-2 border-t border-black/5 dark:border-white/5">
                     <h3 className="text-xs font-bold uppercase tracking-wider text-gray-400 flex items-center gap-1.5 px-1">
-                      <span>✓ Erledigte Aufgaben ({done.length})</span>
+                      <span>Erledigt ({done.length})</span>
                     </h3>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       {done.map(task => (
@@ -400,6 +384,7 @@ export const HomeworkScreen: React.FC = () => {
                           homework={task}
                           subject={subjectMap.get(task.subjectId)}
                           onToggleComplete={handleToggleComplete}
+                          onView={setViewingHomework}
                           onEdit={(hw) => {
                             setEditingHomework(hw);
                             setIsModalOpen(true);
@@ -424,6 +409,7 @@ export const HomeworkScreen: React.FC = () => {
               homework={task}
               subject={subjectMap.get(task.subjectId)}
               onToggleComplete={handleToggleComplete}
+              onView={setViewingHomework}
               onEdit={(hw) => {
                 setEditingHomework(hw);
                 setIsModalOpen(true);
@@ -454,6 +440,19 @@ export const HomeworkScreen: React.FC = () => {
         subjects={subjects}
       />
 
+      <HomeworkDetailModal
+        isOpen={Boolean(viewingHomework)}
+        onClose={() => setViewingHomework(null)}
+        homework={viewingHomework}
+        subject={viewingHomework ? subjectMap.get(viewingHomework.subjectId) : undefined}
+        onToggleComplete={handleToggleComplete}
+        onEdit={(hw) => {
+          setViewingHomework(null);
+          setEditingHomework(hw);
+          setIsModalOpen(true);
+        }}
+      />
+
       <TaskActionSheet
         isOpen={Boolean(actionSheetTask)}
         onClose={() => setActionSheetTask(null)}
@@ -475,28 +474,6 @@ export const HomeworkScreen: React.FC = () => {
         onClose={() => setUndoToast((prev) => ({ ...prev, isOpen: false }))}
       />
 
-      <AiStudyPlannerModal
-        isOpen={isAiPlannerOpen}
-        onClose={() => setIsAiPlannerOpen(false)}
-        exams={exams}
-        subjects={subjects}
-        onOpenPricing={() => setIsPricingOpen(true)}
-        onOpenActivation={() => setIsActivationOpen(true)}
-      />
-
-      <PricingModal
-        isOpen={isPricingOpen}
-        onClose={() => setIsPricingOpen(false)}
-        onOpenActivation={() => {
-          setIsPricingOpen(false);
-          setIsActivationOpen(true);
-        }}
-      />
-
-      <LicenseActivationModal
-        isOpen={isActivationOpen}
-        onClose={() => setIsActivationOpen(false)}
-      />
     </div>
   );
 };

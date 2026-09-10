@@ -1,21 +1,17 @@
 import React from 'react';
 import {
   Sun,
-  Moon,
   Calendar,
   CheckCircle2,
   GraduationCap,
   Settings,
   Search,
-  BookOpen,
   MapPin,
   Award,
   BarChart3,
-  Bot,
 } from 'lucide-react';
 import type { NavigationTab } from '../../types';
 import { useHomeworkStore } from '../../store/useHomeworkStore';
-import { useExamStore } from '../../store/useExamStore';
 import { useSettingsStore } from '../../store/useSettingsStore';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useSearchStore } from '../../store/useSearchStore';
@@ -26,16 +22,13 @@ import { GERMAN_STATES } from '../../data/holidays';
 interface SidebarProps {
   activeTab: NavigationTab;
   onTabChange: (tab: NavigationTab) => void;
-  onOpenAiAssistant?: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
   activeTab,
   onTabChange,
-  onOpenAiAssistant,
 }) => {
   const { homework } = useHomeworkStore();
-  const { exams } = useExamStore();
   const { settings } = useSettingsStore();
   const { user } = useAuthStore();
   const { openSearch } = useSearchStore();
@@ -45,7 +38,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const stateName = GERMAN_STATES.find(s => s.code === settings.state)?.name || settings.state;
 
   const navItems = [
-    { id: 'today' as NavigationTab, label: 'Smart Day', icon: Sun, count: null },
+    { id: 'today' as NavigationTab, label: 'Heute', icon: Sun, count: null },
     { id: 'calendar' as NavigationTab, label: 'Kalender', icon: Calendar, count: null },
     { id: 'tasks' as NavigationTab, label: 'Aufgaben', icon: CheckCircle2, count: openTasksCount || null },
     { id: 'statistics' as NavigationTab, label: 'Statistiken', icon: BarChart3, count: null },
@@ -55,12 +48,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
   ];
 
   return (
-    <aside className="hidden ipad:flex flex-col w-64 xl:w-72 bg-gray-50/80 dark:bg-ios-dark-card/90 backdrop-blur-xl border-r border-black/5 dark:border-white/10 shrink-0 h-full overflow-y-auto overscroll-contain no-scrollbar p-4 pt-[max(1rem,env(safe-area-inset-top,0px))] pb-[max(1rem,env(safe-area-inset-bottom,0px))] pl-[max(1rem,env(safe-area-inset-left,0px))] select-none">
+    <aside className="hidden ipad:flex flex-col w-64 xl:w-72 bg-gray-50 dark:bg-ios-dark-card border-r border-black/5 dark:border-white/10 shrink-0 h-full overflow-y-auto overscroll-contain no-scrollbar p-4 pt-[max(1rem,env(safe-area-inset-top,0px))] pb-[max(1rem,env(safe-area-inset-bottom,0px))] pl-[max(1rem,env(safe-area-inset-left,0px))] select-none">
       {/* Brand Header */}
       <div className="flex items-center gap-3 px-2 py-3 mb-2">
-        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-ios-blue to-indigo-600 flex items-center justify-center text-white shadow-md shadow-blue-500/20">
-          <BookOpen className="w-5 h-5" />
-        </div>
+        <img src="/icon.svg" alt="" className="w-10 h-10 rounded-xl" />
         <div>
           <h1 className="text-base font-bold text-gray-900 dark:text-white leading-tight tracking-tight flex items-center gap-1.5">
             SchoolCal
@@ -80,7 +71,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       >
         <div className="flex items-center gap-2">
           <Search className="w-4 h-4 text-gray-400" />
-          <span>Schnellsuche...</span>
+          <span>Schnellsuche</span>
         </div>
         <kbd className="px-1.5 py-0.5 text-[10px] font-semibold bg-gray-100 dark:bg-ios-dark-tertiary rounded text-gray-500">
           ⌘K
@@ -135,34 +126,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
         })}
       </div>
 
-      {/* 🤖 KI-Schulassistent Quick Access */}
-      {onOpenAiAssistant && (
-        <button
-          type="button"
-          onClick={onOpenAiAssistant}
-          className="touch-target-y w-full p-2.5 rounded-2xl bg-gray-100/80 dark:bg-ios-dark-secondary/60 hover:bg-gray-200/80 dark:hover:bg-ios-dark-tertiary border border-black/5 dark:border-white/5 text-left transition-all group mb-4"
-        >
-          <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-lg bg-purple-500/15 text-purple-600 dark:text-purple-400 flex items-center justify-center shadow-xs shrink-0 group-hover:scale-105 transition-transform">
-              <Bot className="w-4 h-4" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-1.5">
-                <span className="text-xs font-bold text-gray-900 dark:text-white">
-                  KI-Assistent
-                </span>
-                <span className="text-[8px] font-extrabold uppercase px-1.5 py-0.2 rounded-full bg-purple-500/20 text-purple-700 dark:text-purple-300 border border-purple-500/30">
-                  BETA
-                </span>
-              </div>
-              <p className="text-[10px] text-gray-500 dark:text-gray-400 truncate">
-                Stundenplan- & Lernfragen
-              </p>
-            </div>
-          </div>
-        </button>
-      )}
-
       {/* iPad Quick Status Cards */}
       <div className="mt-auto space-y-2 pt-4 border-t border-black/5 dark:border-white/10">
         <div className="p-3 rounded-ios bg-white/60 dark:bg-ios-dark-secondary/60 border border-black/5 dark:border-white/5">
@@ -186,7 +149,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           className="touch-target-y w-full flex items-center gap-2.5 p-2 rounded-ios hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer text-left"
           onClick={() => onTabChange('settings')}
         >
-          <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-purple-500 to-ios-blue text-white flex items-center justify-center font-bold text-xs shadow-sm">
+          <div className="w-8 h-8 rounded-full bg-slate-700 dark:bg-slate-200 text-white dark:text-slate-900 flex items-center justify-center font-bold text-xs">
             {user?.displayName ? user.displayName.slice(0, 2).toUpperCase() : 'PS'}
           </div>
           <div className="min-w-0 flex-1">

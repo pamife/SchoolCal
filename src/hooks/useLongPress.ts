@@ -32,11 +32,22 @@ export function useLongPress({
   const timerRef = useRef<number | null>(null);
   const isLongPressTriggered = useRef(false);
   const hasMoved = useRef(false);
+  const hasStarted = useRef(false);
   const startPos = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+
+  const isNestedInteractiveTarget = (e: React.TouchEvent | React.MouseEvent) => {
+    if (!(e.target instanceof Element)) return false;
+    const interactiveTarget = e.target.closest('button, a, input, textarea, select, [role="button"]');
+    return Boolean(interactiveTarget && interactiveTarget !== e.currentTarget);
+  };
 
   const start = useCallback(
     (e: React.TouchEvent | React.MouseEvent, clientX: number, clientY: number) => {
-      if (disabled) return;
+      if (disabled || isNestedInteractiveTarget(e)) {
+        hasStarted.current = false;
+        return;
+      }
+      hasStarted.current = true;
       isLongPressTriggered.current = false;
       hasMoved.current = false;
       startPos.current = { x: clientX, y: clientY };
@@ -75,6 +86,9 @@ export function useLongPress({
 
   const end = useCallback(
     (e: React.TouchEvent | React.MouseEvent, clientX?: number, clientY?: number) => {
+      if (!hasStarted.current) return;
+      hasStarted.current = false;
+
       if (timerRef.current) {
         clearTimeout(timerRef.current);
         timerRef.current = null;
@@ -97,6 +111,7 @@ export function useLongPress({
   );
 
   const cancel = useCallback(() => {
+    hasStarted.current = false;
     hasMoved.current = true;
     if (timerRef.current) {
       clearTimeout(timerRef.current);

@@ -10,16 +10,16 @@
     }
   ],
   "start_url": "/",
-  "background_color": "#000000",
-  "theme_color": "#007AFF",
+  "background_color": "#F2F2F7",
+  "theme_color": "#12304A",
   "display": "standalone",
   "orientation": "any",
   "categories": ["education", "productivity", "utilities"],
   "shortcuts": [
     {
-      "name": "Smart Day & Heute",
-      "short_name": "Smart Day",
-      "description": "Öffne deine heutige Smart Day Übersicht",
+      "name": "Heute",
+      "short_name": "Heute",
+      "description": "Öffne deine heutige Übersicht",
       "url": "/?tab=today",
       "icons": [{ "src": "/icon.svg", "sizes": "192x192" }]
     },

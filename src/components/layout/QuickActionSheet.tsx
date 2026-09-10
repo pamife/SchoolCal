@@ -25,22 +25,6 @@ export const QuickActionSheet: React.FC<QuickActionSheetProps> = ({
 }) => {
   const actions: { id: QuickActionType; label: string; description: string; icon: React.ComponentType<{ className?: string }>; color: string; badge?: string }[] = [
     {
-      id: 'ai_chat',
-      label: '🤖 KI-Schulassistent',
-      description: 'Fragen zu Stundenplan, Aufgaben & Lernzeiten',
-      icon: Brain,
-      color: 'bg-purple-600/15 text-purple-600 dark:text-purple-300 border border-purple-500/20',
-      badge: 'BETA',
-    },
-    {
-      id: 'ai_plan',
-      label: '✨ KI-Lernzeitplaner',
-      description: 'Lernstoff optimal bis zur nächsten Klausur verteilen',
-      icon: Sparkles,
-      color: 'bg-purple-600/15 text-purple-600 dark:text-purple-300 border border-purple-500/20',
-      badge: 'BETA',
-    },
-    {
       id: 'homework',
       label: 'Hausaufgabe / Aufgabe',
       description: 'Fach, Fälligkeitsdatum & Priorität festlegen',
@@ -81,6 +65,22 @@ export const QuickActionSheet: React.FC<QuickActionSheetProps> = ({
       description: 'Raumwechsel, Lehrerwechsel oder Stundenausfall',
       icon: RefreshCw,
       color: 'bg-teal-500 text-white',
+    },
+    {
+      id: 'ai_chat',
+      label: 'KI-Assistent',
+      description: 'Fragen zu Stundenplan, Aufgaben und Lernzeiten',
+      icon: Brain,
+      color: 'bg-gray-100 text-gray-700 dark:bg-ios-dark-secondary dark:text-gray-300',
+      badge: 'BETA',
+    },
+    {
+      id: 'ai_plan',
+      label: 'KI-Lernplan',
+      description: 'Lernstoff bis zur nächsten Klausur verteilen',
+      icon: Sparkles,
+      color: 'bg-gray-100 text-gray-700 dark:bg-ios-dark-secondary dark:text-gray-300',
+      badge: 'BETA',
     },
   ];
 

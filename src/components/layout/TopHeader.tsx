@@ -1,4 +1,4 @@
-import { Search, Plus, MapPin, Bot, RefreshCw, CloudOff } from 'lucide-react';
+import { Search, Plus, MapPin, RefreshCw, CloudOff } from 'lucide-react';
 import { useSearchStore } from '../../store/useSearchStore';
 import { useSettingsStore } from '../../store/useSettingsStore';
 import { useSyncStore } from '../../store/useSyncStore';
@@ -9,13 +9,11 @@ import { Badge } from '../common/Badge';
 
 interface TopHeaderProps {
   onOpenQuickAction: () => void;
-  onOpenAiAssistant?: () => void;
   title?: string;
 }
 
 export const TopHeader: React.FC<TopHeaderProps> = ({
   onOpenQuickAction,
-  onOpenAiAssistant,
   title,
 }) => {
   const { openSearch } = useSearchStore();
@@ -77,18 +75,6 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
 
         {/* Right: Actions */}
         <div className="flex items-center gap-2">
-          {/* AI Assistant Quick Button */}
-          {onOpenAiAssistant && (
-            <button
-              type="button"
-              onClick={onOpenAiAssistant}
-              className="touch-target w-9 h-9 rounded-full bg-gradient-to-tr from-purple-600/20 to-indigo-600/20 text-purple-600 dark:text-purple-300 border border-purple-500/30 flex items-center justify-center hover:bg-purple-600 hover:text-white transition-all active:scale-95 shadow-xs"
-              title="KI-Schulassistent öffnen"
-            >
-              <Bot className="w-4 h-4" />
-            </button>
-          )}
-
           {/* Global Search Button */}
           <button
             type="button"

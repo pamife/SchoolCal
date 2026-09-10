@@ -40,7 +40,6 @@ import { sendLocalNotification } from './services/notifications/notificationServ
 import { useInputAutoScroll } from './hooks/useInputAutoScroll';
 import { useAppSync } from './hooks/useAppSync';
 import type { NavigationTab, QuickActionType, ScheduleEntry, Exam } from './types';
-import { BookOpen } from 'lucide-react';
 
 export function App() {
   useInputAutoScroll();
@@ -191,9 +190,7 @@ export function App() {
   if (isLoading) {
     return (
       <div className="h-dvh w-full flex flex-col items-center justify-center bg-ios-light-bg dark:bg-ios-dark-bg text-slate-900 dark:text-white">
-        <div className="w-16 h-16 rounded-[22px] bg-gradient-to-br from-ios-blue to-indigo-600 flex items-center justify-center text-white shadow-xl animate-pulse mb-4">
-          <BookOpen className="w-8 h-8" />
-        </div>
+        <img src="/icon.svg" alt="SchoolCal" className="w-16 h-16 rounded-[14px] mb-4" />
         <div className="w-6 h-6 border-2 border-ios-blue border-t-transparent rounded-full animate-spin" />
       </div>
     );
@@ -210,7 +207,6 @@ export function App() {
       <Sidebar
         activeTab={activeTab}
         onTabChange={setActiveTab}
-        onOpenAiAssistant={() => setIsAiAssistantOpen(true)}
       />
 
       {/* Main Content Area */}
@@ -218,7 +214,6 @@ export function App() {
         {/* Top Header */}
         <TopHeader
           onOpenQuickAction={() => setIsQuickActionOpen(true)}
-          onOpenAiAssistant={() => setIsAiAssistantOpen(true)}
         />
 
         {/* Tab View Scroll Container with reliable bottom and landscape safe area clearance */}

@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  BookOpen,
   Mail,
   Lock,
   User,
@@ -122,7 +121,7 @@ export const AuthScreen: React.FC = () => {
   };
 
   return (
-    <div className="h-full h-dvh w-full overflow-y-auto overscroll-contain flex flex-col items-center p-4 pt-[max(1.5rem,env(safe-area-inset-top,0px))] pb-[max(1.5rem,env(safe-area-inset-bottom,0px))] pl-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] bg-gradient-to-b from-ios-light-bg via-gray-100 to-ios-light-bg dark:from-ios-dark-bg dark:via-black dark:to-ios-dark-bg select-none">
+    <div className="h-full h-dvh w-full overflow-y-auto overscroll-contain flex flex-col items-center p-4 pt-[max(1.5rem,env(safe-area-inset-top,0px))] pb-[max(1.5rem,env(safe-area-inset-bottom,0px))] pl-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] bg-ios-light-bg dark:bg-ios-dark-bg select-none">
       <motion.div
         initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
@@ -131,9 +130,7 @@ export const AuthScreen: React.FC = () => {
       >
         {/* App Logo & Header */}
         <div className="text-center mb-6">
-          <div className="inline-flex w-16 h-16 rounded-[22px] bg-gradient-to-br from-ios-blue to-indigo-600 items-center justify-center text-white shadow-xl shadow-blue-500/25 mb-3">
-            <BookOpen className="w-8 h-8" />
-          </div>
+          <img src="/icon.svg" alt="" className="inline-block w-16 h-16 rounded-[14px] mb-3" />
           <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">
             SchoolCal
           </h1>
@@ -143,7 +140,7 @@ export const AuthScreen: React.FC = () => {
         </div>
 
         {/* Auth Card */}
-        <div className="ios-card p-6 shadow-2xl backdrop-blur-2xl bg-white/90 dark:bg-ios-dark-card/90">
+        <div className="ios-card p-6 bg-white dark:bg-ios-dark-card">
           {/* Mode Switcher */}
           <div className="grid grid-cols-2 p-1 bg-gray-100 dark:bg-ios-dark-secondary rounded-ios mb-5">
             <button

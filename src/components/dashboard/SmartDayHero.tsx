@@ -7,7 +7,6 @@ import {
   CheckCircle2,
   Circle,
   Plus,
-  Sparkles,
   BookOpen,
 } from 'lucide-react';
 import type { SmartDayData, Subject } from '../../types';
@@ -20,7 +19,6 @@ interface SmartDayHeroProps {
   subjects?: Subject[];
   onOpenSchedule: () => void;
   onOpenTasks?: () => void;
-  onOpenAiAssistant?: () => void;
   onToggleComplete?: (id: string) => void;
   onAddHomework?: () => void;
 }
@@ -30,7 +28,6 @@ export const SmartDayHero: React.FC<SmartDayHeroProps> = ({
   subjects = [],
   onOpenSchedule,
   onOpenTasks,
-  onOpenAiAssistant,
   onToggleComplete,
   onAddHomework,
 }) => {
@@ -129,9 +126,9 @@ export const SmartDayHero: React.FC<SmartDayHeroProps> = ({
         <div
           className={`ios-card p-4 sm:p-5 relative overflow-hidden transition-all border ${
             isCancelled
-              ? 'bg-gradient-to-br from-red-500/10 via-rose-500/5 to-transparent border-red-500/30'
+              ? 'bg-red-50 dark:bg-red-950/20 border-red-500/30'
               : isCurrent
-              ? 'bg-gradient-to-br from-blue-500/10 via-indigo-500/5 to-transparent border-blue-500/30'
+              ? 'bg-blue-50 dark:bg-blue-950/20 border-blue-500/30'
               : 'bg-white dark:bg-ios-dark-secondary border-black/5 dark:border-white/10'
           }`}
         >
@@ -232,7 +229,7 @@ export const SmartDayHero: React.FC<SmartDayHeroProps> = ({
         </div>
       ) : pendingTasks.length > 0 ? (
         /* 📚 After School / Free Time Hero Card with Pending Homework */
-        <div className="ios-card p-4 sm:p-5 relative overflow-hidden transition-all bg-gradient-to-br from-blue-500/10 via-indigo-500/5 to-transparent border border-blue-500/20">
+        <div className="ios-card p-4 sm:p-5 relative overflow-hidden transition-all bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900/60">
           <div className="flex items-center justify-between gap-3 mb-3 pb-2.5 border-b border-black/5 dark:border-white/10">
             <div className="flex items-center gap-2.5 min-w-0">
               <div className="w-8 h-8 rounded-xl bg-ios-blue text-white flex items-center justify-center shadow-sm shrink-0">
@@ -343,18 +340,18 @@ export const SmartDayHero: React.FC<SmartDayHeroProps> = ({
         </div>
       ) : (
         /* 🎉 Celebratory Card if no lessons and no pending homework */
-        <div className="ios-card p-5 text-center space-y-2.5 bg-gradient-to-br from-emerald-500/10 via-teal-500/5 to-transparent border border-emerald-500/20">
-          <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-emerald-400 to-green-600 text-white flex items-center justify-center mx-auto shadow-md shadow-emerald-500/20">
-            <Sparkles className="w-5 h-5" />
+        <div className="ios-card p-5 text-center space-y-2.5 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900/60">
+          <div className="w-11 h-11 rounded-2xl bg-emerald-600 text-white flex items-center justify-center mx-auto">
+            <CheckCircle2 className="w-5 h-5" />
           </div>
           <div>
             <h4 className="text-base font-bold text-gray-900 dark:text-white">
               {smartDay.timeContext === 'after_school'
-                ? 'Schulschluss – Alles erledigt! 🎉'
+                ? 'Schulschluss – alles erledigt.'
                 : smartDay.timeContext === 'weekend'
-                ? 'Schönes Wochenende – Keine offenen Aufgaben! ☀️'
+                ? 'Schönes Wochenende – keine offenen Aufgaben.'
                 : smartDay.timeContext === 'holiday'
-                ? 'Schöne Ferienzeit – Keine Aufgaben! 🏖️'
+                ? 'Schöne Ferien – keine offenen Aufgaben.'
                 : 'Alles erledigt! Keine offenen Aufgaben.'}
             </h4>
             <p className="text-xs text-gray-500 dark:text-gray-400 max-w-md mx-auto mt-0.5">

@@ -1,6 +1,6 @@
-import React, { useState, useRef } from 'react';
-import { motion, useMotionValue, useTransform, PanInfo } from 'framer-motion';
-import { CheckCircle2, Circle, Clock, Edit2, Trash2, Check, Sparkles } from 'lucide-react';
+import React, { useState } from 'react';
+import { motion, useDragControls, useMotionValue, useTransform, PanInfo } from 'framer-motion';
+import { CheckCircle2, Circle, Clock, Edit2, Trash2, Check } from 'lucide-react';
 import type { Homework, Subject } from '../../types';
 import { getHomeworkDueDateStatus } from '../../utils/dateUtils';
 import { Badge } from '../common/Badge';
@@ -11,6 +11,7 @@ export interface SwipeableHomeworkCardProps {
   homework: Homework;
   subject?: Subject;
   onToggleComplete: (id: string) => void;
+  onView: (homework: Homework) => void;
   onEdit: (homework: Homework) => void;
   onDelete: (id: string) => void;
   onLongPressOpen?: (homework: Homework) => void;
@@ -20,6 +21,7 @@ export const SwipeableHomeworkCard: React.FC<SwipeableHomeworkCardProps> = ({
   homework,
   subject,
   onToggleComplete,
+  onView,
   onEdit,
   onDelete,
   onLongPressOpen,
@@ -30,6 +32,7 @@ export const SwipeableHomeworkCard: React.FC<SwipeableHomeworkCardProps> = ({
 
   const [dragOffset, setDragOffset] = useState(0);
   const x = useMotionValue(0);
+  const dragControls = useDragControls();
 
   // Background action transforms based on drag x
   const completeBgOpacity = useTransform(x, [0, 40, 90], [0, 0.6, 1]);
@@ -47,9 +50,9 @@ export const SwipeableHomeworkCard: React.FC<SwipeableHomeworkCardProps> = ({
       }
     },
     onClick: () => {
-      // Normal click opens edit ONLY if completely stationary (no drag or swipe)
+      // A stationary tap opens the read-only detail view.
       if (Math.abs(x.get()) < 3 && Math.abs(dragOffset) < 3) {
-        onEdit(homework);
+        onView(homework);
       }
     },
   });
@@ -120,13 +123,31 @@ export const SwipeableHomeworkCard: React.FC<SwipeableHomeworkCardProps> = ({
       <motion.div
         style={{ x }}
         drag="x"
+        dragControls={dragControls}
+        dragListener={false}
         dragDirectionLock
         dragConstraints={{ left: -110, right: 100 }}
         dragElastic={{ left: 0.15, right: 0.35 }}
         onDrag={(_, info) => setDragOffset(info.offset.x)}
         onDragEnd={handleDragEnd}
+        onPointerDown={(event) => {
+          const target = event.target as Element;
+          const interactiveTarget = target.closest('button, a, input, textarea, select, [role="button"]');
+          if (!interactiveTarget || interactiveTarget === event.currentTarget) {
+            dragControls.start(event);
+          }
+        }}
         {...longPressHandlers}
-        className={`relative z-10 ios-card p-4 transition-shadow flex items-start justify-between gap-3 cursor-grab active:cursor-grabbing ${
+        role="button"
+        tabIndex={0}
+        aria-label={`${homework.title} ansehen`}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            onView(homework);
+          }
+        }}
+        className={`relative z-10 ios-card p-4 transition-shadow flex items-start justify-between gap-3 cursor-pointer ${
           isDone
             ? 'opacity-55 bg-gray-50/70 dark:bg-ios-dark-secondary/50'
             : isOverdue
@@ -142,7 +163,8 @@ export const SwipeableHomeworkCard: React.FC<SwipeableHomeworkCardProps> = ({
             haptics.success();
             onToggleComplete(homework.id);
           }}
-          className="mt-0.5 text-gray-400 hover:text-ios-blue dark:hover:text-ios-blue transition-colors shrink-0 ios-press-active p-1 -m-1"
+          className="touch-target mt-[-0.625rem] ml-[-0.625rem] text-gray-400 hover:text-ios-blue dark:hover:text-ios-blue transition-colors shrink-0 ios-press-active flex items-center justify-center"
+          aria-label={isDone ? 'Als unerledigt markieren' : 'Als erledigt markieren'}
           title={isDone ? 'Als unerledigt markieren' : 'Als erledigt markieren'}
         >
           {isDone ? (
@@ -245,6 +267,7 @@ export const SwipeableHomeworkCard: React.FC<SwipeableHomeworkCardProps> = ({
             onEdit(homework);
           }}
           className="p-2 -mr-1 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors shrink-0 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 active:scale-95"
+          aria-label="Aufgabe bearbeiten"
           title="Bearbeiten"
         >
           <Edit2 className="w-4 h-4" />

@@ -7,7 +7,6 @@ import {
   BellRing,
   Smartphone,
   CheckCircle2,
-  Sparkles,
   ArrowRight,
   ChevronLeft,
   ChevronRight,
@@ -657,13 +656,13 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({
               animate={{ opacity: 1, scale: 1 }}
               className="py-8 text-center space-y-4"
             >
-              <div className="w-16 h-16 rounded-[24px] bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center mx-auto shadow-xl shadow-emerald-500/25">
-                <Sparkles className="w-8 h-8" />
+              <div className="w-16 h-16 rounded-2xl bg-emerald-600 text-white flex items-center justify-center mx-auto">
+                <CheckCircle2 className="w-8 h-8" />
               </div>
 
               <div className="space-y-1">
                 <h3 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">
-                  🎉 SchoolCal ist eingerichtet!
+                  SchoolCal ist eingerichtet
                 </h3>
                 <p className="text-sm text-gray-500 dark:text-gray-400 max-w-sm mx-auto">
                   Dein persönlicher Schulplaner ist einsatzbereit. Du kannst alle Einstellungen jederzeit anpassen.
@@ -748,7 +747,7 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({
                 variant="primary"
                 size="md"
                 onClick={() => setCurrentStep('completed')}
-                icon={<Sparkles className="w-4 h-4" />}
+                icon={<CheckCircle2 className="w-4 h-4" />}
               >
                 Einrichtung abschließen
               </Button>

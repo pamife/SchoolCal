@@ -10,7 +10,6 @@ import {
   Tablet,
   Laptop,
   ArrowRight,
-  Sparkles,
   ChevronRight,
 } from 'lucide-react';
 import { Button } from '../common/Button';
@@ -31,17 +30,15 @@ export const IntroSlides: React.FC<IntroSlidesProps> = ({
       id: 'welcome',
       icon: BookOpen,
       iconGradient: 'from-ios-blue to-indigo-600',
-      badge: 'Willkommen 👋',
+      badge: 'Willkommen',
       badgeVariant: 'blue' as const,
       title: 'Willkommen bei SchoolCal',
       subtitle: 'Dein Schulalltag. Einfach organisiert.',
       description:
-        'Der moderne, intelligente Schulbegleiter für Stundenplan, Aufgaben, Klausuren und Benachrichtigungen.',
+        'Stundenplan, Aufgaben, Klausuren und Benachrichtigungen an einem Ort.',
       illustration: (
         <div className="relative w-full h-36 flex items-center justify-center">
-          <div className="w-20 h-20 rounded-[28px] bg-gradient-to-br from-ios-blue via-indigo-600 to-purple-600 flex items-center justify-center text-white shadow-2xl shadow-blue-500/30 animate-pulse">
-            <BookOpen className="w-10 h-10" />
-          </div>
+          <img src="/icon.svg" alt="" className="w-20 h-20 rounded-[18px]" />
         </div>
       ),
       buttonText: 'Weiter',
@@ -71,7 +68,7 @@ export const IntroSlides: React.FC<IntroSlidesProps> = ({
             <div className="text-xs font-bold text-gray-900 dark:text-white">Aufgaben</div>
           </div>
           <div className="p-3 rounded-2xl bg-purple-500/10 border border-purple-500/20 text-center">
-            <Sparkles className="w-5 h-5 text-purple-600 mx-auto mb-1" />
+            <CheckCircle2 className="w-5 h-5 text-purple-600 mx-auto mb-1" />
             <div className="text-xs font-bold text-gray-900 dark:text-white">Klausuren</div>
           </div>
         </div>
@@ -82,12 +79,12 @@ export const IntroSlides: React.FC<IntroSlidesProps> = ({
       id: 'schedule',
       icon: Clock,
       iconGradient: 'from-indigo-500 to-purple-600',
-      badge: 'Stundenplan & Smart Day',
+      badge: 'Stundenplan & Tagesübersicht',
       badgeVariant: 'purple' as const,
       title: 'Dein Stundenplan im Blick.',
       subtitle: 'Unterricht, Räume, Lehrer und Änderungen.',
       description:
-        'Der intelligente Smart Day zeigt dir in Echtzeit die aktuelle und nächste Stunde, Raumwechsel oder Vertretungen.',
+        'Die Tagesübersicht zeigt dir die aktuelle und nächste Stunde, Raumwechsel oder Vertretungen.',
       illustration: (
         <div className="p-3.5 rounded-2xl bg-gray-50 dark:bg-ios-dark-secondary border border-black/5 dark:border-white/10 max-w-xs mx-auto text-left shadow-xs">
           <div className="flex items-center justify-between text-[11px] text-gray-500 font-semibold mb-1">
@@ -288,7 +285,7 @@ export const IntroSlides: React.FC<IntroSlidesProps> = ({
           size="lg"
           fullWidth
           onClick={handleNext}
-          icon={currentSlide === slides.length - 1 ? <Sparkles className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+          icon={currentSlide === slides.length - 1 ? <CheckCircle2 className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
         >
           {slide.buttonText}
         </Button>
