@@ -182,7 +182,7 @@ export const LicenseGeneratorTab: React.FC<LicenseGeneratorTabProps> = ({
                 }`}
               >
                 <div className="text-xs font-extrabold text-purple-600 dark:text-purple-400 uppercase">Pro Tarif</div>
-                <div className="text-[11px] text-gray-500 mt-0.5">KI-Planung, Notenanalysen, Alle Features</div>
+                <div className="text-[11px] text-gray-500 mt-0.5">KI-Planung, Notennachweis, alle Funktionen</div>
               </button>
             </div>
           </div>

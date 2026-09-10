@@ -1,272 +1,203 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
+import { Award, BookOpen, FileCheck2, Info, Plus, Trash2 } from 'lucide-react';
+import { format, parseISO } from 'date-fns';
 import { FeatureGate } from '../licensing/FeatureGate';
 import { useGradeStore } from '../../store/useGradeStore';
 import { useSchoolStore } from '../../store/useSchoolStore';
+import { useSettingsStore } from '../../store/useSettingsStore';
 import { useAuthStore } from '../../store/useAuthStore';
 import { Button } from '../common/Button';
-import { Badge } from '../common/Badge';
 import { BottomSheet } from '../common/BottomSheet';
 import { PricingModal } from '../licensing/PricingModal';
 import { LicenseActivationModal } from '../licensing/LicenseActivationModal';
-import { Award, Plus, TrendingUp, BarChart3, Trash2, BookOpen, Calculator, Sparkles } from 'lucide-react';
 import type { Grade, GradeType } from '../../types';
-import { format } from 'date-fns';
+import { formatRecordedResult, getGradingSystem, getRecordedGradingSystem } from '../../utils/gradingSystem';
+
+const gradeTypeLabels: Record<GradeType, string> = {
+  exam: 'Klausur / Schulaufgabe',
+  test: 'Test / Kurzkontrolle',
+  oral: 'Mündliche Leistung',
+  presentation: 'Präsentation',
+  homework: 'Hausaufgabe',
+  other: 'Sonstiges',
+};
 
 export const GradesScreen: React.FC = () => {
   const { user } = useAuthStore();
   const { subjects } = useSchoolStore();
+  const { settings } = useSettingsStore();
   const { grades, addGrade, deleteGrade } = useGradeStore();
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isPricingOpen, setIsPricingOpen] = useState(false);
   const [isActivationOpen, setIsActivationOpen] = useState(false);
-
   const [selectedSubjectId, setSelectedSubjectId] = useState(subjects[0]?.id || '');
   const [title, setTitle] = useState('');
   const [value, setValue] = useState<number>(2);
-  const [weight, setWeight] = useState<number>(1);
   const [type, setType] = useState<GradeType>('exam');
   const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+  const [notes, setNotes] = useState('');
 
   const uid = user?.uid || '';
-  const subjectMap = new Map(subjects.map(s => [s.id, s]));
+  const gradingSystem = getGradingSystem(settings.gradeLevel);
+  const usesPoints = gradingSystem === 'points';
 
-  // Calculate Overall Average
-  const totalWeightedSum = grades.reduce((sum, g) => sum + g.value * g.weight, 0);
-  const totalWeights = grades.reduce((sum, g) => sum + g.weight, 0);
-  const overallAverage = totalWeights > 0 ? (totalWeightedSum / totalWeights).toFixed(2) : null;
+  const subjectGradesMap = useMemo(() => {
+    const grouped = new Map<string, Grade[]>();
+    grades.forEach((grade) => {
+      const list = grouped.get(grade.subjectId) || [];
+      list.push(grade);
+      grouped.set(grade.subjectId, list);
+    });
+    grouped.forEach((list) => list.sort((a, b) => b.date.localeCompare(a.date)));
+    return grouped;
+  }, [grades]);
 
-  // Group grades by subject
-  const subjectGradesMap = new Map<string, Grade[]>();
-  grades.forEach((g) => {
-    const list = subjectGradesMap.get(g.subjectId) || [];
-    list.push(g);
-    subjectGradesMap.set(g.subjectId, list);
-  });
+  const openAddModal = () => {
+    if (subjects.length > 0 && !selectedSubjectId) {
+      setSelectedSubjectId(subjects[0].id);
+    }
+    setValue(usesPoints ? 10 : 2);
+    setIsAddModalOpen(true);
+  };
 
-  const handleSaveGrade = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSaveGrade = async (event: React.FormEvent) => {
+    event.preventDefault();
     if (!selectedSubjectId || !title.trim()) return;
+
+    const normalizedValue = usesPoints
+      ? Math.round(Math.min(15, Math.max(0, Number(value))))
+      : Math.min(6, Math.max(1, Number(value)));
 
     const newGrade: Grade = {
       id: `grd-${Date.now()}`,
       subjectId: selectedSubjectId,
       title: title.trim(),
-      value: Number(value),
-      weight: Number(weight),
+      value: normalizedValue,
+      weight: 1,
+      gradingSystem,
       type,
       date,
+      notes: notes.trim() || undefined,
     };
 
     await addGrade(uid, newGrade);
     setTitle('');
+    setNotes('');
     setIsAddModalOpen(false);
   };
 
   return (
     <div className="space-y-6 pb-4 ipad:pb-6 max-w-5xl mx-auto px-1">
-      {/* Screen Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white tracking-tight flex items-center gap-2">
-            <span>Noten & Notenschnitt</span>
-            <span className="text-[10px] font-extrabold uppercase bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-2 py-0.5 rounded-full shadow-xs">
+          <h2 className="flex items-center gap-2 text-xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-2xl">
+            <span>Notennachweis</span>
+            <span className="rounded-md bg-gray-200 px-2 py-0.5 text-[10px] font-bold uppercase text-gray-700 dark:bg-gray-700 dark:text-gray-200">
               Pro
             </span>
           </h2>
           <p className="text-xs text-gray-500 dark:text-gray-400">
-            Verwalte deine Noten, Fächerschnitte und deinen Gesamt-Notendurchschnitt
+            Ergebnisse dokumentieren – ohne Durchschnitt, Prognose oder Endnote.
           </p>
         </div>
 
-        <Button
-          type="button"
-          variant="primary"
-          size="sm"
-          onClick={() => {
-            if (subjects.length > 0 && !selectedSubjectId) {
-              setSelectedSubjectId(subjects[0].id);
-            }
-            setIsAddModalOpen(true);
-          }}
-          icon={<Plus className="w-4 h-4" />}
-        >
-          Note eintragen
+        <Button type="button" variant="primary" size="sm" onClick={openAddModal} icon={<Plus className="h-4 w-4" />}>
+          Ergebnis eintragen
         </Button>
       </div>
 
       <FeatureGate
         feature="gradeAnalytics"
-        fallbackTitle="Notenübersicht & Notenschnitt (Grade Analytics)"
-        fallbackDescription="Behalte alle deine Noten, Klausurergebnisse und deinen Gesamtschnitt im Blick. Inklusive Fächer-Durchschnitt und automatischer Gewichtung. Exklusiv im Pro-Tarif verfügbar."
+        fallbackTitle="Persönlicher Notennachweis"
+        fallbackDescription="Dokumentiere deine schulischen Ergebnisse übersichtlich nach Fach und Datum. Es werden keine Durchschnitte oder Endnoten berechnet."
         onOpenPricing={() => setIsPricingOpen(true)}
         onOpenActivation={() => setIsActivationOpen(true)}
       >
-        <div className="space-y-6">
-          {/* Header KPI cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div className="ios-card p-4 bg-gradient-to-br from-purple-500/10 to-indigo-500/10 border border-purple-500/20 flex items-center justify-between">
-              <div>
-                <div className="text-xs font-semibold text-purple-600 dark:text-purple-400">Gesamtschnitt</div>
-                <div className="text-3xl font-black text-gray-900 dark:text-white mt-1">
-                  {overallAverage ? overallAverage.replace('.', ',') : '–'}
-                </div>
-                <div className="text-[10px] text-gray-400 mt-0.5">
-                  {grades.length} Note{grades.length !== 1 ? 'n' : ''} eingetragen
-                </div>
-              </div>
-              <div className="w-12 h-12 rounded-2xl bg-purple-600 text-white flex items-center justify-center shadow-sm">
-                <TrendingUp className="w-6 h-6" />
-              </div>
-            </div>
-
-            <div className="ios-card p-4 flex items-center justify-between">
-              <div>
-                <div className="text-xs font-semibold text-gray-500">Beste Note</div>
-                <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400 mt-1">
-                  {grades.length > 0 ? Math.min(...grades.map(g => g.value)).toFixed(1).replace('.', ',') : '–'}
-                </div>
-                <div className="text-[10px] text-gray-400 mt-0.5">Top-Leistung</div>
-              </div>
-              <div className="w-10 h-10 rounded-xl bg-emerald-500/15 text-emerald-600 flex items-center justify-center">
-                <Award className="w-5 h-5" />
-              </div>
-            </div>
-
-            <div className="ios-card p-4 flex items-center justify-between">
-              <div>
-                <div className="text-xs font-semibold text-gray-500">Erfasste Fächer</div>
-                <div className="text-2xl font-bold text-ios-blue mt-1">
-                  {subjectGradesMap.size} von {subjects.length}
-                </div>
-                <div className="text-[10px] text-gray-400 mt-0.5">Fächer mit Noten</div>
-              </div>
-              <div className="w-10 h-10 rounded-xl bg-blue-500/15 text-ios-blue flex items-center justify-center">
-                <BookOpen className="w-5 h-5" />
-              </div>
-            </div>
-          </div>
-
-          {/* 🧠 AI Noten-Zielrechner Card */}
-          <div className="ios-card p-4 bg-gradient-to-r from-purple-500/10 via-indigo-500/10 to-teal-500/10 border border-purple-500/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-purple-600 text-white flex items-center justify-center shadow-xs shrink-0">
-                <Calculator className="w-5 h-5" />
+        <div className="space-y-5">
+          <div className="ios-card flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-start gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-100 text-ios-blue dark:bg-blue-950/50">
+                <FileCheck2 className="h-5 w-5" />
               </div>
               <div>
-                <div className="flex items-center gap-1.5">
-                  <h4 className="text-sm font-bold text-gray-900 dark:text-white">
-                    KI-Notenprognose & Zielrechner
-                  </h4>
-                  <span className="text-[9px] font-extrabold uppercase bg-purple-600 text-white px-1.5 py-0.2 rounded-full">
-                    Pro
-                  </span>
+                <div className="text-sm font-bold text-gray-900 dark:text-white">
+                  {grades.length} {grades.length === 1 ? 'Eintrag' : 'Einträge'} dokumentiert
                 </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  {overallAverage
-                    ? `Dein aktueller Notenschnitt liegt bei ${overallAverage.replace('.', ',')}. Trage weitere Noten ein, um die Prognose zu verfeinern.`
-                    : 'Trage deine ersten Noten ein, um eine automatische Notenschnitt-Prognose zu erhalten.'}
+                <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                  Aktuelle Eingabe: {usesPoints ? '0–15 Punkte (ab Klasse 11)' : 'Noten 1–6'}
                 </p>
               </div>
             </div>
-
-            <Button
-              type="button"
-              variant="secondary"
-              size="sm"
-              onClick={() => {
-                if (subjects.length > 0 && !selectedSubjectId) {
-                  setSelectedSubjectId(subjects[0].id);
-                }
-                setIsAddModalOpen(true);
-              }}
-              icon={<Sparkles className="w-3.5 h-3.5 text-purple-600" />}
-              className="shrink-0"
-            >
-              Note simulieren
-            </Button>
+            <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+              <Info className="h-4 w-4 shrink-0" />
+              <span>Die tatsächliche Zeugnisnote legt ausschließlich die Schule fest.</span>
+            </div>
           </div>
 
-          {/* Fächerspiegel Breakdown */}
           {subjects.length === 0 ? (
-            <div className="ios-card p-8 text-center text-xs text-gray-400">
-              Lege im Tab <strong>Schule</strong> zuerst deine Schulfächer an, um Noten einzutragen.
+            <div className="ios-card p-8 text-center text-xs text-gray-500 dark:text-gray-400">
+              Lege im Tab <strong>Schule</strong> zuerst deine Schulfächer an.
+            </div>
+          ) : grades.length === 0 ? (
+            <div className="ios-card p-8 text-center">
+              <Award className="mx-auto h-8 w-8 text-gray-300 dark:text-gray-600" />
+              <h3 className="mt-3 text-sm font-bold text-gray-900 dark:text-white">Noch keine Ergebnisse eingetragen</h3>
+              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Deine Einträge erscheinen hier nach Fach und Datum sortiert.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-              {subjects.map((sub) => {
-                const subGrades = subjectGradesMap.get(sub.id) || [];
-                const subSum = subGrades.reduce((sum, g) => sum + g.value * g.weight, 0);
-                const subWeight = subGrades.reduce((sum, g) => sum + g.weight, 0);
-                const subAverage = subWeight > 0 ? (subSum / subWeight).toFixed(2).replace('.', ',') : '–';
+            <div className="grid grid-cols-1 gap-3.5 md:grid-cols-2">
+              {subjects.map((subject) => {
+                const subjectGrades = subjectGradesMap.get(subject.id) || [];
+                if (subjectGrades.length === 0) return null;
 
                 return (
-                  <div key={sub.id} className="ios-card p-4 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2.5">
-                        <div
-                          className="w-8 h-8 rounded-xl flex items-center justify-center text-white font-bold text-xs shadow-xs"
-                          style={{ backgroundColor: sub.color }}
-                        >
-                          {sub.shortName}
-                        </div>
-                        <div>
-                          <h4 className="text-sm font-bold text-gray-900 dark:text-white">
-                            {sub.name}
-                          </h4>
-                          <span className="text-[11px] text-gray-400">
-                            {subGrades.length} Note{subGrades.length !== 1 ? 'n' : ''}
-                          </span>
-                        </div>
+                  <section key={subject.id} className="ios-card p-4">
+                    <div className="flex items-center gap-2.5 border-b border-black/5 pb-3 dark:border-white/5">
+                      <div
+                        className="flex h-9 w-9 items-center justify-center rounded-xl text-xs font-bold text-white"
+                        style={{ backgroundColor: subject.color }}
+                      >
+                        {subject.shortName}
                       </div>
-
-                      <div className="text-right">
-                        <span className="text-xs font-semibold text-gray-400 block text-[10px] uppercase">Schnitt</span>
-                        <span className="text-lg font-black text-gray-900 dark:text-white">
-                          {subAverage}
-                        </span>
+                      <div>
+                        <h3 className="text-sm font-bold text-gray-900 dark:text-white">{subject.name}</h3>
+                        <p className="text-[11px] text-gray-400">{subjectGrades.length} {subjectGrades.length === 1 ? 'Eintrag' : 'Einträge'}</p>
                       </div>
                     </div>
 
-                    {/* Grades List for this Subject */}
-                    {subGrades.length > 0 && (
-                      <div className="space-y-1.5 pt-2 border-t border-black/5 dark:border-white/5">
-                        {subGrades.map((g) => (
-                          <div
-                            key={g.id}
-                            className="p-2 rounded-lg bg-gray-50 dark:bg-ios-dark-secondary flex items-center justify-between text-xs"
-                          >
-                            <div className="flex items-center gap-2">
-                              <span className="w-6 h-6 rounded-md bg-white dark:bg-ios-dark-card font-black text-center flex items-center justify-center text-gray-900 dark:text-white border border-black/5 dark:border-white/10">
-                                {g.value}
-                              </span>
-                              <div>
-                                <span className="font-semibold text-gray-800 dark:text-gray-200">
-                                  {g.title}
+                    <div className="mt-2 space-y-2">
+                      {subjectGrades.map((grade) => (
+                        <article key={grade.id} className="rounded-xl bg-gray-50 p-3 dark:bg-ios-dark-secondary">
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <span className={`rounded-md px-2 py-1 text-xs font-bold ${
+                                  getRecordedGradingSystem(grade) === 'points'
+                                    ? 'bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300'
+                                    : 'bg-white text-gray-900 dark:bg-ios-dark-card dark:text-white'
+                                }`}>
+                                  {formatRecordedResult(grade)}
                                 </span>
-                                {g.weight > 1 && (
-                                  <span className="ml-1 text-[10px] text-purple-600 font-bold">
-                                    ({g.weight}x)
-                                  </span>
-                                )}
+                                <span className="text-[11px] text-gray-400">{format(parseISO(grade.date), 'dd.MM.yyyy')}</span>
                               </div>
+                              <h4 className="mt-2 text-sm font-semibold text-gray-900 dark:text-white">{grade.title}</h4>
+                              <p className="text-[11px] text-gray-500 dark:text-gray-400">{gradeTypeLabels[grade.type]}</p>
+                              {grade.notes && <p className="mt-2 whitespace-pre-wrap text-xs text-gray-600 dark:text-gray-300">{grade.notes}</p>}
                             </div>
-
-                            <div className="flex items-center gap-2">
-                              <span className="text-[10px] text-gray-400">{g.date}</span>
-                              <button
-                                type="button"
-                                onClick={() => deleteGrade(uid, g.id)}
-                                className="p-1 text-gray-300 hover:text-red-500 rounded"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
-                            </div>
+                            <button
+                              type="button"
+                              onClick={() => deleteGrade(uid, grade.id)}
+                              className="touch-target flex shrink-0 items-center justify-center rounded-lg text-gray-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/30"
+                              aria-label={`${grade.title} löschen`}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
                           </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
+                        </article>
+                      ))}
+                    </div>
+                  </section>
                 );
               })}
             </div>
@@ -274,85 +205,91 @@ export const GradesScreen: React.FC = () => {
         </div>
       </FeatureGate>
 
-      {/* Add Grade Modal */}
-      <BottomSheet
-        isOpen={isAddModalOpen}
-        onClose={() => setIsAddModalOpen(false)}
-        title="Note eintragen"
-      >
+      <BottomSheet isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} title="Ergebnis dokumentieren">
         <form onSubmit={handleSaveGrade} className="space-y-4">
+          <div className="rounded-xl border border-blue-200 bg-blue-50 p-3 text-xs text-blue-900 dark:border-blue-900/60 dark:bg-blue-950/30 dark:text-blue-200">
+            {usesPoints
+              ? `Für „${settings.gradeLevel || 'Oberstufe'}“ werden Ergebnisse als 0 bis 15 Punkte gespeichert.`
+              : `Für „${settings.gradeLevel || 'deine Klassenstufe'}“ werden Ergebnisse als Noten von 1 bis 6 gespeichert.`}
+          </div>
+
           <div>
-            <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">
-              Schulfach
-            </label>
+            <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Schulfach</label>
             <select
               value={selectedSubjectId}
-              onChange={(e) => setSelectedSubjectId(e.target.value)}
+              onChange={(event) => setSelectedSubjectId(event.target.value)}
               required
-              className="w-full px-3.5 py-2.5 bg-gray-100 dark:bg-ios-dark-secondary rounded-xl text-sm font-semibold text-gray-900 dark:text-white focus:outline-none"
+              className="w-full rounded-xl bg-gray-100 px-3.5 py-2.5 text-sm font-semibold text-gray-900 focus:outline-none dark:bg-ios-dark-secondary dark:text-white"
             >
-              {subjects.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name} ({s.shortName})
-                </option>
-              ))}
+              {subjects.map((subject) => <option key={subject.id} value={subject.id}>{subject.name} ({subject.shortName})</option>)}
             </select>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
-              <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">
-                Note (1.0 – 6.0)
+              <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                {usesPoints ? 'Punkte (0–15)' : 'Note (1–6)'}
               </label>
               <input
                 type="number"
-                step="0.1"
-                min="0.7"
-                max="6.0"
+                step={usesPoints ? 1 : 0.1}
+                min={usesPoints ? 0 : 1}
+                max={usesPoints ? 15 : 6}
                 required
                 value={value}
-                onChange={(e) => setValue(Number(e.target.value))}
-                className="w-full px-3.5 py-2.5 bg-gray-100 dark:bg-ios-dark-secondary rounded-xl text-sm font-bold text-center text-gray-900 dark:text-white focus:outline-none"
+                onChange={(event) => setValue(Number(event.target.value))}
+                className="w-full rounded-xl bg-gray-100 px-3.5 py-2.5 text-center text-sm font-bold text-gray-900 focus:outline-none dark:bg-ios-dark-secondary dark:text-white"
               />
             </div>
-
             <div>
-              <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">
-                Gewichtung
-              </label>
-              <select
-                value={weight}
-                onChange={(e) => setWeight(Number(e.target.value))}
-                className="w-full px-3 py-2.5 bg-gray-100 dark:bg-ios-dark-secondary rounded-xl text-sm font-semibold text-gray-900 dark:text-white focus:outline-none"
-              >
-                <option value={1}>1-fach (normal)</option>
-                <option value={2}>2-fach (Klausur / Schulaufgabe)</option>
-                <option value={0.5}>0.5-fach (Mündlich / Hausaufgabe)</option>
-              </select>
+              <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Datum</label>
+              <input
+                type="date"
+                required
+                value={date}
+                onChange={(event) => setDate(event.target.value)}
+                className="w-full rounded-xl bg-gray-100 px-3.5 py-2.5 text-sm font-semibold text-gray-900 focus:outline-none dark:bg-ios-dark-secondary dark:text-white"
+              />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">
-              Bezeichnung / Thema
-            </label>
+            <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Art der Leistung</label>
+            <select
+              value={type}
+              onChange={(event) => setType(event.target.value as GradeType)}
+              className="w-full rounded-xl bg-gray-100 px-3.5 py-2.5 text-sm font-semibold text-gray-900 focus:outline-none dark:bg-ios-dark-secondary dark:text-white"
+            >
+              {Object.entries(gradeTypeLabels).map(([id, label]) => <option key={id} value={id}>{label}</option>)}
+            </select>
+          </div>
+
+          <div>
+            <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Bezeichnung / Thema</label>
             <input
               type="text"
               required
-              placeholder="z.B. 1. Schulaufgabe Analysis"
+              placeholder="z. B. Klausur Analysis"
               value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="w-full px-3.5 py-2.5 bg-gray-100 dark:bg-ios-dark-secondary rounded-xl text-sm font-medium text-gray-900 dark:text-white focus:outline-none"
+              onChange={(event) => setTitle(event.target.value)}
+              className="w-full rounded-xl bg-gray-100 px-3.5 py-2.5 text-sm font-medium text-gray-900 focus:outline-none dark:bg-ios-dark-secondary dark:text-white"
             />
           </div>
 
-          <div className="pt-2 flex justify-end gap-2">
-            <Button type="button" variant="secondary" size="md" onClick={() => setIsAddModalOpen(false)}>
-              Abbrechen
-            </Button>
-            <Button type="submit" variant="primary" size="md">
-              Note speichern
-            </Button>
+          <div>
+            <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Notiz / Nachweis (optional)</label>
+            <textarea
+              rows={3}
+              placeholder="z. B. Rückgabedatum, Thema oder Hinweis der Lehrkraft"
+              value={notes}
+              onChange={(event) => setNotes(event.target.value)}
+              className="w-full rounded-xl bg-gray-100 px-3.5 py-2.5 text-sm text-gray-900 focus:outline-none dark:bg-ios-dark-secondary dark:text-white"
+            />
+          </div>
+
+          <div className="flex justify-end gap-2 pt-2">
+            <Button type="button" variant="secondary" size="md" onClick={() => setIsAddModalOpen(false)}>Abbrechen</Button>
+            <Button type="submit" variant="primary" size="md" icon={<BookOpen className="h-4 w-4" />}>Speichern</Button>
           </div>
         </form>
       </BottomSheet>
@@ -365,11 +302,7 @@ export const GradesScreen: React.FC = () => {
           setIsActivationOpen(true);
         }}
       />
-
-      <LicenseActivationModal
-        isOpen={isActivationOpen}
-        onClose={() => setIsActivationOpen(false)}
-      />
+      <LicenseActivationModal isOpen={isActivationOpen} onClose={() => setIsActivationOpen(false)} />
     </div>
   );
 };

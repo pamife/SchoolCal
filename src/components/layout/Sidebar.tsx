@@ -42,7 +42,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'calendar' as NavigationTab, label: 'Kalender', icon: Calendar, count: null },
     { id: 'tasks' as NavigationTab, label: 'Aufgaben', icon: CheckCircle2, count: openTasksCount || null },
     { id: 'statistics' as NavigationTab, label: 'Statistiken', icon: BarChart3, count: null },
-    { id: 'grades' as NavigationTab, label: 'Noten & Schnitt', icon: Award, count: null, isPro: true },
+    { id: 'grades' as NavigationTab, label: 'Notennachweis', icon: Award, count: null, isPro: true },
     { id: 'school' as NavigationTab, label: 'Schule & Stundenplan', icon: GraduationCap, count: null },
     { id: 'settings' as NavigationTab, label: 'Einstellungen', icon: Settings, count: null },
   ];

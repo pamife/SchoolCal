@@ -161,16 +161,18 @@ export interface Exam {
 }
 
 // ----------------------------------------------------
-// Pro Feature: Noten & Notenschnitt (Grade Analytics)
+// Pro Feature: Dokumentation schulischer Ergebnisse
 // ----------------------------------------------------
 
 export type GradeType = 'exam' | 'test' | 'oral' | 'presentation' | 'homework' | 'other';
+export type GradingSystem = 'grade' | 'points';
 
 export interface Grade {
   id: string;
   subjectId: string;
-  value: number; // e.g. 1.0 - 6.0
-  weight: number; // 1.0 = einfach, 2.0 = doppelt (z.B. Klausur/Schulaufgabe)
+  value: number; // 1.0-6.0 for grades or 0-15 for upper-secondary points.
+  weight: number; // Legacy field; documentation entries always use 1.
+  gradingSystem?: GradingSystem; // Legacy entries without this field are regular grades.
   type: GradeType;
   date: string; // YYYY-MM-DD
   title: string; // e.g. "1. Schulaufgabe"
@@ -325,7 +327,6 @@ export interface SubjectStat {
   completedTasks: number;
   openTasks: number;
   completionRate: number; // 0 - 100
-  averageGrade?: number;
 }
 
 export interface WeeklyTrendPoint {
@@ -652,6 +653,3 @@ export interface TimetableDiff {
   items: TimetableDiffItem[];
   summary: string[];
 }
-
-
-

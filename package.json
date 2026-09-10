@@ -14,6 +14,7 @@
     "test:privacy": "npx tsx scripts/test-privacy-security.ts",
     "test:mobile": "npx tsx scripts/test-mobile-ux-sync.ts",
     "test:timetables": "npx tsx scripts/test-class-timetables.ts",
+    "test:grades": "npx tsx scripts/test-grade-documentation.ts",
     "preview": "vite preview"
   },
   "dependencies": {

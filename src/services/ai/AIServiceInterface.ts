@@ -1,12 +1,4 @@
-import type {
-  ScheduleEntry,
-  Subject,
-  Homework,
-  Exam,
-  Grade,
-  AIChatMessage,
-  AIActionPayload,
-} from '../../types';
+import type { AIChatMessage, AIActionPayload } from '../../types';
 
 export interface AISchoolContext {
   currentDate: string; // ISO string or formatted
@@ -40,10 +32,6 @@ export interface AISchoolContext {
     daysLeft: number;
     topics?: string[];
   }>;
-  gradesSummary?: {
-    overallAverage?: string;
-    subjectAverages?: Array<{ subjectName: string; average: string }>;
-  };
 }
 
 export interface AIResponse {
@@ -72,4 +60,3 @@ export interface IAIService {
   ): Promise<AIResponse>;
   checkHealth?(forceRefresh?: boolean): Promise<AIHealthStatus>;
 }
-

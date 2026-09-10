@@ -61,15 +61,15 @@ export const PLAN_INFO: Record<UserPlan, PlanMeta> = {
     name: 'Pro',
     badgeLabel: 'Pro',
     badgeColor: 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-xs',
-    description: 'Das ultimative Schul-Cockpit mit intelligenter Planung & Notenanalyse.',
+    description: 'Erweiterte Planung und ein persönlicher Nachweis schulischer Ergebnisse.',
     priceLabel: 'Exklusive Pro Lizenz',
     features: [
       'Alle Plus- und Standard-Funktionen',
       'KI-Schulassistent mit Echtzeit-Kontext aus Stundenplan & Aufgaben',
       'KI-Lernzeitplaner & Klausurvorbereitung mit Aktions-Bestätigung',
       'KI-gestützte Smart-Day-Tagesbriefings & Empfehlungen',
-      'Langzeit-Trendstatistiken & Noten-Analysen',
-      'Notenverwaltung, Schnitte & Notenspiegel',
+      'Langzeit-Trendstatistiken für Unterricht und Aufgaben',
+      'Notennachweis mit Noten- und Oberstufenpunkten',
       'Detaillierte PDF-Berichte',
       'Alle zukünftigen Premium-Features inklusive',
     ],
@@ -130,4 +130,3 @@ export function isPlanEligible(userPlan: UserPlan, requiredPlan: UserPlan): bool
 export function getRequiredPlanForFeature(feature: FeatureKey): UserPlan {
   return FEATURE_GATES[feature] ?? 'STANDARD';
 }
-

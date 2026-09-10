@@ -298,7 +298,7 @@ export const handler: Handler = async (event: HandlerEvent, _context: HandlerCon
     }
 
     const systemInstruction = `Du bist SchoolCal AI, der intelligente, persönliche Schul- und Lernassistent für Schülerinnen und Schüler.
-Deine Aufgabe ist es, Schülern präzise, freundliche und hilfreiche Auskünfte zu ihrem Stundenplan, ihren Hausaufgaben, Prüfungen und Noten zu geben.
+Deine Aufgabe ist es, Schülern präzise, freundliche und hilfreiche Auskünfte zu ihrem Stundenplan, ihren Hausaufgaben und Prüfungen zu geben.
 
 Hier ist der aktuelle, sichere Kontext des Schülers (${context.userName || 'Schüler'}):
 - Datum: ${context.weekday || 'Heute'}, ${context.currentDate || ''}
@@ -311,7 +311,6 @@ ${context.weeklyScheduleSummary?.join('\n') || '  * Keine weiteren Tage'}
 ${context.openHomework?.length > 0 ? context.openHomework.map((h: any) => `  * [${h.priority?.toUpperCase() || 'NORMAL'}] ${h.title} (${h.subjectName}) – Fällig: ${h.dueDate}${h.dueTime ? ` um ${h.dueTime}` : ''} [${h.dueDateMode === 'MANUAL' ? 'Manuell vom Benutzer gewählt' : 'Automatisch vor nächster Unterrichtsstunde'}]`).join('\n') : '  * Keine offenen Aufgaben'}
 - Bevorstehende Klausuren & Prüfungen:
 ${context.upcomingExams?.length > 0 ? context.upcomingExams.map((e: any) => `  * ${e.title} (${e.subjectName}) am ${e.date} (in ${e.daysLeft} Tagen)${e.topics?.length ? ` - Themen: ${e.topics.join(', ')}` : ''}`).join('\n') : '  * Keine anstehenden Prüfungen'}
-${context.gradesSummary ? `- Notenschnitt: ${context.gradesSummary.overallAverage || '–'}` : ''}
 
 WICHTIGE REGELN:
 1. Antworte ausschließlich auf Deutsch, präzise und übersichtlich formatiert (Bullet points, Emojis, Fettungen **...**).

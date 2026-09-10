@@ -7,7 +7,6 @@ import type {
   Room,
   Homework,
   Exam,
-  Grade,
   UserSettings,
 } from '../../types';
 import type { AISchoolContext } from './AIServiceInterface';
@@ -22,7 +21,6 @@ export interface BuildContextParams {
   scheduleEntries: ScheduleEntry[];
   homework: Homework[];
   exams: Exam[];
-  grades: Grade[];
 }
 
 export function buildSafeAISchoolContext({
@@ -35,7 +33,6 @@ export function buildSafeAISchoolContext({
   scheduleEntries = [],
   homework = [],
   exams = [],
-  grades = [],
 }: BuildContextParams): AISchoolContext {
   const subjectMap = new Map(subjects.map((s) => [s.id, s]));
   const teacherMap = new Map(teachers.map((t) => [t.id, t]));
@@ -108,29 +105,6 @@ export function buildSafeAISchoolContext({
       };
     });
 
-  // Grades summary
-  let gradesSummary: AISchoolContext['gradesSummary'];
-  if (grades.length > 0) {
-    const totalWeightedSum = grades.reduce((sum, g) => sum + g.value * g.weight, 0);
-    const totalWeights = grades.reduce((sum, g) => sum + g.weight, 0);
-    const overallAverage = totalWeights > 0 ? (totalWeightedSum / totalWeights).toFixed(2) : undefined;
-
-    const subjectAverages = subjects.map((sub) => {
-      const subGrades = grades.filter((g) => g.subjectId === sub.id);
-      const sum = subGrades.reduce((acc, g) => acc + g.value * g.weight, 0);
-      const w = subGrades.reduce((acc, g) => acc + g.weight, 0);
-      return {
-        subjectName: sub.name,
-        average: w > 0 ? (sum / w).toFixed(2) : '–',
-      };
-    }).filter((s) => s.average !== '–');
-
-    gradesSummary = {
-      overallAverage,
-      subjectAverages,
-    };
-  }
-
   return {
     currentDate: format(currentDate, 'dd. MMMM yyyy', { locale: de }),
     weekday: format(currentDate, 'EEEE', { locale: de }),
@@ -141,6 +115,5 @@ export function buildSafeAISchoolContext({
     weeklyScheduleSummary,
     openHomework,
     upcomingExams,
-    gradesSummary,
   };
 }

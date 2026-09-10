@@ -2,7 +2,7 @@
 import { buildSafeAISchoolContext } from '../src/services/ai/aiContextBuilder';
 import { executeConfirmedAIAction } from '../src/services/ai/aiActionHandler';
 import { getRequiredPlanForFeature, isPlanEligible } from '../src/config/features';
-import type { Subject, Teacher, Room, ScheduleEntry, Homework, Exam, Grade, UserSettings } from '../src/types';
+import type { Subject, Teacher, Room, ScheduleEntry, Homework, Exam, UserSettings } from '../src/types';
 
 async function runAIAssistantTests() {
   console.log('====================================================');
@@ -153,11 +153,6 @@ async function runAIAssistantTests() {
     },
   ];
 
-  const testGrades: Grade[] = [
-    { id: 'g-1', subjectId: 'sub-1', value: 2.0, weight: 1, type: 'oral', date: '2026-08-20' },
-    { id: 'g-2', subjectId: 'sub-1', value: 1.0, weight: 2, type: 'exam', date: '2026-08-25' },
-  ];
-
   const context = buildSafeAISchoolContext({
     currentDate: new Date('2026-08-31T10:00:00Z'),
     userName: 'Anna',
@@ -168,7 +163,6 @@ async function runAIAssistantTests() {
     scheduleEntries: testEntries,
     homework: testHomework,
     exams: testExams,
-    grades: testGrades,
   });
 
   assert(context.userName === 'Anna', 'Context has correct student name');
@@ -177,7 +171,7 @@ async function runAIAssistantTests() {
   assert(context.openHomework[0].title === 'Buch S. 42 Nr. 1-4', 'Homework title matches');
   assert(context.upcomingExams.length === 1, 'Upcoming exams included');
   assert(context.upcomingExams[0].topics?.[0] === 'Ableitungsregeln', 'Exam topics included');
-  assert(context.gradesSummary?.overallAverage !== undefined, 'Grade average calculated');
+  assert(!('gradesSummary' in context), 'Grade averages are not calculated or sent to the assistant');
 
   // --- 5. AI Action Execution Tests ---
   console.log('\n--- 5. AI Action Execution Tests ---');

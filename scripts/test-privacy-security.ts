@@ -10,7 +10,6 @@ import type {
   ScheduleEntry,
   Homework,
   Exam,
-  Grade,
 } from '../src/types';
 
 function assert(condition: boolean, message: string) {
@@ -112,16 +111,11 @@ const mockSubjects: Subject[] = [
   { id: 'sub-1', name: 'Mathematik', shortName: 'M', color: '#007AFF', icon: 'Calculator' },
 ];
 
-const mockGrades: Grade[] = [
-  { id: 'gr-1', subjectId: 'sub-1', value: 1.5, weight: 2.0, type: 'exam', date: '2026-09-01', title: '1. Schulaufgabe' },
-];
-
 const mockHomework: Homework[] = [
   { id: 'hw-1', title: 'S. 45 Nr. 3', subjectId: 'sub-1', dueDate: '2026-09-02', priority: 'high', status: 'todo', createdAt: '2026-08-31T10:00:00Z' },
 ];
 
 assert(mockUser.email.includes('@'), 'Mock user email is valid');
-assert(mockGrades[0].value === 1.5, 'Grades are structured properly');
 assert(mockHomework[0].priority === 'high', 'Homework is structured properly');
 
 
@@ -140,13 +134,12 @@ const aiContext = buildSafeAISchoolContext({
   scheduleEntries: [],
   homework: mockHomework,
   exams: [],
-  grades: mockGrades,
 });
 
 assert(aiContext.userName === 'Max Mustermann', 'AI context has user name');
 assert(aiContext.openHomework.length === 1, 'AI context contains only open homework');
 assert(aiContext.openHomework[0].title === 'S. 45 Nr. 3', 'AI context contains task title');
-assert(aiContext.gradesSummary?.overallAverage === '1.50', 'AI context contains computed grade summary');
+assert(!('gradesSummary' in aiContext), 'AI context excludes grade calculations and grade records');
 
 // Check that NO passwords or internal secrets are in AI context
 const serializedContext = JSON.stringify(aiContext);

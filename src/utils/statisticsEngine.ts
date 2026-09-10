@@ -15,7 +15,6 @@ import type {
   Subject,
   Homework,
   Exam,
-  Grade,
   StatisticsPeriod,
   SchoolStatistics,
   SubjectStat,
@@ -29,7 +28,6 @@ export interface StatisticsParams {
   subjects: Subject[];
   homework: Homework[];
   exams: Exam[];
-  grades: Grade[];
   currentDate?: Date;
 }
 
@@ -91,7 +89,6 @@ export function calculateSchoolStatistics({
   subjects = [],
   homework = [],
   exams = [],
-  grades = [],
   currentDate = new Date(),
 }: StatisticsParams): SchoolStatistics {
   const { start, end, label: periodLabel } = getPeriodInterval(period, currentDate);
@@ -168,13 +165,6 @@ export function calculateSchoolStatistics({
     subjectHomeworkMap.set(h.subjectId, list);
   });
 
-  const subjectGradesMap = new Map<string, Grade[]>();
-  grades.forEach((g) => {
-    const list = subjectGradesMap.get(g.subjectId) || [];
-    list.push(g);
-    subjectGradesMap.set(g.subjectId, list);
-  });
-
   const subjectStats: SubjectStat[] = subjects.map((sub) => {
     const subHw = subjectHomeworkMap.get(sub.id) || [];
     const totalTasks = subHw.length;
@@ -187,11 +177,6 @@ export function calculateSchoolStatistics({
     const subM = subLessonMin % 60;
     const lessonHoursFormatted = subM > 0 ? `${subH}h ${subM}m` : `${subH}h`;
 
-    const subGrades = subjectGradesMap.get(sub.id) || [];
-    const sumVal = subGrades.reduce((acc, g) => acc + g.value * g.weight, 0);
-    const sumW = subGrades.reduce((acc, g) => acc + g.weight, 0);
-    const averageGrade = sumW > 0 ? Number((sumVal / sumW).toFixed(2)) : undefined;
-
     return {
       subjectId: sub.id,
       subjectName: sub.name,
@@ -203,7 +188,6 @@ export function calculateSchoolStatistics({
       completedTasks,
       openTasks,
       completionRate,
-      averageGrade,
     };
   });
 

@@ -23,7 +23,6 @@ import type {
   Substitution,
   Homework,
   Exam,
-  Grade,
   NotificationPreferences,
   UserSettings,
 } from '../src/types';
@@ -232,11 +231,6 @@ async function runSmartFeaturesTests() {
   // ----------------------------------------------------
   console.log('\n--- 2. Statistics Engine Tests ---');
 
-  const testGrades: Grade[] = [
-    { id: 'g-1', subjectId: 'sub-mathe', value: 1.5, weight: 2.0, type: 'exam', date: '2026-09-10', title: '1. Schulaufgabe' },
-    { id: 'g-2', subjectId: 'sub-mathe', value: 2.0, weight: 1.0, type: 'test', date: '2026-09-12', title: 'Kurzarbeit' },
-  ];
-
   const stats = calculateSchoolStatistics({
     period: 'this_week',
     scheduleEntries: testSchedule,
@@ -244,7 +238,6 @@ async function runSmartFeaturesTests() {
     subjects: testSubjects,
     homework: testHomework,
     exams: testExams,
-    grades: testGrades,
     currentDate: tuesdayMorning,
   });
 
@@ -258,7 +251,7 @@ async function runSmartFeaturesTests() {
   const matheStat = stats.subjectStats.find((s) => s.subjectId === 'sub-mathe');
   assert(matheStat?.totalTasks === 1, 'Mathe has 1 task');
   assert(matheStat?.completedTasks === 0, 'Mathe has 0 completed tasks');
-  assert(matheStat?.averageGrade === 1.67, 'Calculates weighted grade average 1.67 for Mathe');
+  assert(!('averageGrade' in (matheStat || {})), 'Statistics do not calculate grade averages');
 
   // Empty data test
   const emptyStats = calculateSchoolStatistics({
@@ -268,7 +261,6 @@ async function runSmartFeaturesTests() {
     subjects: [],
     homework: [],
     exams: [],
-    grades: [],
   });
 
   assert(emptyStats.hasEnoughDataForTrends === false, 'Empty data honest flag hasEnoughDataForTrends is false');
@@ -356,14 +348,13 @@ async function runSmartFeaturesTests() {
     scheduleEntries: testSchedule,
     homework: testHomework,
     exams: testExams,
-    grades: testGrades,
   });
 
   assert(aiContext.userName === 'Paul', 'Context contains student user name');
   assert(aiContext.todaySchedule.length === 4, 'Context contains 4 schedule entries for today');
   assert(aiContext.openHomework.length === 2, 'Context contains ONLY open homework (done tasks excluded)');
   assert(aiContext.upcomingExams.length === 1, 'Context contains upcoming exams');
-  assert(aiContext.gradesSummary?.overallAverage !== undefined, 'Context contains grade average');
+  assert(!('gradesSummary' in aiContext), 'AI context does not calculate or expose grade averages');
 
   // Test AI Action execution upon explicit confirmation
   let addedTasksCount = 0;

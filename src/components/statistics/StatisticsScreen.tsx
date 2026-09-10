@@ -15,7 +15,6 @@ import {
 import { useSchoolStore } from '../../store/useSchoolStore';
 import { useHomeworkStore } from '../../store/useHomeworkStore';
 import { useExamStore } from '../../store/useExamStore';
-import { useGradeStore } from '../../store/useGradeStore';
 import { useSettingsStore } from '../../store/useSettingsStore';
 import { useSubscription } from '../../hooks/useSubscription';
 import { calculateSchoolStatistics } from '../../utils/statisticsEngine';
@@ -29,7 +28,6 @@ export const StatisticsScreen: React.FC = () => {
   const { scheduleEntries, subjects } = useSchoolStore();
   const { homework } = useHomeworkStore();
   const { exams } = useExamStore();
-  const { grades } = useGradeStore();
   const { settings } = useSettingsStore();
   const { isPlus, isPro } = useSubscription();
 
@@ -44,7 +42,6 @@ export const StatisticsScreen: React.FC = () => {
     subjects,
     homework,
     exams,
-    grades,
   });
 
   const periodOptions: { id: StatisticsPeriod; label: string; isPlus?: boolean }[] = [

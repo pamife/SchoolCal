@@ -16,7 +16,6 @@ import { FeatureGate } from '../licensing/FeatureGate';
 import { useSchoolStore } from '../../store/useSchoolStore';
 import { useHomeworkStore } from '../../store/useHomeworkStore';
 import { useExamStore } from '../../store/useExamStore';
-import { useGradeStore } from '../../store/useGradeStore';
 import { useSettingsStore } from '../../store/useSettingsStore';
 import { useAuthStore } from '../../store/useAuthStore';
 import { buildSafeAISchoolContext } from '../../services/ai/aiContextBuilder';
@@ -46,7 +45,6 @@ export const AiAssistantModal: React.FC<AiAssistantModalProps> = ({
   const { subjects, teachers, rooms, scheduleEntries } = useSchoolStore();
   const { homework } = useHomeworkStore();
   const { exams } = useExamStore();
-  const { grades } = useGradeStore();
   const { settings } = useSettingsStore();
 
   const [input, setInput] = useState('');
@@ -165,7 +163,6 @@ export const AiAssistantModal: React.FC<AiAssistantModalProps> = ({
         scheduleEntries,
         homework,
         exams,
-        grades,
       });
 
       const response = await defaultAIService.ask(query, context, messages);
