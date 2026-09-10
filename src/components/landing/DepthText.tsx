@@ -92,6 +92,7 @@ export function DepthText({
 
     let frameId = 0;
     let activePointer = false;
+    let isVisible = true;
     let startTime = performance.now();
     const current = { ...baseRotation };
     const target = { ...baseRotation };
@@ -130,6 +131,9 @@ export function DepthText({
     }
 
     const tick = (now: number) => {
+      frameId = 0;
+      if (!isVisible || document.hidden) return;
+
       if ((!canTrackPointer || !activePointer) && autoOrbit) {
         const elapsed = (now - startTime) / 1000;
         const orbit = elapsed * safeOrbitSpeed * Math.PI * 2;
@@ -144,8 +148,30 @@ export function DepthText({
       frameId = requestAnimationFrame(tick);
     };
 
+    const startAnimation = () => {
+      if (!frameId && isVisible && !document.hidden) frameId = requestAnimationFrame(tick);
+    };
+
+    const stopAnimation = () => {
+      cancelAnimationFrame(frameId);
+      frameId = 0;
+    };
+
+    const visibilityObserver = new IntersectionObserver(([entry]) => {
+      isVisible = entry.isIntersecting;
+      if (isVisible) startAnimation();
+      else stopAnimation();
+    });
+
+    const handleVisibilityChange = () => {
+      if (document.hidden) stopAnimation();
+      else startAnimation();
+    };
+
     applyTransform();
-    frameId = requestAnimationFrame(tick);
+    visibilityObserver.observe(root);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    startAnimation();
 
     return () => {
       if (canTrackPointer) {
@@ -153,7 +179,9 @@ export function DepthText({
         window.removeEventListener('pointerleave', handlePointerLeave);
         window.removeEventListener('blur', handlePointerLeave);
       }
-      cancelAnimationFrame(frameId);
+      stopAnimation();
+      visibilityObserver.disconnect();
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
       startTime = 0;
     };
   }, [autoOrbit, baseRotation, pointerTracking, safeOrbitSpeed, safeSmoothing, safeTilt]);
