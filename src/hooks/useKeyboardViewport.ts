@@ -35,10 +35,18 @@ function updateViewportMetrics() {
     currentVvWidth = Math.round(vv.width);
     offsetTop = Math.round(vv.offsetTop);
 
-    // If visualViewport height is substantially smaller than window.innerHeight, keyboard is active
+    // Safari toolbars can also shrink the visual viewport. Only treat the
+    // difference as a keyboard while an editable control actually has focus.
     const heightDifference = windowHeight - currentVvHeight;
-    // Typical virtual keyboard height is > 140px
-    if (heightDifference > 140) {
+    const activeElement = document.activeElement;
+    const hasEditableFocus =
+      activeElement instanceof HTMLInputElement ||
+      activeElement instanceof HTMLTextAreaElement ||
+      activeElement instanceof HTMLSelectElement ||
+      (activeElement instanceof HTMLElement && activeElement.isContentEditable);
+
+    // Typical virtual keyboard height is > 140px.
+    if (heightDifference > 140 && hasEditableFocus) {
       keyboardH = heightDifference;
     }
   }
@@ -56,6 +64,7 @@ function updateViewportMetrics() {
   // Sync CSS custom variables on documentElement for styling & responsive sheets
   if (document.documentElement) {
     document.documentElement.style.setProperty('--visual-viewport-height', `${currentVvHeight}px`);
+    document.documentElement.style.setProperty('--visual-viewport-offset-top', `${offsetTop}px`);
     document.documentElement.style.setProperty('--keyboard-height', `${keyboardH}px`);
   }
 

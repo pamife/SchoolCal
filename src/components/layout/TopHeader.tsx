@@ -82,7 +82,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
             <button
               type="button"
               onClick={onOpenAiAssistant}
-              className="w-9 h-9 rounded-full bg-gradient-to-tr from-purple-600/20 to-indigo-600/20 text-purple-600 dark:text-purple-300 border border-purple-500/30 flex items-center justify-center hover:bg-purple-600 hover:text-white transition-all active:scale-95 shadow-xs"
+              className="touch-target w-9 h-9 rounded-full bg-gradient-to-tr from-purple-600/20 to-indigo-600/20 text-purple-600 dark:text-purple-300 border border-purple-500/30 flex items-center justify-center hover:bg-purple-600 hover:text-white transition-all active:scale-95 shadow-xs"
               title="KI-Schulassistent öffnen"
             >
               <Bot className="w-4 h-4" />
@@ -93,7 +93,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
           <button
             type="button"
             onClick={() => openSearch()}
-            className="w-9 h-9 rounded-full bg-gray-200/70 dark:bg-ios-dark-secondary flex items-center justify-center text-gray-700 dark:text-gray-300 hover:bg-gray-300/80 dark:hover:bg-ios-dark-tertiary transition-colors"
+            className="touch-target w-9 h-9 rounded-full bg-gray-200/70 dark:bg-ios-dark-secondary flex items-center justify-center text-gray-700 dark:text-gray-300 hover:bg-gray-300/80 dark:hover:bg-ios-dark-tertiary transition-colors"
             title="Suche (⌘K)"
           >
             <Search className="w-4 h-4" />
@@ -103,7 +103,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
           <button
             type="button"
             onClick={onOpenQuickAction}
-            className="h-9 px-3 sm:px-3.5 rounded-full bg-ios-blue text-white flex items-center gap-1.5 font-medium text-xs sm:text-sm shadow-sm hover:brightness-105 active:scale-95 transition-all"
+            className="touch-target-y h-9 px-3 sm:px-3.5 rounded-full bg-ios-blue text-white flex items-center gap-1.5 font-medium text-xs sm:text-sm shadow-sm hover:brightness-105 active:scale-95 transition-all"
           >
             <Plus className="w-4 h-4 stroke-[2.5]" />
             <span className="hidden xs:inline">Hinzufügen</span>

@@ -28,7 +28,7 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
   onNavigateTab,
 }) => {
   const { isOpen, query, closeSearch, setQuery } = useSearchStore();
-  const { isKeyboardOpen, keyboardHeight, viewportHeight } = useKeyboardViewport();
+  const { isKeyboardOpen, viewportHeight } = useKeyboardViewport();
   const { subjects, teachers, rooms, scheduleEntries } = useSchoolStore();
   const { events } = useCalendarStore();
   const { homework } = useHomeworkStore();
@@ -124,12 +124,7 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
   return (
     <AnimatePresence>
       {isOpen && (
-        <div
-          style={{
-            bottom: isKeyboardOpen && keyboardHeight > 0 ? `${keyboardHeight}px` : 0,
-          }}
-          className="fixed inset-0 z-50 flex items-start justify-center p-3 sm:p-6 pt-[max(2.5rem,env(safe-area-inset-top,0px))] pb-[max(1rem,env(safe-area-inset-bottom,0px))] pl-[max(0.75rem,env(safe-area-inset-left,0px))] pr-[max(0.75rem,env(safe-area-inset-right,0px))] transition-[bottom] duration-150"
-        >
+        <div className="visual-viewport-overlay fixed inset-0 z-50 flex items-start justify-center p-3 sm:p-6 pt-[max(2.5rem,env(safe-area-inset-top,0px))] pb-[max(1rem,env(safe-area-inset-bottom,0px))] pl-[max(0.75rem,env(safe-area-inset-left,0px))] pr-[max(0.75rem,env(safe-area-inset-right,0px))]">
           {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
@@ -165,7 +160,7 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
                 <button
                   type="button"
                   onClick={() => setQuery('')}
-                  className="p-1 rounded-full text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                  className="touch-target p-1 rounded-full text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
                 >
                   <X className="w-4 h-4" />
                 </button>

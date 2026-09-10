@@ -57,7 +57,7 @@ export const TaskActionSheet: React.FC<TaskActionSheetProps> = ({
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center sm:justify-center p-0 sm:p-4">
+        <div className="visual-viewport-overlay fixed inset-0 z-50 flex items-end sm:items-center sm:justify-center p-0 sm:p-4">
           {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
@@ -110,7 +110,7 @@ export const TaskActionSheet: React.FC<TaskActionSheetProps> = ({
               <button
                 type="button"
                 onClick={onClose}
-                className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors shrink-0"
+                className="touch-target w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors shrink-0"
               >
                 <X className="w-4 h-4" />
               </button>

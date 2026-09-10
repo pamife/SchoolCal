@@ -76,7 +76,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       <button
         type="button"
         onClick={() => openSearch()}
-        className="flex items-center justify-between w-full px-3.5 py-2.5 mb-4 text-xs font-medium text-gray-500 dark:text-gray-400 bg-white dark:bg-ios-dark-secondary rounded-ios border border-black/5 dark:border-white/5 shadow-xs hover:border-ios-blue/40 transition-colors"
+        className="touch-target-y flex items-center justify-between w-full px-3.5 py-2.5 mb-4 text-xs font-medium text-gray-500 dark:text-gray-400 bg-white dark:bg-ios-dark-secondary rounded-ios border border-black/5 dark:border-white/5 shadow-xs hover:border-ios-blue/40 transition-colors"
       >
         <div className="flex items-center gap-2">
           <Search className="w-4 h-4 text-gray-400" />
@@ -101,7 +101,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               key={item.id}
               type="button"
               onClick={() => onTabChange(item.id)}
-              className={`flex items-center justify-between w-full px-3 py-2 rounded-ios font-medium text-sm transition-all ${
+              className={`touch-target-y flex items-center justify-between w-full px-3 py-2 rounded-ios font-medium text-sm transition-all ${
                 isActive
                   ? 'bg-ios-blue text-white shadow-sm font-semibold'
                   : 'text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/5'
@@ -140,7 +140,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <button
           type="button"
           onClick={onOpenAiAssistant}
-          className="w-full p-2.5 rounded-2xl bg-gray-100/80 dark:bg-ios-dark-secondary/60 hover:bg-gray-200/80 dark:hover:bg-ios-dark-tertiary border border-black/5 dark:border-white/5 text-left transition-all group mb-4"
+          className="touch-target-y w-full p-2.5 rounded-2xl bg-gray-100/80 dark:bg-ios-dark-secondary/60 hover:bg-gray-200/80 dark:hover:bg-ios-dark-tertiary border border-black/5 dark:border-white/5 text-left transition-all group mb-4"
         >
           <div className="flex items-center gap-2.5">
             <div className="w-7 h-7 rounded-lg bg-purple-500/15 text-purple-600 dark:text-purple-400 flex items-center justify-center shadow-xs shrink-0 group-hover:scale-105 transition-transform">
@@ -181,8 +181,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
 
         {/* User profile snippet */}
-        <div
-          className="flex items-center gap-2.5 p-2 rounded-ios hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer"
+        <button
+          type="button"
+          className="touch-target-y w-full flex items-center gap-2.5 p-2 rounded-ios hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer text-left"
           onClick={() => onTabChange('settings')}
         >
           <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-purple-500 to-ios-blue text-white flex items-center justify-center font-bold text-xs shadow-sm">
@@ -196,7 +197,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               {settings.gradeLevel || 'Schüler'}
             </p>
           </div>
-        </div>
+        </button>
       </div>
     </aside>
   );

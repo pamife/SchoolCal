@@ -91,7 +91,7 @@ export const ThreeDayView: React.FC<ThreeDayViewProps> = ({
       </div>
 
       {/* 3-Day Columns */}
-      <div className="grid grid-cols-3 divide-x divide-black/5 dark:divide-white/5 p-2 min-h-[420px] max-h-[calc(100vh-280px)] overflow-y-auto no-scrollbar">
+      <div className="grid grid-cols-3 divide-x divide-black/5 dark:divide-white/5 p-2 min-h-[420px] max-h-[calc(100vh-280px)] supports-[height:100dvh]:max-h-[calc(100dvh-280px)] overflow-y-auto no-scrollbar">
         {threeDays.map((day) => {
           const jsDay = day.getDay();
           const dayOfWeek = jsDay === 0 ? 7 : jsDay;

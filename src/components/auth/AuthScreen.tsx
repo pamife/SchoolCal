@@ -22,8 +22,10 @@ import {
   translateFirebaseAuthError,
 } from '../../services/firebase/authService';
 import { Button } from '../common/Button';
+import { useKeyboardViewport } from '../../hooks/useKeyboardViewport';
 
 export const AuthScreen: React.FC = () => {
+  useKeyboardViewport();
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [displayName, setDisplayName] = useState('');
   const [email, setEmail] = useState('');
@@ -150,7 +152,7 @@ export const AuthScreen: React.FC = () => {
                 setMode('login');
                 setErrorMessage('');
               }}
-              className={`py-2 rounded-xl text-xs font-bold transition-all ${
+              className={`touch-target-y py-2 rounded-xl text-xs font-bold transition-all ${
                 mode === 'login'
                   ? 'bg-white dark:bg-ios-dark-card text-gray-900 dark:text-white shadow-xs'
                   : 'text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200'
@@ -164,7 +166,7 @@ export const AuthScreen: React.FC = () => {
                 setMode('register');
                 setErrorMessage('');
               }}
-              className={`py-2 rounded-xl text-xs font-bold transition-all ${
+              className={`touch-target-y py-2 rounded-xl text-xs font-bold transition-all ${
                 mode === 'register'
                   ? 'bg-white dark:bg-ios-dark-card text-gray-900 dark:text-white shadow-xs'
                   : 'text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200'
@@ -187,7 +189,7 @@ export const AuthScreen: React.FC = () => {
             type="button"
             onClick={handleGoogleAuth}
             disabled={isGoogleLoading || isLoading}
-            className="w-full py-2.5 px-4 bg-white dark:bg-ios-dark-secondary hover:bg-gray-50 dark:hover:bg-ios-dark-tertiary border border-gray-200 dark:border-white/10 rounded-xl text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-200 flex items-center justify-center gap-3 transition-all shadow-xs active:scale-[0.98] mb-4"
+            className="touch-target-y w-full py-2.5 px-4 bg-white dark:bg-ios-dark-secondary hover:bg-gray-50 dark:hover:bg-ios-dark-tertiary border border-gray-200 dark:border-white/10 rounded-xl text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-200 flex items-center justify-center gap-3 transition-all shadow-xs active:scale-[0.98] mb-4"
           >
             {isGoogleLoading ? (
               <span className="w-4 h-4 border-2 border-ios-blue border-t-transparent rounded-full animate-spin" />
@@ -275,7 +277,7 @@ export const AuthScreen: React.FC = () => {
                       setResetError('');
                       setIsResetOpen(true);
                     }}
-                    className="text-xs font-semibold text-ios-blue hover:underline"
+                    className="touch-target-y text-xs font-semibold text-ios-blue hover:underline"
                   >
                     Passwort vergessen?
                   </button>
@@ -294,7 +296,7 @@ export const AuthScreen: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                  className="touch-target absolute right-0 inset-y-0 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 flex items-center justify-center"
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
@@ -353,7 +355,7 @@ export const AuthScreen: React.FC = () => {
       {/* Password Reset Dialog */}
       <AnimatePresence>
         {isResetOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="visual-viewport-overlay fixed inset-0 z-50 flex items-center justify-center p-4">
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -378,7 +380,7 @@ export const AuthScreen: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setIsResetOpen(false)}
-                  className="p-1 rounded-full text-gray-400 hover:text-gray-600"
+                  className="touch-target p-1 rounded-full text-gray-400 hover:text-gray-600"
                 >
                   <X className="w-4 h-4" />
                 </button>

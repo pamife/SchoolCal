@@ -183,7 +183,7 @@ export const CalendarScreen: React.FC<CalendarScreenProps> = ({
             <button
               type="button"
               onClick={handlePrevious}
-              className="p-1.5 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-white dark:hover:bg-ios-dark-card transition-colors active:scale-95"
+              className="touch-target p-1.5 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-white dark:hover:bg-ios-dark-card transition-colors active:scale-95"
               title="Vorheriger Zeitraum"
             >
               <ChevronLeft className="w-4 h-4" />
@@ -191,14 +191,14 @@ export const CalendarScreen: React.FC<CalendarScreenProps> = ({
             <button
               type="button"
               onClick={handleToday}
-              className="px-2.5 py-1 text-xs font-semibold text-gray-800 dark:text-gray-200 hover:bg-white dark:hover:bg-ios-dark-card rounded-lg transition-colors active:scale-95"
+              className="touch-target-y px-2.5 py-1 text-xs font-semibold text-gray-800 dark:text-gray-200 hover:bg-white dark:hover:bg-ios-dark-card rounded-lg transition-colors active:scale-95"
             >
               Heute
             </button>
             <button
               type="button"
               onClick={handleNext}
-              className="p-1.5 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-white dark:hover:bg-ios-dark-card transition-colors active:scale-95"
+              className="touch-target p-1.5 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-white dark:hover:bg-ios-dark-card transition-colors active:scale-95"
               title="Nächster Zeitraum"
             >
               <ChevronRight className="w-4 h-4" />
@@ -209,7 +209,7 @@ export const CalendarScreen: React.FC<CalendarScreenProps> = ({
           <button
             type="button"
             onClick={handleExportIcs}
-            className="p-2 bg-gray-100 dark:bg-ios-dark-secondary text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-ios-dark-tertiary rounded-ios transition-colors active:scale-95"
+            className="touch-target p-2 bg-gray-100 dark:bg-ios-dark-secondary text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-ios-dark-tertiary rounded-ios transition-colors active:scale-95"
             title="In Apple Kalender / ICS exportieren"
           >
             <Download className="w-4 h-4" />
@@ -233,11 +233,11 @@ export const CalendarScreen: React.FC<CalendarScreenProps> = ({
           {headerTitle}
         </h2>
         <span className="text-xs text-gray-400 font-medium hidden sm:inline">
-          Tippe oder wische zum Blättern
+          Nutze die Pfeile zum Blättern
         </span>
       </div>
 
-      {/* View Render with Smooth Horizontal Swipe Gestures */}
+      {/* View Render with a smooth transition between date ranges */}
       <div {...swipeHandlers} className="w-full min-w-0 touch-pan-y overflow-hidden">
         <AnimatePresence initial={false} custom={direction} mode="wait">
           <motion.div

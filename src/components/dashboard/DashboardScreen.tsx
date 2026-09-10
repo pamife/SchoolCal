@@ -194,10 +194,10 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
         </div>
       </div>
 
-      {/* 4. Grid: Heutiger Stundenplan (Left) + Tasks & Exams (Right on iPad) */}
-      <div className="grid grid-cols-1 ipad:grid-cols-12 gap-5">
+      {/* 4. Grid: Heutiger Stundenplan + Aufgaben und Klausuren auf breiten iPads/Desktops */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
         {/* Left column: Heutiger Stundenplan */}
-        <div className="ipad:col-span-7 space-y-3">
+        <div className="lg:col-span-7 space-y-3">
           <div className="flex items-center justify-between px-1">
             <div className="flex items-center gap-2">
               <BookOpen className="w-4 h-4 text-ios-blue" />
@@ -227,7 +227,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
         </div>
 
         {/* Right column: Hausaufgaben & Klausur-Countdowns */}
-        <div className="ipad:col-span-5 space-y-4">
+        <div className="lg:col-span-5 space-y-4">
           <TodayHomeworkWidget
             homework={homework}
             subjects={subjects}
@@ -248,4 +248,3 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
     </div>
   );
 };
-

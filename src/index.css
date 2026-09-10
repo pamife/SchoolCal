@@ -10,6 +10,7 @@
     --sal: env(safe-area-inset-left, 0px);
     
     --visual-viewport-height: 100dvh;
+    --visual-viewport-offset-top: 0px;
     --keyboard-height: 0px;
 
     --accent-color: #007AFF;
@@ -28,7 +29,6 @@
     overflow-x: hidden !important;
     overscroll-behavior: none;
     overscroll-behavior-x: none;
-    touch-action: pan-y;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     -webkit-tap-highlight-color: transparent;
@@ -46,7 +46,6 @@
     overflow-x: hidden !important;
     overscroll-behavior: none;
     overscroll-behavior-x: none;
-    touch-action: pan-y;
     position: fixed;
     inset: 0;
     -webkit-font-smoothing: antialiased;
@@ -62,7 +61,6 @@
     overflow: hidden;
     overflow-x: hidden !important;
     overscroll-behavior-x: none;
-    touch-action: pan-y;
     position: relative;
     display: flex;
     flex-direction: column;
@@ -84,9 +82,9 @@
   }
 
   /* Prevent automatic iOS Safari auto-zoom on input focus */
-  @media screen and (max-width: 768px) {
+  @media screen and (max-width: 1366px) and (any-pointer: coarse) {
     input, select, textarea {
-      font-size: 16px;
+      font-size: 16px !important;
     }
   }
 }
@@ -133,13 +131,31 @@
 
   .overflow-y-auto {
     overflow-x: hidden !important;
-    touch-action: pan-y;
     -webkit-overflow-scrolling: touch;
   }
 
   .overflow-x-auto,
   .overflow-auto {
+    touch-action: pan-x pan-y;
     -webkit-overflow-scrolling: touch;
+  }
+
+  /* Follow iPadOS Safari's visible viewport when its toolbars or keyboard move it. */
+  .visual-viewport-overlay {
+    top: var(--visual-viewport-offset-top, 0px) !important;
+    bottom: auto !important;
+    height: var(--visual-viewport-height, 100dvh);
+  }
+
+  @media (any-pointer: coarse) {
+    .touch-target {
+      min-width: 44px;
+      min-height: 44px;
+    }
+
+    .touch-target-y {
+      min-height: 44px;
+    }
   }
 
   /* Apple Glassmorphism */

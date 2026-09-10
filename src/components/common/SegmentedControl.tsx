@@ -33,7 +33,7 @@ export function SegmentedControl<T extends string>({
             key={option.id}
             type="button"
             onClick={() => onChange(option.id)}
-            className={`relative z-10 flex items-center justify-center gap-1.5 px-3 py-1.5 font-medium rounded-[10px] transition-colors ${
+            className={`touch-target-y relative z-10 flex items-center justify-center gap-1.5 px-3 py-1.5 font-medium rounded-[10px] transition-colors ${
               isSelected
                 ? 'text-gray-900 dark:text-white'
                 : 'text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200'

@@ -19,7 +19,7 @@ export const Button: React.FC<ButtonProps> = ({
   disabled,
   ...props
 }) => {
-  const baseStyles = 'inline-flex items-center justify-center font-medium rounded-ios transition-all active:scale-[0.97] select-none cursor-pointer disabled:opacity-50 disabled:pointer-events-none disabled:active:scale-100';
+  const baseStyles = 'touch-target-y inline-flex items-center justify-center font-medium rounded-ios transition-all active:scale-[0.97] select-none cursor-pointer disabled:opacity-50 disabled:pointer-events-none disabled:active:scale-100';
 
   const sizeStyles = {
     sm: 'text-xs px-3 py-1.5 gap-1.5 font-medium',

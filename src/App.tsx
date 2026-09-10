@@ -190,7 +190,7 @@ export function App() {
   // Initial App Loading Screen
   if (isLoading) {
     return (
-      <div className="h-screen w-screen flex flex-col items-center justify-center bg-ios-light-bg dark:bg-ios-dark-bg text-slate-900 dark:text-white">
+      <div className="h-dvh w-full flex flex-col items-center justify-center bg-ios-light-bg dark:bg-ios-dark-bg text-slate-900 dark:text-white">
         <div className="w-16 h-16 rounded-[22px] bg-gradient-to-br from-ios-blue to-indigo-600 flex items-center justify-center text-white shadow-xl animate-pulse mb-4">
           <BookOpen className="w-8 h-8" />
         </div>
@@ -222,10 +222,7 @@ export function App() {
         />
 
         {/* Tab View Scroll Container with reliable bottom and landscape safe area clearance */}
-        <div
-          className="flex-1 min-w-0 w-full max-w-full overflow-y-auto overflow-x-hidden overscroll-contain"
-          style={{ touchAction: 'pan-y' }}
-        >
+        <div className="flex-1 min-w-0 w-full max-w-full overflow-y-auto overflow-x-hidden overscroll-contain">
           <main className="min-h-full w-full max-w-full overflow-x-hidden p-3.5 sm:p-5 sm:px-6 pb-[calc(5.5rem+env(safe-area-inset-bottom,0px))] ipad:pb-8 pl-[max(0.875rem,env(safe-area-inset-left,0px))] pr-[max(0.875rem,env(safe-area-inset-right,0px))]">
             {activeTab === 'today' && (
               <DashboardScreen
