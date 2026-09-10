@@ -10,6 +10,7 @@ import {
   MapPin,
 } from 'lucide-react';
 import { Button } from '../../common/Button';
+import { Button as StatefulButton } from '../../ui/stateful-button';
 import { Badge } from '../../common/Badge';
 import type {
   TimetableVariant,
@@ -235,13 +236,16 @@ export const ClassVariantsTab: React.FC<ClassVariantsTabProps> = ({
                         </span>
                         <span className="text-gray-400">{room?.name || ''}</span>
                       </div>
-                      <button
+                      <StatefulButton
                         type="button"
                         onClick={() => handleRemoveEntryFromVariant(ent.id)}
+                        variant="ghost"
+                        size="sm"
                         className="p-1 text-gray-400 hover:text-red-500 transition-colors"
+                        icon={<Trash2 className="w-3.5 h-3.5" />}
+                        aria-label="Stunde aus Variante löschen"
                       >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                      </StatefulButton>
                     </div>
                   );
                 })}
@@ -401,14 +405,17 @@ export const ClassVariantsTab: React.FC<ClassVariantsTabProps> = ({
                   >
                     <Edit2 className="w-3.5 h-3.5" />
                   </button>
-                  <button
+                  <StatefulButton
                     type="button"
                     onClick={() => handleDeleteVariant(v.id)}
+                    variant="ghost"
+                    size="sm"
                     className="p-1 text-gray-400 hover:text-red-500 transition-colors"
                     title="Löschen"
+                    icon={<Trash2 className="w-3.5 h-3.5" />}
+                    aria-label={`${v.name} löschen`}
                   >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
+                  </StatefulButton>
                 </div>
               </div>
 

@@ -21,6 +21,7 @@ import { useClassTimetableStore } from '../../../store/useClassTimetableStore';
 import { useSchoolConfigStore } from '../../../store/useSchoolConfigStore';
 import { SegmentedControl, type SegmentOption } from '../../common/SegmentedControl';
 import { Button } from '../../common/Button';
+import { Button as StatefulButton } from '../../ui/stateful-button';
 import { Badge } from '../../common/Badge';
 import { BottomSheet } from '../../common/BottomSheet';
 import { ClassTimetableEditor } from './ClassTimetableEditor';
@@ -486,15 +487,17 @@ export const ClassTimetableAdminTab: React.FC<ClassTimetableAdminTabProps> = ({
             <Button variant="secondary" size="md" onClick={() => setIsCopyModalOpen(false)}>
               Abbrechen
             </Button>
-            <Button
+            <StatefulButton
               variant="primary"
               size="md"
               disabled={!copySourceClassId}
               onClick={handleConfirmCopy}
               icon={<Copy className="w-3.5 h-3.5" />}
+              loadingText="Wird kopiert..."
+              successText="Kopiert"
             >
               Stundenplan kopieren
-            </Button>
+            </StatefulButton>
           </div>
         </div>
       </BottomSheet>

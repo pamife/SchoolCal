@@ -26,6 +26,7 @@ import {
 } from '../../services/ai/geminiApiClient';
 import { MarkdownText } from '../common/MarkdownText';
 import { AiActionCard } from './AiActionCard';
+import { Button as StatefulButton } from '../ui/stateful-button';
 import type { AIChatMessage } from '../../types';
 
 interface AiAssistantModalProps {
@@ -130,10 +131,10 @@ export const AiAssistantModal: React.FC<AiAssistantModalProps> = ({
     'Ich habe heute von 16 bis 18 Uhr Zeit. Was soll ich lernen?',
   ];
 
-  const handleSaveApiKey = () => {
+  const handleSaveApiKey = async () => {
     setCustomGeminiApiKey(customKeyInput);
     setShowKeyConfig(false);
-    refreshAiStatus();
+    await refreshAiStatus();
   };
 
   const handleSendMessage = async (textToSend?: string) => {
@@ -271,14 +272,16 @@ export const AiAssistantModal: React.FC<AiAssistantModalProps> = ({
               </button>
             </div>
 
-            <button
+            <StatefulButton
               type="button"
               onClick={handleClearChat}
+              variant="ghost"
+              size="sm"
               className="text-[11px] text-gray-400 hover:text-red-500 flex items-center gap-1 font-medium transition-colors"
+              icon={<Trash2 className="w-3 h-3" />}
             >
-              <Trash2 className="w-3 h-3" />
-              <span>Verlauf leeren</span>
-            </button>
+              Verlauf leeren
+            </StatefulButton>
           </div>
 
           {/* Optional API Key Configuration Panel */}
@@ -318,14 +321,18 @@ export const AiAssistantModal: React.FC<AiAssistantModalProps> = ({
                   placeholder="AIzaSy..."
                   className="flex-1 px-3 py-1.5 bg-white dark:bg-ios-dark-secondary rounded-xl border border-black/10 dark:border-white/10 text-xs font-mono text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-purple-600"
                 />
-                <button
+                <StatefulButton
                   type="button"
                   onClick={handleSaveApiKey}
+                  variant="primary"
+                  size="sm"
                   className="px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs flex items-center gap-1 shrink-0 shadow-xs"
+                  icon={<Check className="w-3.5 h-3.5" />}
+                  loadingText="Speichern..."
+                  successText="Gespeichert"
                 >
-                  <Check className="w-3.5 h-3.5" />
-                  <span>Speichern</span>
-                </button>
+                  Speichern
+                </StatefulButton>
               </div>
 
               <div className="flex items-center justify-between pt-0.5">
@@ -340,17 +347,19 @@ export const AiAssistantModal: React.FC<AiAssistantModalProps> = ({
                 </a>
 
                 {customKeyInput && (
-                  <button
+                  <StatefulButton
                     type="button"
-                    onClick={() => {
+                    variant="ghost"
+                    size="sm"
+                    onClick={async () => {
                       setCustomKeyInput('');
                       setCustomGeminiApiKey('');
-                      refreshAiStatus();
+                      await refreshAiStatus();
                     }}
                     className="text-[10px] text-red-500 hover:underline"
                   >
                     Key löschen
-                  </button>
+                  </StatefulButton>
                 )}
               </div>
             </div>

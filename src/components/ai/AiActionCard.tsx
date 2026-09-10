@@ -6,6 +6,7 @@ import { useHomeworkStore } from '../../store/useHomeworkStore';
 import { useCalendarStore } from '../../store/useCalendarStore';
 import { useAuthStore } from '../../store/useAuthStore';
 import { Button } from '../common/Button';
+import { Button as StatefulButton } from '../ui/stateful-button';
 
 interface AiActionCardProps {
   action: AIActionPayload;
@@ -36,6 +37,9 @@ export const AiActionCard: React.FC<AiActionCardProps> = ({ action, onExecuted }
     setIsExecuting(false);
     setExecuted(res.success);
     setResultMessage(res.message);
+    if (!res.success) {
+      throw new Error(res.message);
+    }
     if (res.success && onExecuted) {
       onExecuted();
     }
@@ -98,7 +102,7 @@ export const AiActionCard: React.FC<AiActionCardProps> = ({ action, onExecuted }
             Verwerfen
           </Button>
 
-          <Button
+          <StatefulButton
             type="button"
             variant="primary"
             size="sm"
@@ -106,9 +110,11 @@ export const AiActionCard: React.FC<AiActionCardProps> = ({ action, onExecuted }
             disabled={isExecuting}
             icon={<Check className="w-3.5 h-3.5" />}
             className="bg-purple-600 hover:bg-purple-700 text-white shadow-xs"
+            loadingText="Wird übernommen..."
+            successText="Übernommen"
           >
-            {isExecuting ? 'Wird übernommen...' : 'In Aufgaben übernehmen'}
-          </Button>
+            In Aufgaben übernehmen
+          </StatefulButton>
         </div>
       )}
     </div>

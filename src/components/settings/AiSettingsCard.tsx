@@ -14,6 +14,7 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import { Button } from '../common/Button';
+import { Button as StatefulButton } from '../ui/stateful-button';
 import {
   getEffectiveGeminiApiKey,
   setCustomGeminiApiKey,
@@ -55,12 +56,12 @@ export const AiSettingsCard: React.FC = () => {
     setTimeout(() => setSaveStatus('idle'), 2500);
   };
 
-  const handleClear = () => {
+  const handleClear = async () => {
     setApiKey('');
     setCustomGeminiApiKey('');
     setSaveStatus('cleared');
     setTestStatus('idle');
-    checkHealth(true);
+    await checkHealth(true);
     setTimeout(() => setSaveStatus('idle'), 2500);
   };
 
@@ -249,7 +250,7 @@ export const AiSettingsCard: React.FC = () => {
             </Button>
 
             {apiKey && (
-              <Button
+              <StatefulButton
                 type="button"
                 variant="ghost"
                 size="sm"
@@ -257,6 +258,7 @@ export const AiSettingsCard: React.FC = () => {
                 icon={<Trash2 className="w-3.5 h-3.5" />}
                 className="text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30"
                 title="Key löschen"
+                aria-label="API-Key löschen"
               />
             )}
           </div>

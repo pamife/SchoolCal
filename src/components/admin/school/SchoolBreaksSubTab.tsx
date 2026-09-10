@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Coffee, Plus, Trash2, CheckCircle2, Sparkles, LayoutGrid } from 'lucide-react';
 import { Button } from '../../common/Button';
+import { Button as StatefulButton } from '../../ui/stateful-button';
 import { OFFICIAL_SCHERPF_BREAKS } from '../../../config/schoolConfig';
 import type { ScheduleBreak, BreakDisplayMode, SchedulePeriodTime } from '../../../types';
 
@@ -162,14 +163,17 @@ export const SchoolBreaksSubTab: React.FC<SchoolBreaksSubTabProps> = ({
                     />
                   </div>
 
-                  <button
+                  <StatefulButton
                     type="button"
                     onClick={() => handleRemoveBreak(b.id)}
+                    variant="ghost"
+                    size="sm"
                     className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
                     title="Pause löschen"
+                    icon={<Trash2 className="w-4 h-4" />}
+                    aria-label="Pause löschen"
                   >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                  </StatefulButton>
                 </div>
               </div>
             </div>

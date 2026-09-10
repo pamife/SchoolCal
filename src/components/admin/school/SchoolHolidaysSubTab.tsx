@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Calendar, Plus, Trash2, CheckCircle2, ShieldCheck, Tag } from 'lucide-react';
 import { Button } from '../../common/Button';
+import { Button as StatefulButton } from '../../ui/stateful-button';
 import { Badge } from '../../common/Badge';
 import { getHolidaysForState } from '../../../data/holidays';
 import type { Holiday } from '../../../types';
@@ -193,14 +194,17 @@ export const SchoolHolidaysSubTab: React.FC<SchoolHolidaysSubTabProps> = ({
                   </div>
                 </div>
 
-                <button
+                <StatefulButton
                   type="button"
                   onClick={() => handleDelete(sh.id)}
+                  variant="ghost"
+                  size="sm"
                   className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
                   title="Eintrag löschen"
+                  icon={<Trash2 className="w-4 h-4" />}
+                  aria-label={`${sh.name} löschen`}
                 >
-                  <Trash2 className="w-4 h-4" />
-                </button>
+                </StatefulButton>
               </div>
             ))}
           </div>

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { CalendarEvent, CalendarEventType, Subject } from '../../types';
 import { BottomSheet } from '../common/BottomSheet';
 import { Button } from '../common/Button';
+import { Button as StatefulButton } from '../ui/stateful-button';
 import { ACCENT_PALETTES } from '../../utils/colorUtils';
 import { Calendar, Clock, MapPin, Tag, FileText, Trash2, Repeat, Bell } from 'lucide-react';
 import { format } from 'date-fns';
@@ -10,7 +11,7 @@ interface EventModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (event: CalendarEvent) => void;
-  onDelete?: (id: string) => void;
+  onDelete?: (id: string) => void | Promise<void>;
   initialEvent?: CalendarEvent | null;
   initialDate?: Date;
   subjects: Subject[];
@@ -328,18 +329,19 @@ export const EventModal: React.FC<EventModalProps> = ({
         {/* Buttons */}
         <div className="flex items-center gap-2 pt-3 pb-8 sm:pb-4">
           {initialEvent && onDelete && (
-            <Button
+            <StatefulButton
               type="button"
               variant="destructive"
               size="md"
-              onClick={() => {
-                onDelete(initialEvent.id);
-                onClose();
+              onClick={async () => {
+                await onDelete(initialEvent.id);
               }}
+              onActionSuccess={onClose}
               icon={<Trash2 className="w-4 h-4" />}
+              loadingText="Löschen..."
             >
               Löschen
-            </Button>
+            </StatefulButton>
           )}
 
           <Button type="submit" variant="primary" size="md" fullWidth>

@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import type { Homework, Subject } from '../../types';
 import { haptics } from '../../utils/haptics';
+import { Button as StatefulButton } from '../ui/stateful-button';
 
 export interface TaskActionSheetProps {
   isOpen: boolean;
@@ -20,7 +21,7 @@ export interface TaskActionSheetProps {
   subject?: Subject;
   onToggleComplete: (id: string) => void;
   onEdit: (homework: Homework) => void;
-  onDelete: (id: string) => void;
+  onDelete: (id: string) => void | Promise<void>;
   onReschedule: (id: string, newDateIso: string) => void;
 }
 
@@ -196,14 +197,18 @@ export const TaskActionSheet: React.FC<TaskActionSheetProps> = ({
               </button>
 
               {/* Delete Destructive */}
-              <button
+              <StatefulButton
                 type="button"
-                onClick={() => {
+                variant="ghost"
+                fullWidth
+                onClick={async () => {
                   haptics.warning();
-                  onDelete(homework.id);
-                  onClose();
+                  await onDelete(homework.id);
                 }}
-                className="w-full flex items-center gap-3 p-3 rounded-2xl hover:bg-red-500/10 active:scale-[0.98] transition-all text-left font-semibold text-sm text-red-600 dark:text-red-400"
+                onActionSuccess={onClose}
+                className="w-full flex items-center justify-start gap-3 p-3 rounded-2xl hover:bg-red-500/10 active:scale-[0.98] transition-all text-left font-semibold text-sm text-red-600 dark:text-red-400"
+                loadingText="Löschen..."
+                successText="Gelöscht"
               >
                 <div className="w-9 h-9 rounded-xl bg-red-500/15 text-red-600 dark:text-red-400 flex items-center justify-center">
                   <Trash2 className="w-5 h-5" />
@@ -212,7 +217,7 @@ export const TaskActionSheet: React.FC<TaskActionSheetProps> = ({
                   <div>Aufgabe löschen</div>
                   <div className="text-xs text-red-500/70 font-normal">Unwiderruflich entfernen</div>
                 </div>
-              </button>
+              </StatefulButton>
             </div>
           </motion.div>
         </div>

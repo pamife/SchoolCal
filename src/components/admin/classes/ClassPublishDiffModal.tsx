@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { BottomSheet } from '../../common/BottomSheet';
 import { Button } from '../../common/Button';
+import { Button as StatefulButton } from '../../ui/stateful-button';
 import { Badge } from '../../common/Badge';
 import { CheckCircle2, AlertCircle, ArrowRight, Upload } from 'lucide-react';
 import type { TimetableDiff, ClassTimetable } from '../../../types';
@@ -32,9 +33,9 @@ export const ClassPublishDiffModal: React.FC<ClassPublishDiffModalProps> = ({
     setIsPublishing(true);
     try {
       await onConfirmPublish(diff.summary);
-      onClose();
     } catch (err) {
       console.error('Publish error:', err);
+      throw err;
     } finally {
       setIsPublishing(false);
     }
@@ -135,15 +136,18 @@ export const ClassPublishDiffModal: React.FC<ClassPublishDiffModalProps> = ({
           <Button variant="secondary" size="md" onClick={onClose} disabled={isPublishing}>
             Abbrechen
           </Button>
-          <Button
+          <StatefulButton
             variant="primary"
             size="md"
             onClick={handlePublish}
             disabled={isPublishing}
             icon={<Upload className="w-4 h-4" />}
+            loadingText="Wird veröffentlicht..."
+            successText="Veröffentlicht"
+            onActionSuccess={onClose}
           >
-            {isPublishing ? 'Wird veröffentlicht...' : `Jetzt veröffentlichen (v${nextVersion})`}
-          </Button>
+            Jetzt veröffentlichen (v{nextVersion})
+          </StatefulButton>
         </div>
       </div>
     </BottomSheet>

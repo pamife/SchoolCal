@@ -9,6 +9,7 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 import { Button } from '../../common/Button';
+import { Button as StatefulButton } from '../../ui/stateful-button';
 import { Badge } from '../../common/Badge';
 import { BottomSheet } from '../../common/BottomSheet';
 import { hexToRgba } from '../../../utils/colorUtils';
@@ -688,23 +689,24 @@ export const ClassTimetableEditor: React.FC<ClassTimetableEditorProps> = ({
           </div>
 
           <div className="flex items-center justify-between pt-2 border-t border-black/5 dark:border-white/10">
-            <Button
+            <StatefulButton
               variant="secondary"
               size="sm"
               onClick={handleDeleteCell}
               icon={<Trash2 className="w-3.5 h-3.5" />}
               className="text-red-500 hover:text-red-600"
+              successText="Gelöscht"
             >
               Stunde löschen
-            </Button>
+            </StatefulButton>
 
             <div className="flex items-center gap-2">
               <Button variant="secondary" size="sm" onClick={() => setIsCellModalOpen(false)}>
                 Abbrechen
               </Button>
-              <Button variant="primary" size="sm" onClick={handleSaveCell}>
+              <StatefulButton variant="primary" size="sm" onClick={handleSaveCell} successText="Übernommen">
                 Übernehmen
-              </Button>
+              </StatefulButton>
             </div>
           </div>
         </div>

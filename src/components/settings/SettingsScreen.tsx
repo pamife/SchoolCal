@@ -34,6 +34,7 @@ import { useSubscription } from '../../hooks/useSubscription';
 import { GERMAN_STATES, getHolidaysForState } from '../../data/holidays';
 import { ACCENT_PALETTES } from '../../utils/colorUtils';
 import { Button } from '../common/Button';
+import { Button as StatefulButton } from '../ui/stateful-button';
 import { Badge } from '../common/Badge';
 import { BottomSheet } from '../common/BottomSheet';
 import { PeriodTimesModal } from '../school/PeriodTimesModal';
@@ -1097,13 +1098,15 @@ export const SettingsScreen: React.FC = () => {
             >
               Abbrechen
             </Button>
-            <Button
+            <StatefulButton
               variant="primary"
               size="md"
-              onClick={() => proceedEnrollment(selectedClassToEnroll, enrollingTimetable)}
+              onClick={async () => proceedEnrollment(selectedClassToEnroll, enrollingTimetable)}
+              loadingText="Wird übernommen..."
+              successText="Übernommen"
             >
               Übernehmen
-            </Button>
+            </StatefulButton>
           </div>
         </div>
       </BottomSheet>

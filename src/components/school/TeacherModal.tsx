@@ -2,13 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { Teacher, Subject } from '../../types';
 import { BottomSheet } from '../common/BottomSheet';
 import { Button } from '../common/Button';
+import { Button as StatefulButton } from '../ui/stateful-button';
 import { Trash2 } from 'lucide-react';
 
 interface TeacherModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (teacher: Teacher) => void;
-  onDelete?: (id: string) => void;
+  onDelete?: (id: string) => void | Promise<void>;
   initialTeacher?: Teacher | null;
   subjects: Subject[];
 }
@@ -165,18 +166,19 @@ export const TeacherModal: React.FC<TeacherModalProps> = ({
         {/* Action Buttons */}
         <div className="flex items-center gap-2 pt-2">
           {initialTeacher && onDelete && (
-            <Button
+            <StatefulButton
               type="button"
               variant="destructive"
               size="md"
-              onClick={() => {
-                onDelete(initialTeacher.id);
-                onClose();
+              onClick={async () => {
+                await onDelete(initialTeacher.id);
               }}
+              onActionSuccess={onClose}
               icon={<Trash2 className="w-4 h-4" />}
+              loadingText="Löschen..."
             >
               Löschen
-            </Button>
+            </StatefulButton>
           )}
 
           <Button type="submit" variant="primary" size="md" fullWidth>

@@ -105,13 +105,14 @@ export const HomeworkScreen: React.FC = () => {
   const handleDeleteTask = (id: string) => {
     const task = homework.find(h => h.id === id);
     if (!task) return;
-    deleteHomework(uid, id);
+    const deletion = deleteHomework(uid, id);
     haptics.warning();
     setUndoToast({
       isOpen: true,
       message: `"${task.title}" gelöscht`,
       onUndo: () => addHomework(uid, task),
     });
+    return deletion;
   };
 
   const handleRescheduleTask = (id: string, newDateIso: string) => {

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Exam, ExamType, ExamTopic, Subject, Teacher, Room } from '../../types';
 import { BottomSheet } from '../common/BottomSheet';
 import { Button } from '../common/Button';
+import { Button as StatefulButton } from '../ui/stateful-button';
 import { format, addDays } from 'date-fns';
 import { Trash2, Plus, X, CheckSquare, Square } from 'lucide-react';
 
@@ -9,7 +10,7 @@ interface ExamModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (exam: Exam) => void;
-  onDelete?: (id: string) => void;
+  onDelete?: (id: string) => void | Promise<void>;
   initialExam?: Exam | null;
   subjects: Subject[];
   teachers: Teacher[];
@@ -379,18 +380,19 @@ export const ExamModal: React.FC<ExamModalProps> = ({
         {/* Action Buttons */}
         <div className="flex items-center gap-2 pt-3 pb-8 sm:pb-4">
           {initialExam && onDelete && (
-            <Button
+            <StatefulButton
               type="button"
               variant="destructive"
               size="md"
-              onClick={() => {
-                onDelete(initialExam.id);
-                onClose();
+              onClick={async () => {
+                await onDelete(initialExam.id);
               }}
+              onActionSuccess={onClose}
               icon={<Trash2 className="w-4 h-4" />}
+              loadingText="Löschen..."
             >
               Löschen
-            </Button>
+            </StatefulButton>
           )}
 
           <Button type="submit" variant="primary" size="md" fullWidth>

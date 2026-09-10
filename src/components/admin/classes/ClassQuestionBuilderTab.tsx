@@ -11,6 +11,7 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 import { Button } from '../../common/Button';
+import { Button as StatefulButton } from '../../ui/stateful-button';
 import { Badge } from '../../common/Badge';
 import type {
   OnboardingQuestion,
@@ -326,13 +327,16 @@ export const ClassQuestionBuilderTab: React.FC<ClassQuestionBuilderTabProps> = (
                         </div>
                       )}
                     </div>
-                    <button
+                    <StatefulButton
                       type="button"
                       onClick={() => handleRemoveOptionFromEditing(opt.id)}
+                      variant="ghost"
+                      size="sm"
                       className="p-1 text-gray-400 hover:text-red-500 transition-colors"
+                      icon={<Trash2 className="w-3.5 h-3.5" />}
+                      aria-label="Option löschen"
                     >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
+                    </StatefulButton>
                   </div>
                 ))}
               </div>
@@ -491,14 +495,17 @@ export const ClassQuestionBuilderTab: React.FC<ClassQuestionBuilderTabProps> = (
                     >
                       <Edit2 className="w-3.5 h-3.5" />
                     </button>
-                    <button
+                    <StatefulButton
                       type="button"
                       onClick={() => handleDeleteQuestion(q.id)}
+                      variant="ghost"
+                      size="sm"
                       className="p-1 text-gray-400 hover:text-red-500 transition-colors"
                       title="Löschen"
+                      icon={<Trash2 className="w-3.5 h-3.5" />}
+                      aria-label="Frage löschen"
                     >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
+                    </StatefulButton>
                   </div>
                 </div>
 

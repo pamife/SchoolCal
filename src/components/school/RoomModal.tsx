@@ -2,13 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { Room } from '../../types';
 import { BottomSheet } from '../common/BottomSheet';
 import { Button } from '../common/Button';
+import { Button as StatefulButton } from '../ui/stateful-button';
 import { Trash2 } from 'lucide-react';
 
 interface RoomModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (room: Room) => void;
-  onDelete?: (id: string) => void;
+  onDelete?: (id: string) => void | Promise<void>;
   initialRoom?: Room | null;
 }
 
@@ -122,18 +123,19 @@ export const RoomModal: React.FC<RoomModalProps> = ({
         {/* Buttons */}
         <div className="flex items-center gap-2 pt-2">
           {initialRoom && onDelete && (
-            <Button
+            <StatefulButton
               type="button"
               variant="destructive"
               size="md"
-              onClick={() => {
-                onDelete(initialRoom.id);
-                onClose();
+              onClick={async () => {
+                await onDelete(initialRoom.id);
               }}
+              onActionSuccess={onClose}
               icon={<Trash2 className="w-4 h-4" />}
+              loadingText="Löschen..."
             >
               Löschen
-            </Button>
+            </StatefulButton>
           )}
 
           <Button type="submit" variant="primary" size="md" fullWidth>

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { BottomSheet } from '../common/BottomSheet';
 import { Button } from '../common/Button';
+import { Button as StatefulButton } from '../ui/stateful-button';
 import { Clock, Plus, Trash2, Coffee, Sparkles } from 'lucide-react';
 import type { SchedulePeriodTime, ScheduleBreak } from '../../types';
 import { DEFAULT_PERIOD_TIMES, DEFAULT_BREAKS } from '../../data/mockData';
@@ -172,14 +173,17 @@ export const PeriodTimesModal: React.FC<PeriodTimesModalProps> = ({
                     </div>
 
                     {periods.length > 1 && (
-                      <button
+                      <StatefulButton
                         type="button"
                         onClick={() => handleRemovePeriod(p.period)}
+                        variant="ghost"
+                        size="sm"
                         className="p-1 text-gray-400 hover:text-red-500 rounded-lg"
                         title="Stunde entfernen"
+                        icon={<Trash2 className="w-3.5 h-3.5" />}
+                        aria-label={`${p.label} entfernen`}
                       >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                      </StatefulButton>
                     )}
                   </div>
 
@@ -277,13 +281,16 @@ export const PeriodTimesModal: React.FC<PeriodTimesModalProps> = ({
                   />
                 </div>
 
-                <button
+                <StatefulButton
                   type="button"
                   onClick={() => handleRemoveBreak(b.id)}
+                  variant="ghost"
+                  size="sm"
                   className="p-1 text-gray-400 hover:text-red-500"
+                  icon={<Trash2 className="w-3.5 h-3.5" />}
+                  aria-label="Pause löschen"
                 >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
+                </StatefulButton>
               </div>
             ))}
           </div>

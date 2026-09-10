@@ -13,6 +13,7 @@ import {
 import { useClassTimetableStore } from '../../../store/useClassTimetableStore';
 import { SegmentedControl, type SegmentOption } from '../../common/SegmentedControl';
 import { Button } from '../../common/Button';
+import { Button as StatefulButton } from '../../ui/stateful-button';
 import { Badge } from '../../common/Badge';
 import { SUBJECT_COLORS, getSubjectIcon, hexToRgba } from '../../../utils/colorUtils';
 import type { Subject, Teacher, Room } from '../../../types';
@@ -287,13 +288,17 @@ export const CentralEntitiesSubTab: React.FC<CentralEntitiesSubTabProps> = () =>
                     >
                       <Edit2 className="w-3.5 h-3.5" />
                     </button>
-                    <button
+                    <StatefulButton
                       type="button"
                       onClick={() => removeSubject(sub.id)}
+                      variant="ghost"
+                      size="sm"
                       className="p-1 text-gray-400 hover:text-red-500 transition-colors"
+                      icon={<Trash2 className="w-3.5 h-3.5" />}
+                      aria-label={`${sub.name} löschen`}
+                      title="Löschen"
                     >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
+                    </StatefulButton>
                   </div>
                 </div>
               ))}
@@ -394,13 +399,17 @@ export const CentralEntitiesSubTab: React.FC<CentralEntitiesSubTabProps> = () =>
                     >
                       <Edit2 className="w-3.5 h-3.5" />
                     </button>
-                    <button
+                    <StatefulButton
                       type="button"
                       onClick={() => removeTeacher(t.id)}
+                      variant="ghost"
+                      size="sm"
                       className="p-1 text-gray-400 hover:text-red-500 transition-colors"
+                      icon={<Trash2 className="w-3.5 h-3.5" />}
+                      aria-label={`${t.name} löschen`}
+                      title="Löschen"
                     >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
+                    </StatefulButton>
                   </div>
                 </div>
               ))}
@@ -491,13 +500,17 @@ export const CentralEntitiesSubTab: React.FC<CentralEntitiesSubTabProps> = () =>
                     >
                       <Edit2 className="w-3.5 h-3.5" />
                     </button>
-                    <button
+                    <StatefulButton
                       type="button"
                       onClick={() => removeRoom(r.id)}
+                      variant="ghost"
+                      size="sm"
                       className="p-1 text-gray-400 hover:text-red-500 transition-colors"
+                      icon={<Trash2 className="w-3.5 h-3.5" />}
+                      aria-label={`${r.name} löschen`}
+                      title="Löschen"
                     >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
+                    </StatefulButton>
                   </div>
                 </div>
               ))}

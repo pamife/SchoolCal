@@ -6,6 +6,7 @@ import { getHomeworkDueDateStatus } from '../../utils/dateUtils';
 import { Badge } from '../common/Badge';
 import { haptics } from '../../utils/haptics';
 import { useLongPress } from '../../hooks/useLongPress';
+import { Button as StatefulButton } from '../ui/stateful-button';
 
 export interface SwipeableHomeworkCardProps {
   homework: Homework;
@@ -13,7 +14,7 @@ export interface SwipeableHomeworkCardProps {
   onToggleComplete: (id: string) => void;
   onView: (homework: Homework) => void;
   onEdit: (homework: Homework) => void;
-  onDelete: (id: string) => void;
+  onDelete: (id: string) => void | Promise<void>;
   onLongPressOpen?: (homework: Homework) => void;
 }
 
@@ -105,18 +106,21 @@ export const SwipeableHomeworkCard: React.FC<SwipeableHomeworkCardProps> = ({
         </button>
 
         {/* Delete Button */}
-        <button
+        <StatefulButton
           type="button"
-          onClick={(e) => {
+          variant="destructive"
+          size="sm"
+          onClick={async (e) => {
             e.stopPropagation();
             haptics.warning();
-            onDelete(homework.id);
+            await onDelete(homework.id);
           }}
           className="w-10 h-10 rounded-xl bg-red-500 text-white flex items-center justify-center shadow-md active:scale-90 transition-transform"
           title="Löschen"
+          icon={<Trash2 className="w-4 h-4" />}
+          aria-label={`${homework.title} löschen`}
         >
-          <Trash2 className="w-4 h-4" />
-        </button>
+        </StatefulButton>
       </motion.div>
 
       {/* Foreground Swipeable Card Surface */}

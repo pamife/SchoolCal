@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Clock, Plus, Trash2, CheckCircle2, Sparkles } from 'lucide-react';
 import { Button } from '../../common/Button';
+import { Button as StatefulButton } from '../../ui/stateful-button';
 import { OFFICIAL_SCHERPF_PERIODS } from '../../../config/schoolConfig';
 import type { SchedulePeriodTime, DayScheduleOverride } from '../../../types';
 
@@ -217,13 +218,15 @@ export const SchoolPeriodsSubTab: React.FC<SchoolPeriodsSubTabProps> = ({
               : `Aktuell gelten die Standardzeiten für ${weekdaysList.find((w) => w.id === activeDay)?.label}. Durch Bearbeiten wird eine Ausnahme angelegt.`}
           </span>
           {dayOverrides[activeDay] && (
-            <button
+            <StatefulButton
               type="button"
               onClick={() => handleRemoveDayOverride(activeDay as keyof DayScheduleOverride)}
+              variant="ghost"
+              size="sm"
               className="text-[11px] font-bold text-red-500 hover:underline shrink-0"
             >
               Ausnahme löschen
-            </button>
+            </StatefulButton>
           )}
         </div>
       )}
@@ -274,14 +277,17 @@ export const SchoolPeriodsSubTab: React.FC<SchoolPeriodsSubTabProps> = ({
 
               <div className="col-span-2 flex justify-end">
                 {currentPeriods.length > 1 && (
-                  <button
+                  <StatefulButton
                     type="button"
                     onClick={() => handleRemovePeriod(p.period)}
+                    variant="ghost"
+                    size="sm"
                     className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
                     title="Stunde entfernen"
+                    icon={<Trash2 className="w-4 h-4" />}
+                    aria-label={`${p.label} entfernen`}
                   >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                  </StatefulButton>
                 )}
               </div>
             </div>

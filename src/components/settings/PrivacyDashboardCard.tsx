@@ -13,6 +13,7 @@ import {
   Layers,
 } from 'lucide-react';
 import { Button } from '../common/Button';
+import { Button as StatefulButton } from '../ui/stateful-button';
 import { Badge } from '../common/Badge';
 import { exportGdprUserDataJson } from '../../services/export/dataExportService';
 import { useAuthStore } from '../../store/useAuthStore';
@@ -75,6 +76,7 @@ export const PrivacyDashboardCard: React.FC<PrivacyDashboardCardProps> = ({
       setDeleteError(err.message || 'Fehler beim Löschen des Kontos.');
       setIsDeleting(false);
       setDeleteStep(0);
+      throw err;
     }
   };
 
@@ -267,13 +269,14 @@ export const PrivacyDashboardCard: React.FC<PrivacyDashboardCardProps> = ({
               >
                 Abbrechen
               </Button>
-              <Button
+              <StatefulButton
                 variant="destructive"
                 size="sm"
                 onClick={() => setDeleteStep(2)}
+                successText="Bestätigt"
               >
                 Ja, fortfahren
-              </Button>
+              </StatefulButton>
             </div>
           </div>
         )}
@@ -298,21 +301,18 @@ export const PrivacyDashboardCard: React.FC<PrivacyDashboardCardProps> = ({
               >
                 Abbrechen
               </Button>
-              <button
+              <StatefulButton
                 type="button"
+                variant="destructive"
+                size="sm"
                 disabled={isDeleting}
                 onClick={handleExecuteDeletion}
-                className="px-4 py-2 bg-black/40 hover:bg-black/60 text-white font-bold text-xs rounded-xl transition-all flex items-center gap-2 border border-white/30"
+                loadingText="Lösche alle Cloud-Daten..."
+                successText="Account gelöscht"
+                className="bg-black/40 hover:bg-black/60 text-white font-bold border border-white/30"
               >
-                {isDeleting ? (
-                  <>
-                    <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    <span>Lösche alle Cloud-Daten...</span>
-                  </>
-                ) : (
-                  <span>Ja, ALLES endgültig löschen</span>
-                )}
-              </button>
+                Ja, ALLES endgültig löschen
+              </StatefulButton>
             </div>
           </div>
         )}

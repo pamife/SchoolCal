@@ -7,6 +7,7 @@ import { useSchoolStore } from '../../store/useSchoolStore';
 import { useSettingsStore } from '../../store/useSettingsStore';
 import { useAuthStore } from '../../store/useAuthStore';
 import { Button } from '../common/Button';
+import { Button as StatefulButton } from '../ui/stateful-button';
 import { BottomSheet } from '../common/BottomSheet';
 import { PricingModal } from '../licensing/PricingModal';
 import { LicenseActivationModal } from '../licensing/LicenseActivationModal';
@@ -185,14 +186,17 @@ export const GradesScreen: React.FC = () => {
                               <p className="text-[11px] text-gray-500 dark:text-gray-400">{gradeTypeLabels[grade.type]}</p>
                               {grade.notes && <p className="mt-2 whitespace-pre-wrap text-xs text-gray-600 dark:text-gray-300">{grade.notes}</p>}
                             </div>
-                            <button
+                            <StatefulButton
                               type="button"
                               onClick={() => deleteGrade(uid, grade.id)}
+                              variant="ghost"
+                              size="sm"
                               className="touch-target flex shrink-0 items-center justify-center rounded-lg text-gray-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/30"
                               aria-label={`${grade.title} löschen`}
+                              title="Löschen"
+                              icon={<Trash2 className="h-4 w-4" />}
                             >
-                              <Trash2 className="h-4 w-4" />
-                            </button>
+                            </StatefulButton>
                           </div>
                         </article>
                       ))}

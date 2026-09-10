@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Homework, Subject, PriorityLevel, TaskStatus, DueDateMode, DueDateSource } from '../../types';
 import { BottomSheet } from '../common/BottomSheet';
 import { Button } from '../common/Button';
+import { Button as StatefulButton } from '../ui/stateful-button';
 import { Badge } from '../common/Badge';
 import { format, addDays, parseISO } from 'date-fns';
 import { de } from 'date-fns/locale';
@@ -14,7 +15,7 @@ interface HomeworkModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (homework: Homework) => void;
-  onDelete?: (id: string) => void;
+  onDelete?: (id: string) => void | Promise<void>;
   initialHomework?: Homework | null;
   subjects: Subject[];
 }
@@ -437,18 +438,19 @@ export const HomeworkModal: React.FC<HomeworkModalProps> = ({
         {/* Action Buttons */}
         <div className="flex items-center gap-2 pt-3 pb-8 sm:pb-4">
           {initialHomework && onDelete && (
-            <Button
+            <StatefulButton
               type="button"
               variant="destructive"
               size="md"
-              onClick={() => {
-                onDelete(initialHomework.id);
-                onClose();
+              onClick={async () => {
+                await onDelete(initialHomework.id);
               }}
+              onActionSuccess={onClose}
               icon={<Trash2 className="w-4 h-4" />}
+              loadingText="Löschen..."
             >
               Löschen
-            </Button>
+            </StatefulButton>
           )}
 
           <Button type="submit" variant="primary" size="md" fullWidth>
@@ -459,4 +461,3 @@ export const HomeworkModal: React.FC<HomeworkModalProps> = ({
     </BottomSheet>
   );
 };
-
